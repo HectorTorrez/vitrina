@@ -63,6 +63,7 @@ func main() {
 	authRoutes(mux, db, delivery)
 	panelRoutes(mux, db)
 	publicBookingRoutes(mux, db, delivery)
+	mediaRoutes(mux, db)
 	mux.HandleFunc("GET /api/shops", func(w http.ResponseWriter, r *http.Request) {
 		type entry struct {
 			Slug        string   `json:"slug"`

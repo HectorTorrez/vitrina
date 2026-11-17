@@ -9,3 +9,4 @@ dist/
 .local/
 deploy/.env
 deploy/backups/
+api/uploads/

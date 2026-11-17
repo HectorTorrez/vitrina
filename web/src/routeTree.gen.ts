@@ -17,6 +17,8 @@ import { Route as IngresarRouteImport } from './routes/ingresar'
 import { Route as PanelRouteImport } from './routes/panel'
 import { Route as RobotsDottxtRouteImport } from './routes/robots[.]txt'
 import { Route as SitemapDotxmlRouteImport } from './routes/sitemap[.]xml'
+import { Route as SubirRouteImport } from './routes/subir'
+import { Route as MediaNameRouteImport } from './routes/media.$name'
 import { Route as TiendaShopIndexRouteImport } from './routes/tienda.$shop.index'
 import { Route as TiendaShopProductRouteImport } from './routes/tienda.$shop.$product'
 
@@ -60,6 +62,16 @@ const SitemapDotxmlRoute = SitemapDotxmlRouteImport.update({
   path: '/sitemap.xml',
   getParentRoute: () => rootRouteImport,
 } as any)
+const SubirRoute = SubirRouteImport.update({
+  id: '/subir',
+  path: '/subir',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const MediaNameRoute = MediaNameRouteImport.update({
+  id: '/media/$name',
+  path: '/media/$name',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const TiendaShopIndexRoute = TiendaShopIndexRouteImport.update({
   id: '/tienda/$shop/',
   path: '/tienda/$shop/',
@@ -80,6 +92,8 @@ export interface FileRoutesByFullPath {
   '/panel': typeof PanelRoute
   '/robots.txt': typeof RobotsDottxtRoute
   '/sitemap.xml': typeof SitemapDotxmlRoute
+  '/subir': typeof SubirRoute
+  '/media/$name': typeof MediaNameRoute
   '/tienda/$shop/$product': typeof TiendaShopProductRoute
   '/tienda/$shop/': typeof TiendaShopIndexRoute
 }
@@ -92,6 +106,8 @@ export interface FileRoutesByTo {
   '/panel': typeof PanelRoute
   '/robots.txt': typeof RobotsDottxtRoute
   '/sitemap.xml': typeof SitemapDotxmlRoute
+  '/subir': typeof SubirRoute
+  '/media/$name': typeof MediaNameRoute
   '/tienda/$shop/$product': typeof TiendaShopProductRoute
   '/tienda/$shop': typeof TiendaShopIndexRoute
 }
@@ -105,6 +121,8 @@ export interface FileRoutesById {
   '/panel': typeof PanelRoute
   '/robots.txt': typeof RobotsDottxtRoute
   '/sitemap.xml': typeof SitemapDotxmlRoute
+  '/subir': typeof SubirRoute
+  '/media/$name': typeof MediaNameRoute
   '/tienda/$shop/$product': typeof TiendaShopProductRoute
   '/tienda/$shop/': typeof TiendaShopIndexRoute
 }
@@ -119,6 +137,8 @@ export interface FileRouteTypes {
     | '/panel'
     | '/robots.txt'
     | '/sitemap.xml'
+    | '/subir'
+    | '/media/$name'
     | '/tienda/$shop/$product'
     | '/tienda/$shop/'
   fileRoutesByTo: FileRoutesByTo
@@ -131,6 +151,8 @@ export interface FileRouteTypes {
     | '/panel'
     | '/robots.txt'
     | '/sitemap.xml'
+    | '/subir'
+    | '/media/$name'
     | '/tienda/$shop/$product'
     | '/tienda/$shop'
   id:
@@ -143,6 +165,8 @@ export interface FileRouteTypes {
     | '/panel'
     | '/robots.txt'
     | '/sitemap.xml'
+    | '/subir'
+    | '/media/$name'
     | '/tienda/$shop/$product'
     | '/tienda/$shop/'
   fileRoutesById: FileRoutesById
@@ -156,6 +180,8 @@ export interface RootRouteChildren {
   PanelRoute: typeof PanelRoute
   RobotsDottxtRoute: typeof RobotsDottxtRoute
   SitemapDotxmlRoute: typeof SitemapDotxmlRoute
+  SubirRoute: typeof SubirRoute
+  MediaNameRoute: typeof MediaNameRoute
   TiendaShopProductRoute: typeof TiendaShopProductRoute
   TiendaShopIndexRoute: typeof TiendaShopIndexRoute
 }
@@ -218,6 +244,20 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof SitemapDotxmlRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/subir': {
+      id: '/subir'
+      path: '/subir'
+      fullPath: '/subir'
+      preLoaderRoute: typeof SubirRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/media/$name': {
+      id: '/media/$name'
+      path: '/media/$name'
+      fullPath: '/media/$name'
+      preLoaderRoute: typeof MediaNameRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/tienda/$shop/': {
       id: '/tienda/$shop/'
       path: '/tienda/$shop'
@@ -244,6 +284,8 @@ const rootRouteChildren: RootRouteChildren = {
   PanelRoute: PanelRoute,
   RobotsDottxtRoute: RobotsDottxtRoute,
   SitemapDotxmlRoute: SitemapDotxmlRoute,
+  SubirRoute: SubirRoute,
+  MediaNameRoute: MediaNameRoute,
   TiendaShopProductRoute: TiendaShopProductRoute,
   TiendaShopIndexRoute: TiendaShopIndexRoute,
 }

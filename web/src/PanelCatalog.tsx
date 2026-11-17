@@ -22,6 +22,48 @@ export function PanelCatalog({ shop }: { shop: PanelShop }) {
   );
 }
 
+function ImageField({ initial }: { initial?: string }) {
+  const [url, setUrl] = useState(initial ?? "");
+  const [status, setStatus] = useState<{ text: string; error?: boolean }>();
+  async function upload(file: File) {
+    if (file.size > 5 * 1024 * 1024) {
+      setStatus({ text: "La foto supera los 5 MB", error: true });
+      return;
+    }
+    setStatus({ text: "Subiendo foto…" });
+    try {
+      const response = await fetch("/subir", { method: "POST", body: file });
+      if (response.status === 401) {
+        window.location.assign("/ingresar");
+        return;
+      }
+      if (!response.ok) throw new Error((await response.text()).trim() || "No se pudo subir la foto");
+      const result = await response.json();
+      setUrl(result.url);
+      setStatus({ text: "Foto lista. Guardá la ficha para publicarla." });
+    } catch (error) {
+      setStatus({ text: error instanceof Error ? error.message : "No se pudo subir la foto", error: true });
+    }
+  }
+  return (
+    <div className="panel-image">
+      {url && <img src={url} alt="" referrerPolicy="no-referrer" />}
+      <label>Foto
+        <input type="file" accept="image/jpeg,image/png,image/webp,image/gif" onChange={(event) => {
+          const file = event.target.files?.[0];
+          event.target.value = "";
+          if (file) void upload(file);
+        }} />
+      </label>
+      <label>O URL de la foto
+        <input name="imageUrl" placeholder="https://…" maxLength={2048} value={url} onChange={(event) => setUrl(event.target.value)} />
+      </label>
+      {url && <button type="button" onClick={() => { setUrl(""); setStatus(undefined); }}>Quitar foto</button>}
+      {status && <p role={status.error ? "alert" : "status"}>{status.text}</p>}
+    </div>
+  );
+}
+
 function ItemForm({ shopSlug, item }: { shopSlug: string; item?: Product }) {
   const [kind, setKind] = useState<Product["kind"]>(item?.kind ?? "product");
   const [groups, setGroups] = useState(() => (item?.options ?? []).map((option, index) => ({
@@ -72,9 +114,7 @@ function ItemForm({ shopSlug, item }: { shopSlug: string; item?: Product }) {
         )}
         <label>Posición en el catálogo<input name="position" type="number" min={0} max={999999} defaultValue={item?.position ?? 0} required /></label>
       </div>
-      <label>URL de la foto
-        <input name="imageUrl" type="url" placeholder="https://…" maxLength={2048} defaultValue={item?.imageUrl} />
-      </label>
+      <ImageField initial={item?.imageUrl} />
       <div className="panel-variants">
         <h3>Variantes</h3>
         {groups.map((group, index) => (

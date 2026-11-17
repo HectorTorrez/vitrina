@@ -64,7 +64,7 @@ En `/ingresar`, el vendedor pide un enlace y confirma el acceso al abrirlo. El e
 ### Administrar tiendas
 
 - El operador puede crear una tienda en `/panel`, elegir su enlace público `/tienda/<enlace>` y habilitar el correo del vendedor en el mismo paso. El vendedor pide su enlace de acceso en `/ingresar`.
-- Los vendedores pueden gestionar las tiendas que tengan asignadas. Pueden editar su perfil público y crear o modificar productos y servicios. La posición ordena las fichas de menor a mayor. Las fichas ocultas desaparecen tanto del catálogo como de su enlace público. Las fichas marcadas como no disponibles siguen visibles. Para una foto personalizada, usá una URL HTTPS de la imagen.
+- Los vendedores pueden gestionar las tiendas que tengan asignadas. Pueden editar su perfil público y crear o modificar productos y servicios. La posición ordena las fichas de menor a mayor. Las fichas ocultas desaparecen tanto del catálogo como de su enlace público. Las fichas marcadas como no disponibles siguen visibles. Para la foto, el vendedor puede subir un archivo JPG, PNG, WebP o GIF de hasta 5 MB, o indicar una URL HTTPS. Las fotos subidas se guardan en `VITRINA_UPLOAD_DIR` (por defecto `api/uploads`; en producción, el volumen `uploads`).
 - La agenda usa la hora de El Salvador. Para agendar una cita, el servicio debe estar visible y disponible. Se pueden reprogramar y cancelar citas futuras. Las citas canceladas quedan en el historial y su horario vuelve a estar disponible.
 
 ### Configurar Resend
@@ -106,13 +106,13 @@ Cada tienda y ficha publica título, descripción e imagen Open Graph con el dom
 
 ### Respaldos
 
-`deploy/backup.sh` guarda un volcado de PostgreSQL en `deploy/backups` y conserva los últimos 14. Programalo con cron, por ejemplo todos los días a las 3:15:
+`deploy/backup.sh` guarda un volcado de PostgreSQL y un archivo con las fotos subidas en `deploy/backups`, y conserva los últimos 14 de cada uno. Programalo con cron, por ejemplo todos los días a las 3:15:
 
 ```sh
 15 3 * * * /ruta/a/vitrina/deploy/backup.sh >> /var/log/vitrina-backup.log 2>&1
 ```
 
-Copiá periódicamente esa carpeta fuera del VPS. Para restaurar, ejecutá `deploy/restore.sh deploy/backups/<archivo>.dump`. El script detiene la API y la web mientras restaura.
+Copiá periódicamente esa carpeta fuera del VPS. Para restaurar, ejecutá `deploy/restore.sh backups/<archivo>.dump backups/<fotos>.tar.gz` desde `deploy`. El archivo de fotos es opcional. El script detiene la API y la web mientras restaura.
 
 ### Variables de producción
 

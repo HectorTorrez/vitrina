@@ -49,10 +49,10 @@ func validatePanelItem(item *product) error {
 	default:
 		return panelValidation("Elegí producto o servicio")
 	}
-	if item.ImageURL != "" {
+	if item.ImageURL != "" && !validMediaPath(item.ImageURL) {
 		imageURL, err := url.Parse(item.ImageURL)
 		if err != nil || len(item.ImageURL) > 2048 || imageURL.Scheme != "https" || imageURL.Hostname() == "" || imageURL.User != nil {
-			return panelValidation("Ingresá una URL HTTPS válida para la foto")
+			return panelValidation("Subí una foto o ingresá una URL HTTPS válida")
 		}
 	}
 	if len(item.Options) > 8 {

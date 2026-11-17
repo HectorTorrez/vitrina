@@ -433,3 +433,14 @@ pre {
 .panel-hours-row .panel-check {
   min-width: 120px;
 }
+.panel-image {
+  display: grid;
+  gap: 8px;
+  justify-items: start;
+}
+.panel-image img {
+  max-width: 160px;
+  max-height: 160px;
+  border-radius: 6px;
+  object-fit: cover;
+}
