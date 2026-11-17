@@ -1,0 +1,25 @@
+{
+	email {$ACME_EMAIL}
+}
+
+{$VITRINA_DOMAIN} {
+	encode zstd gzip
+
+	header {
+		Strict-Transport-Security "max-age=31536000; includeSubDomains"
+		X-Content-Type-Options nosniff
+		Referrer-Policy strict-origin-when-cross-origin
+		X-Frame-Options DENY
+		Permissions-Policy "camera=(), microphone=(), geolocation=()"
+		-Server
+	}
+
+	# The Go API is internal: the web server is its only client.
+	respond /api/* 404
+
+	reverse_proxy web:3000
+}
+
+www.{$VITRINA_DOMAIN} {
+	redir https://{$VITRINA_DOMAIN}{uri} permanent
+}

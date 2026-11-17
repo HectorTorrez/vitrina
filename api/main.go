@@ -1,12 +1,15 @@
 package main
 
 import (
+	"context"
 	"encoding/json"
 	"errors"
 	"fmt"
 	"log"
 	"net/http"
 	"os"
+	"os/signal"
+	"syscall"
 	"time"
 
 	"gorm.io/driver/postgres"
@@ -75,7 +78,35 @@ func main() {
 		w.Header().Set("Content-Type", "application/json")
 		json.NewEncoder(w).Encode(s)
 	})
-	server := http.Server{Addr: "127.0.0.1:8080", Handler: mux, ReadHeaderTimeout: 5 * time.Second, ReadTimeout: 10 * time.Second}
+	mux.HandleFunc("GET /api/health", func(w http.ResponseWriter, r *http.Request) {
+		ctx, cancel := context.WithTimeout(r.Context(), 2*time.Second)
+		defer cancel()
+		sqlDB, err := db.DB()
+		if err == nil {
+			err = sqlDB.PingContext(ctx)
+		}
+		w.Header().Set("Cache-Control", "no-store")
+		if err != nil {
+			http.Error(w, "db", http.StatusServiceUnavailable)
+			return
+		}
+		w.Write([]byte("ok"))
+	})
+	addr := os.Getenv("VITRINA_API_ADDR")
+	if addr == "" {
+		addr = "127.0.0.1:8080"
+	}
+	server := http.Server{Addr: addr, Handler: mux, ReadHeaderTimeout: 5 * time.Second, ReadTimeout: 10 * time.Second, WriteTimeout: 30 * time.Second, IdleTimeout: 2 * time.Minute}
+	stop, cancel := signal.NotifyContext(context.Background(), os.Interrupt, syscall.SIGTERM)
+	defer cancel()
+	go func() {
+		<-stop.Done()
+		ctx, done := context.WithTimeout(context.Background(), 10*time.Second)
+		defer done()
+		server.Shutdown(ctx)
+	}()
 	log.Printf("API PostgreSQL en %s", server.Addr)
-	log.Fatal(server.ListenAndServe())
+	if err := server.ListenAndServe(); !errors.Is(err, http.ErrServerClosed) {
+		log.Fatal(err)
+	}
 }

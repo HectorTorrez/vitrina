@@ -68,6 +68,50 @@ Verificá el dominio remitente en Resend y mantené desactivado el seguimiento d
 
 Reiniciá la API y el servidor web después de configurar las variables. Sin la clave, el catálogo funciona y el formulario informa que el acceso no está disponible. El envío se solicita a Resend en segundo plano y los fallos se registran en la API.
 
+## Despliegue en un VPS
+
+La carpeta `deploy` contiene todo lo necesario para producción en un servidor con Docker y Compose. Caddy obtiene y renueva el certificado HTTPS. PostgreSQL, la API y el servidor web solo son accesibles dentro de la red de Docker.
+
+1. Apuntá un registro DNS `A` (y `AAAA` si tenés IPv6) del dominio a la IP del VPS. Abrí los puertos 80 y 443 en el firewall.
+2. Cloná el repositorio en el VPS. Copiá `deploy/.env.example` como `deploy/.env` y completalo. Generá la contraseña de la base con `openssl rand -base64 32`.
+3. Levantá el sistema:
+
+   ```sh
+   cd deploy
+   docker compose --env-file .env up -d --build
+   ```
+
+   El servicio `migrate` crea o actualiza las tablas antes de que arranque la API.
+
+4. Habilitá al primer operador:
+
+   ```sh
+   docker compose --env-file .env run --rm migrate crear-operador operador@example.com
+   ```
+
+Para actualizar, ejecutá `git pull` y repetí el paso 3. Para ver los registros, usá `docker compose --env-file .env logs -f api web`.
+
+### Respaldos
+
+`deploy/backup.sh` guarda un volcado de PostgreSQL en `deploy/backups` y conserva los últimos 14. Programalo con cron, por ejemplo todos los días a las 3:15:
+
+```sh
+15 3 * * * /ruta/a/vitrina/deploy/backup.sh >> /var/log/vitrina-backup.log 2>&1
+```
+
+Copiá periódicamente esa carpeta fuera del VPS. Para restaurar, ejecutá `deploy/restore.sh deploy/backups/<archivo>.dump`. El script detiene la API y la web mientras restaura.
+
+### Variables de producción
+
+| Variable | Uso |
+| --- | --- |
+| `VITRINA_DOMAIN` | Dominio público, sin `https://`. |
+| `ACME_EMAIL` | Correo para los avisos del certificado HTTPS. |
+| `VITRINA_DB_PASSWORD` | Contraseña de PostgreSQL. |
+| `RESEND_API_KEY`, `RESEND_FROM` | Envío de correos. Ver la sección de Resend. |
+
+La API acepta `VITRINA_API_ADDR` para elegir la dirección de escucha (por defecto `127.0.0.1:8080`) y expone `GET /api/health`. El servidor web de producción (`pnpm --filter vitrina-web start`) usa `HOST` y `PORT`.
+
 ## Verificación
 
 En web, ejecutá pnpm build y pnpm check. En api, las pruebas de concurrencia, autenticación y administración usan TEST_DATABASE_URL para conectar con una base PostgreSQL de prueba inicializada mediante el comando init.

@@ -1,0 +1,72 @@
+# Producción en un VPS: docker compose --env-file .env up -d --build
+name: vitrina-prod
+services:
+  db:
+    image: postgres:17-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: vitrina
+      POSTGRES_USER: vitrina
+      POSTGRES_PASSWORD: ${VITRINA_DB_PASSWORD:?Configurá VITRINA_DB_PASSWORD en deploy/.env}
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U vitrina -d vitrina"]
+      interval: 5s
+      timeout: 3s
+      retries: 30
+
+  migrate:
+    build: ../api
+    image: vitrina-api
+    command: ["init"]
+    environment: &api-env
+      DATABASE_URL: host=db port=5432 dbname=vitrina user=vitrina sslmode=disable
+      PGPASSWORD: ${VITRINA_DB_PASSWORD}
+      VITRINA_WEB_ORIGIN: https://${VITRINA_DOMAIN:?Configurá VITRINA_DOMAIN en deploy/.env}
+      RESEND_API_KEY: ${RESEND_API_KEY:-}
+      RESEND_FROM: ${RESEND_FROM:-}
+    depends_on:
+      db:
+        condition: service_healthy
+
+  api:
+    image: vitrina-api
+    restart: unless-stopped
+    environment: *api-env
+    depends_on:
+      migrate:
+        condition: service_completed_successfully
+
+  web:
+    build:
+      context: ..
+      dockerfile: web/Dockerfile
+    restart: unless-stopped
+    environment:
+      VITRINA_API_URL: http://api:8080
+      VITRINA_WEB_ORIGIN: https://${VITRINA_DOMAIN}
+    depends_on:
+      - api
+
+  caddy:
+    image: caddy:2-alpine
+    restart: unless-stopped
+    ports:
+      - "80:80"
+      - "443:443"
+      - "443:443/udp"
+    environment:
+      VITRINA_DOMAIN: ${VITRINA_DOMAIN}
+      ACME_EMAIL: ${ACME_EMAIL:?Configurá ACME_EMAIL en deploy/.env}
+    volumes:
+      - ./Caddyfile:/etc/caddy/Caddyfile:ro
+      - caddy_data:/data
+      - caddy_config:/config
+    depends_on:
+      - web
+
+volumes:
+  postgres_data:
+  caddy_data:
+  caddy_config:
