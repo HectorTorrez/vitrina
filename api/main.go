@@ -83,6 +83,10 @@ func main() {
 		}
 		list := make([]entry, 0, len(shops))
 		for _, s := range shops {
+			// Shops appear in the directory once they publish something.
+			if len(s.Products) == 0 {
+				continue
+			}
 			e := entry{Slug: s.Slug, Name: s.Name, Description: s.Description, Theme: s.Theme, Products: []string{}}
 			for _, p := range s.Products {
 				e.Products = append(e.Products, p.Slug)

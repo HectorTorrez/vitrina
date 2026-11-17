@@ -15,6 +15,9 @@ export const Route = createFileRoute("/auth")({
           return new Response("Formulario inválido", { status: 400, headers });
         }
         const action = form.get("action");
+        if (action === "signup") {
+          return signup(form, request, headers);
+        }
         if (action !== "link" && action !== "verify" && action !== "logout") {
           return new Response("Acción inválida", { status: 400, headers });
         }
@@ -48,6 +51,27 @@ export const Route = createFileRoute("/auth")({
     },
   },
 });
+
+async function signup(form: URLSearchParams, request: Request, headers: Headers) {
+  const shopName = (form.get("shopName") ?? "").trim().slice(0, 100);
+  const shopSlug = (form.get("shopSlug") ?? "").trim().slice(0, 64);
+  const response = await authRequest("signup", request, {
+    email: form.get("email") ?? "", shopName, shopSlug,
+  }).catch(() => null);
+  const status =
+    response?.status === 202 ? "enviado"
+    : response?.status === 409 ? "ocupado"
+    : response?.status === 400 ? "datos"
+    : "servicio";
+  // Keep what the visitor typed (except the email) so they can fix it.
+  const query = new URLSearchParams({ estado: status });
+  if (status !== "enviado") {
+    query.set("nombre", shopName);
+    query.set("enlace", shopSlug);
+  }
+  headers.set("Location", "/registrarse?" + query.toString());
+  return new Response(null, { status: 303, headers });
+}
 
 async function readForm(request: Request) {
   if (request.headers.get("Content-Type") !== "application/x-www-form-urlencoded" || !request.body) {

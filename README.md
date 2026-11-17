@@ -24,7 +24,7 @@ La contraseña predeterminada es para desarrollo local. Podés exportar VITRINA_
 
 Para importar el catálogo SQLite previo en un volumen vacío, ejecutá `docker compose up -d --wait db` y `sh scripts/dev-api.sh init vitrina.db` antes del primer `pnpm dev`.
 
-La portada muestra el directorio de tiendas. Con `VITRINA_HOME_SHOP=<enlace>` en el servidor web, abre directamente esa tienda. La tienda de servicios está en /tienda/luna-unas. La API escucha en 127.0.0.1:8080. El servidor de TanStack Start admite VITRINA_API_URL para elegir otra dirección. Cada tienda tiene una agenda, y cada ficha tiene un enlace compartible.
+La portada es una página de presentación de Vitrina con las tiendas que ya publicaron al menos una ficha. Sus botones llevan a `/registrarse`. Las fotos de la portada están en `web/public/landing`. Con `VITRINA_HOME_SHOP=<enlace>` en el servidor web, abre directamente esa tienda. La tienda de servicios está en /tienda/luna-unas. La API escucha en 127.0.0.1:8080. El servidor de TanStack Start admite VITRINA_API_URL para elegir otra dirección. Cada tienda tiene una agenda, y cada ficha tiene un enlace compartible.
 
 ## Registrar una cita
 
@@ -60,6 +60,10 @@ sh scripts/dev-api.sh asignar-tienda vendedor@example.com luna-unas
 ```
 
 En `/ingresar`, el vendedor pide un enlace y confirma el acceso al abrirlo. El enlace vence en 15 minutos, se usa una vez y se reemplaza al emitir uno nuevo. Cada correo habilitado puede pedir un enlace por minuto. La sesión vence a los siete días y se revoca al cerrar sesión. Si ya habías creado vendedores en la versión con contraseña, sus correos siguen habilitados y deben volver a ingresar.
+
+### Registro de negocios
+
+En `/registrarse`, cualquier negocio puede abrir su tienda indicando el nombre, el enlace público y su correo. La tienda se crea recién cuando el vendedor abre el enlace que le llega por correo (vence en 15 minutos), y en ese mismo paso entra al panel. Si mientras tanto otra tienda tomó ese enlace, o si el correo ya administra una tienda, solo inicia sesión; un vendedor sin tienda puede crearla desde el panel. Las tiendas aparecen en la portada y en el sitemap cuando tienen al menos una ficha visible.
 
 ### Administrar tiendas
 

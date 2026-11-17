@@ -115,7 +115,20 @@ function Panel() {
       )}
       {shop && <PanelCatalog key={shop.slug} shop={shop} />}
       {shop && <PanelAgenda key={shop.slug} shop={shop} />}
-      {!shop && !panel.operator && <p>Tu cuenta todavía no tiene una tienda asignada.</p>}
+      {!shop && !panel.operator && (
+        <section className="panel-section">
+          <h2>Abrí tu tienda</h2>
+          <p>Tu cuenta todavía no tiene una tienda. Elegí su nombre y su enlace para empezar.</p>
+          <PanelForm submit="Crear tienda" payload={(form) => ({
+            action: "crear-tienda", shopSlug: field(form, "shopSlug"), profile: readProfile(form),
+          })}>
+            <label>Enlace público
+              <input name="shopSlug" required maxLength={64} placeholder="mi-tienda" pattern="[a-z0-9]+(-[a-z0-9]+)*" />
+            </label>
+            <ProfileFields />
+          </PanelForm>
+        </section>
+      )}
       {panel.operator && (
         <section className="panel-section">
           <h2>Dar de alta una tienda</h2>

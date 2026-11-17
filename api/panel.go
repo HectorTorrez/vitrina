@@ -152,7 +152,15 @@ func changePanel(db *gorm.DB, account seller, input panelInput) error {
 	}
 	if input.Action == "crear-tienda" {
 		if !account.Operator {
-			return errPanelForbidden
+			// Sellers without a shop (for example when their link was taken) can open their own.
+			var owned int64
+			if err := db.Model(&shopMembership{}).Where("seller_email = ?", account.Email).Count(&owned).Error; err != nil {
+				return err
+			}
+			if owned > 0 {
+				return errPanelForbidden
+			}
+			input.Email = account.Email
 		}
 		return createPanelShop(db, input)
 	}

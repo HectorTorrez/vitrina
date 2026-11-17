@@ -15,6 +15,7 @@ import { Route as ConfirmarAccesoRouteImport } from './routes/confirmar-acceso'
 import { Route as GestionRouteImport } from './routes/gestion'
 import { Route as IngresarRouteImport } from './routes/ingresar'
 import { Route as PanelRouteImport } from './routes/panel'
+import { Route as RegistrarseRouteImport } from './routes/registrarse'
 import { Route as RobotsDottxtRouteImport } from './routes/robots[.]txt'
 import { Route as SitemapDotxmlRouteImport } from './routes/sitemap[.]xml'
 import { Route as SubirRouteImport } from './routes/subir'
@@ -50,6 +51,11 @@ const IngresarRoute = IngresarRouteImport.update({
 const PanelRoute = PanelRouteImport.update({
   id: '/panel',
   path: '/panel',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const RegistrarseRoute = RegistrarseRouteImport.update({
+  id: '/registrarse',
+  path: '/registrarse',
   getParentRoute: () => rootRouteImport,
 } as any)
 const RobotsDottxtRoute = RobotsDottxtRouteImport.update({
@@ -90,6 +96,7 @@ export interface FileRoutesByFullPath {
   '/gestion': typeof GestionRoute
   '/ingresar': typeof IngresarRoute
   '/panel': typeof PanelRoute
+  '/registrarse': typeof RegistrarseRoute
   '/robots.txt': typeof RobotsDottxtRoute
   '/sitemap.xml': typeof SitemapDotxmlRoute
   '/subir': typeof SubirRoute
@@ -104,6 +111,7 @@ export interface FileRoutesByTo {
   '/gestion': typeof GestionRoute
   '/ingresar': typeof IngresarRoute
   '/panel': typeof PanelRoute
+  '/registrarse': typeof RegistrarseRoute
   '/robots.txt': typeof RobotsDottxtRoute
   '/sitemap.xml': typeof SitemapDotxmlRoute
   '/subir': typeof SubirRoute
@@ -119,6 +127,7 @@ export interface FileRoutesById {
   '/gestion': typeof GestionRoute
   '/ingresar': typeof IngresarRoute
   '/panel': typeof PanelRoute
+  '/registrarse': typeof RegistrarseRoute
   '/robots.txt': typeof RobotsDottxtRoute
   '/sitemap.xml': typeof SitemapDotxmlRoute
   '/subir': typeof SubirRoute
@@ -135,6 +144,7 @@ export interface FileRouteTypes {
     | '/gestion'
     | '/ingresar'
     | '/panel'
+    | '/registrarse'
     | '/robots.txt'
     | '/sitemap.xml'
     | '/subir'
@@ -149,6 +159,7 @@ export interface FileRouteTypes {
     | '/gestion'
     | '/ingresar'
     | '/panel'
+    | '/registrarse'
     | '/robots.txt'
     | '/sitemap.xml'
     | '/subir'
@@ -163,6 +174,7 @@ export interface FileRouteTypes {
     | '/gestion'
     | '/ingresar'
     | '/panel'
+    | '/registrarse'
     | '/robots.txt'
     | '/sitemap.xml'
     | '/subir'
@@ -178,6 +190,7 @@ export interface RootRouteChildren {
   GestionRoute: typeof GestionRoute
   IngresarRoute: typeof IngresarRoute
   PanelRoute: typeof PanelRoute
+  RegistrarseRoute: typeof RegistrarseRoute
   RobotsDottxtRoute: typeof RobotsDottxtRoute
   SitemapDotxmlRoute: typeof SitemapDotxmlRoute
   SubirRoute: typeof SubirRoute
@@ -228,6 +241,13 @@ declare module '@tanstack/react-router' {
       path: '/panel'
       fullPath: '/panel'
       preLoaderRoute: typeof PanelRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/registrarse': {
+      id: '/registrarse'
+      path: '/registrarse'
+      fullPath: '/registrarse'
+      preLoaderRoute: typeof RegistrarseRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/robots.txt': {
@@ -282,6 +302,7 @@ const rootRouteChildren: RootRouteChildren = {
   GestionRoute: GestionRoute,
   IngresarRoute: IngresarRoute,
   PanelRoute: PanelRoute,
+  RegistrarseRoute: RegistrarseRoute,
   RobotsDottxtRoute: RobotsDottxtRoute,
   SitemapDotxmlRoute: SitemapDotxmlRoute,
   SubirRoute: SubirRoute,

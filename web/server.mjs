@@ -16,7 +16,7 @@ serve({
     (request, next) => {
       const { pathname } = new URL(request.url);
       if (pathname.startsWith("/assets/")) return assets(request, next);
-      if (pathname.startsWith("/obras/")) return publicFiles(request, next);
+      if (pathname.startsWith("/obras/") || pathname.startsWith("/landing/")) return publicFiles(request, next);
       return next();
     },
   ],
