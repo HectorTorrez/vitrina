@@ -3,7 +3,7 @@ import { PublicBooking } from "../PublicBooking";
 import { createFileRoute, Link, notFound } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
 import { useState, type ReactNode } from "react";
-import { shopQuery, price, productImage, shareMeta, type Product } from "../catalog";
+import { shopQuery, price, productImage, shareMeta, totalPrice, type Product } from "../catalog";
 export const Route = createFileRoute("/tienda/$shop/$product")({
   loader: async ({ context, params }) => {
     const shop = await context.queryClient.ensureQueryData(
@@ -67,7 +67,7 @@ function Order({ product, phone, booking }: { product: Product; phone: string; b
     ...(product.options ?? []).map(
       (o) => o.name + " · " + (choices[o.name] ?? o.values[0]),
     ),
-    "Total · " + price(product.priceCents),
+    "Total · " + price(totalPrice(product, choices)),
   ].join("\n");
   return (
     <section>
@@ -75,11 +75,11 @@ function Order({ product, phone, booking }: { product: Product; phone: string; b
       {service && (
         <p>{product.durationMinutes} min{booking ? "" : " · El negocio confirma tu cita."}</p>
       )}
-      <p className="price">{price(product.priceCents)}</p>
+      <p className="price">{price(totalPrice(product, choices))}</p>
       {(product.options ?? []).map((o) => (
         <fieldset key={o.name}>
           <legend>{o.name}</legend>
-          {o.values.map((v) => (
+          {o.values.map((v, i) => (
             <label key={v}>
               <input
                 type="radio"
@@ -88,6 +88,7 @@ function Order({ product, phone, booking }: { product: Product; phone: string; b
                 onChange={() => setChoices({ ...choices, [o.name]: v })}
               />
               {v}
+              {(o.prices?.[i] ?? 0) > 0 && <small> +{price(o.prices![i])}</small>}
             </label>
           ))}
         </fieldset>

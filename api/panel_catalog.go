@@ -75,6 +75,19 @@ func validatePanelItem(item *product) error {
 			group.Values[i] = value
 			values[value] = true
 		}
+		if len(group.Prices) != 0 && len(group.Prices) != len(group.Values) {
+			return panelValidation("Indicá un recargo por cada opción")
+		}
+		surcharge := false
+		for _, cents := range group.Prices {
+			if cents < 0 || cents > 99999999 {
+				return panelValidation("Los recargos deben ser de 0 a 999999.99")
+			}
+			surcharge = surcharge || cents > 0
+		}
+		if !surcharge {
+			group.Prices = nil
+		}
 	}
 	if item.Options == nil {
 		item.Options = []option{}

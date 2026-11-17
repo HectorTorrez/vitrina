@@ -103,14 +103,14 @@ func TestPanelShopPermissionsAndManagement(t *testing.T) {
 
 	item := product{Slug: "gel", Name: "Uñas en gel", Kind: "service", DurationMinutes: 45, Available: true,
 		PriceCents: 2400, Position: 2, ImageURL: "https://example.com/image.png",
-		Options: []option{{Name: "Color", Values: []string{"Marfil", "Verde"}}}}
+		Options: []option{{Name: "Color", Values: []string{"Marfil", "Verde"}, Prices: []int{0, 300}}}}
 	itemInput := panelInput{Action: "crear-item", ShopSlug: first, Item: item}
 	request(ownerToken, &itemInput, 204)
 	itemInput.Action = "editar-item"
 	itemInput.Item.PriceCents, itemInput.Item.Hidden = 0, true
 	request(ownerToken, &itemInput, 204)
 	items := load(ownerToken).Shops[0].Products
-	if len(items) != 1 || !items[0].Hidden || items[0].PriceCents != 0 || len(items[0].Options) != 1 || items[0].Options[0].Values[1] != "Verde" {
+	if len(items) != 1 || !items[0].Hidden || items[0].PriceCents != 0 || len(items[0].Options) != 1 || items[0].Options[0].Values[1] != "Verde" || items[0].Options[0].Prices[1] != 300 {
 		t.Fatalf("unexpected catalog: %+v", items)
 	}
 

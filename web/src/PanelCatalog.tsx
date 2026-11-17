@@ -30,6 +30,11 @@ export function PanelCatalog({ shop }: { shop: PanelShop }) {
   );
 }
 
+function surcharge(item: Product | undefined, group: string, value: string) {
+  const cents = item?.options?.[Number(group)]?.prices?.[Number(value)] ?? 0;
+  return cents > 0 ? (cents / 100).toFixed(2) : undefined;
+}
+
 function ImageField({ initial }: { initial?: string }) {
   const [url, setUrl] = useState(initial ?? "");
   const [status, setStatus] = useState<{ text: string; error?: boolean }>();
@@ -95,6 +100,7 @@ function ItemForm({ shopSlug, item }: { shopSlug: string; item?: Product }) {
         options: groups.map((group) => ({
           name: field(form, "group-" + group.id),
           values: group.values.map((id) => field(form, "value-" + group.id + "-" + id)),
+          prices: group.values.map((id) => Math.round(Number(field(form, "price-" + group.id + "-" + id) || 0) * 100)),
         })),
         position: Number(field(form, "position")),
         available: form.has("available"),
@@ -134,6 +140,10 @@ function ItemForm({ shopSlug, item }: { shopSlug: string; item?: Product }) {
               <div className="panel-variant-row" key={id}>
                 <label>Opción
                   <input name={"value-" + group.id + "-" + id} defaultValue={item?.options?.[Number(group.id)]?.values[Number(id)]} placeholder="A4" maxLength={60} required />
+                </label>
+                <label>Recargo USD
+                  <input name={"price-" + group.id + "-" + id} type="number" min={0} max={999999.99} step={0.01} placeholder="0.00"
+                    defaultValue={surcharge(item, group.id, id)} />
                 </label>
                 <button type="button" disabled={group.values.length === 1} onClick={() => {
                   setGroups(groups.map((current) => current.id === group.id ? {

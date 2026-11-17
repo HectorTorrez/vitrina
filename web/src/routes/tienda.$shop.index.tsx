@@ -1,7 +1,7 @@
 import { StoreLayout } from "../StoreLayout";
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
-import { shopQuery, price, productImage, shareMeta } from "../catalog";
+import { shopQuery, price, productImage, shareMeta, hasSurcharges } from "../catalog";
 export const Route = createFileRoute("/tienda/$shop/")({
   loader: ({ context, params }) =>
     context.queryClient.ensureQueryData(shopQuery(params.shop)),
@@ -65,7 +65,7 @@ function Catalog() {
               <small>Servicio · {p.durationMinutes} min</small>
             )}
             <h3>{p.name}</h3>
-            <span>{p.available ? price(p.priceCents) : "No disponible"}</span>
+            <span>{p.available ? (hasSurcharges(p) ? "Desde " : "") + price(p.priceCents) : "No disponible"}</span>
           </Link>
         ))}
       </div>

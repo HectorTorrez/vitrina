@@ -12,7 +12,7 @@ export interface Product {
   imageUrl?: string;
   position: number;
   hidden: boolean;
-  options: { name: string; values: string[] }[];
+  options: { name: string; values: string[]; prices?: number[] }[];
 }
 export interface Shop {
   name: string;
@@ -66,6 +66,18 @@ const usd = new Intl.NumberFormat("es-SV", {
   currency: "USD",
 });
 export const price = (cents: number) => usd.format(cents / 100);
+
+/** Base price plus the surcharge of each chosen option (first value when unset). */
+export function totalPrice(product: Product, choices: Record<string, string> = {}) {
+  return (product.options ?? []).reduce((total, option) => {
+    const index = Math.max(0, option.values.indexOf(choices[option.name] ?? option.values[0]));
+    return total + (option.prices?.[index] ?? 0);
+  }, product.priceCents);
+}
+
+export function hasSurcharges(product: Product) {
+  return (product.options ?? []).some((option) => option.prices?.some((cents) => cents > 0));
+}
 
 export function productImage(product: Product) {
   if (product.imageUrl) return product.imageUrl;

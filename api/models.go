@@ -9,6 +9,8 @@ import (
 type option struct {
 	Name   string   `json:"name"`
 	Values []string `json:"values"`
+	// Prices holds an optional surcharge in cents per value, parallel to Values.
+	Prices []int `json:"prices,omitempty"`
 }
 type product struct {
 	ShopSlug        string   `json:"-" gorm:"primaryKey"`
@@ -57,13 +59,13 @@ type reservation struct {
 }
 
 func seed(db *gorm.DB) error {
-	sizes := option{"Tamaño", []string{"A4", "A3"}}
+	sizes := option{Name: "Tamaño", Values: []string{"A4", "A3"}}
 	shops := []shop{
 		{Slug: "marea-estudio", Name: "Marea Estudio", Description: "Láminas de autor impresas en San Salvador.", Theme: "costa", Instagram: "marea.estudio", TikTok: "marea.prints"},
 		{Slug: "luna-unas", Name: "Luna Uñas", Description: "Manicura y cuidado de uñas con cita previa.", Theme: "arena", Hours: []dayHours{{}, {}, {"09:00", "18:00"}, {"09:00", "18:00"}, {"09:00", "18:00"}, {"09:00", "18:00"}, {"09:00", "14:00"}}},
 	}
 	items := []product{
-		{ShopSlug: "marea-estudio", Slug: "sol-de-tarde", Name: "Sol de tarde", Kind: "product", PriceCents: 1800, Available: true, Artwork: "sol-de-tarde", Options: []option{sizes, {"Tipo de papel", []string{"Mate", "Satinado"}}}, Position: 1},
+		{ShopSlug: "marea-estudio", Slug: "sol-de-tarde", Name: "Sol de tarde", Kind: "product", PriceCents: 1800, Available: true, Artwork: "sol-de-tarde", Options: []option{sizes, {Name: "Tipo de papel", Values: []string{"Mate", "Satinado"}}}, Position: 1},
 		{ShopSlug: "marea-estudio", Slug: "marea-baja", Name: "Marea baja", Kind: "product", PriceCents: 1800, Available: true, Artwork: "marea-baja", Options: []option{sizes}, Position: 2},
 		{ShopSlug: "marea-estudio", Slug: "noche-azul", Name: "Noche azul", Kind: "product", PriceCents: 1800, Artwork: "noche-azul", Options: []option{}, Position: 3},
 		{ShopSlug: "luna-unas", Slug: "manicura-gel", Name: "Manicura en gel", Kind: "service", DurationMinutes: 45, PriceCents: 2000, Available: true, Options: []option{}, Position: 1},
