@@ -2,7 +2,7 @@ import { StoreLayout } from "../StoreLayout";
 import { createFileRoute, Link, notFound } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
 import { useState } from "react";
-import { shopQuery, price, type Product } from "../catalog";
+import { shopQuery, price, productImage, type Product } from "../catalog";
 export const Route = createFileRoute("/tienda/$shop/$product")({
   loader: async ({ context, params }) => {
     const shop = await context.queryClient.ensureQueryData(
@@ -27,10 +27,11 @@ function Details() {
         ‹ Catálogo
       </Link>
       <div className="detail">
-        {p.artwork && (
+        {productImage(p) && (
           <img
             className="poster"
-            src={"/obras/" + p.artwork + ".svg"}
+            src={productImage(p)}
+            referrerPolicy="no-referrer"
             alt={p.name}
           />
         )}
@@ -47,7 +48,7 @@ function Order({ product, phone }: { product: Product; phone: string }) {
     (service
       ? "Hola, quisiera consultar horarios para "
       : "Hola, quisiera pedir ") + product.name,
-    ...product.options.map(
+    ...(product.options ?? []).map(
       (o) => o.name + " · " + (choices[o.name] ?? o.values[0]),
     ),
     "Total · " + price(product.priceCents),
@@ -59,7 +60,7 @@ function Order({ product, phone }: { product: Product; phone: string }) {
         <p>{product.durationMinutes} min · El negocio confirma tu cita.</p>
       )}
       <p className="price">{price(product.priceCents)}</p>
-      {product.options.map((o) => (
+      {(product.options ?? []).map((o) => (
         <fieldset key={o.name}>
           <legend>{o.name}</legend>
           {o.values.map((v) => (

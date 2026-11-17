@@ -1,7 +1,7 @@
 import { StoreLayout } from "../StoreLayout";
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
-import { shopQuery, price } from "../catalog";
+import { shopQuery, price, productImage } from "../catalog";
 export const Route = createFileRoute("/tienda/$shop/")({
   loader: ({ context, params }) =>
     context.queryClient.ensureQueryData(shopQuery(params.shop)),
@@ -50,7 +50,7 @@ function Catalog() {
             to="/tienda/$shop/$product"
             params={{ shop, product: p.slug }}
           >
-            {p.artwork && <img src={"/obras/" + p.artwork + ".svg"} alt="" />}
+            {productImage(p) && <img src={productImage(p)} alt="" loading="lazy" referrerPolicy="no-referrer" />}
             {p.kind === "service" && (
               <small>Servicio · {p.durationMinutes} min</small>
             )}

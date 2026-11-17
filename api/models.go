@@ -18,7 +18,9 @@ type product struct {
 	Available       bool     `json:"available"`
 	Artwork         string   `json:"artwork"`
 	Options         []option `json:"options" gorm:"serializer:json;type:jsonb"`
-	Position        int      `json:"-"`
+	Position        int      `json:"position"`
+	Hidden          bool     `json:"hidden" gorm:"not null;default:false"`
+	ImageURL        string   `json:"imageUrl"`
 	Kind            string   `json:"kind" gorm:"not null;check:(kind = 'product' AND duration_minutes = 0) OR (kind = 'service' AND duration_minutes BETWEEN 1 AND 1440)"`
 	DurationMinutes int      `json:"durationMinutes" gorm:"not null"`
 }

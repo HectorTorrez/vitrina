@@ -3,7 +3,7 @@ import { getRequest, setResponseHeader } from "@tanstack/react-start/server";
 import type { Shop } from "./catalog";
 
 export type Profile = Omit<Shop, "products">;
-export type PanelShop = Profile & { slug: string };
+export type PanelShop = Shop & { slug: string };
 export interface PanelAccess {
   email: string;
   operator: boolean;

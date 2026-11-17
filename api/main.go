@@ -62,7 +62,7 @@ func main() {
 	mux.HandleFunc("GET /api/shops/{slug}", func(w http.ResponseWriter, r *http.Request) {
 		slug := r.PathValue("slug")
 		var s shop
-		err := db.WithContext(r.Context()).Preload("Products", func(q *gorm.DB) *gorm.DB { return q.Order("position, slug") }).Where(map[string]any{"slug": slug}).First(&s).Error
+		err := db.WithContext(r.Context()).Preload("Products", func(q *gorm.DB) *gorm.DB { return q.Where("hidden = ?", false).Order("position, slug") }).Where(map[string]any{"slug": slug}).First(&s).Error
 		if errors.Is(err, gorm.ErrRecordNotFound) {
 			http.NotFound(w, r)
 			return

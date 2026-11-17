@@ -33,6 +33,7 @@ type panelAccess struct {
 }
 
 type panelInput struct {
+	Item     product
 	Action   string
 	ShopSlug string
 	Email    string
@@ -106,7 +107,8 @@ func panelRoutes(mux *http.ServeMux, db *gorm.DB) {
 func loadPanel(db *gorm.DB, account seller) (panelAccess, error) {
 	result := panelAccess{Email: account.Email, Operator: account.Operator, Shops: []panelShop{}}
 	var shops []shop
-	err := db.Where("slug IN (?)", db.Model(&shopMembership{}).Select("shop_slug").Where("seller_email = ?", account.Email)).
+	err := db.Preload("Products", func(q *gorm.DB) *gorm.DB { return q.Order("position, slug") }).
+		Where("slug IN (?)", db.Model(&shopMembership{}).Select("shop_slug").Where("seller_email = ?", account.Email)).
 		Order("name, slug").Find(&shops).Error
 	for _, s := range shops {
 		result.Shops = append(result.Shops, panelShop{shop: s, Slug: s.Slug})
@@ -161,6 +163,8 @@ func changePanel(db *gorm.DB, account seller, input panelInput) error {
 		}
 		return db.Model(&shop{}).Where("slug = ?", input.ShopSlug).
 			Select("name", "description", "theme", "instagram", "tiktok", "whatsapp").Updates(&profile).Error
+	case "crear-item", "editar-item":
+		return savePanelItem(db, input.ShopSlug, input.Item, input.Action == "crear-item")
 	default:
 		return panelValidation("Acción inválida")
 	}

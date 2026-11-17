@@ -298,3 +298,44 @@ pre {
 }
 
 .seller-panel [role="alert"] { color: #a32626; }
+
+.seller-panel {
+  padding: 0;
+  --rule: #d6dcd7;
+  --ink: #233f33;
+}
+
+.panel-header {
+  width: 100%;
+  padding: 0 0 1rem;
+}
+
+.panel-section details {
+  border-top: 1px solid var(--rule);
+  padding-top: .75rem;
+}
+
+.panel-section summary {
+  cursor: pointer;
+  font-weight: 600;
+  overflow-wrap: anywhere;
+}
+
+.panel-section details[open] summary {
+  margin-bottom: .85rem;
+}
+
+.seller-panel label {
+  margin: 0;
+  padding: 0;
+  border: 0;
+  min-width: 0;
+}
+
+.seller-panel .panel-check {
+  display: flex;
+}
+
+.seller-panel input[type="checkbox"] {
+  width: auto;
+}

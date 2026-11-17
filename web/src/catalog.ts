@@ -9,6 +9,9 @@ export interface Product {
   priceCents: number;
   available: boolean;
   artwork: string;
+  imageUrl?: string;
+  position: number;
+  hidden: boolean;
   options: { name: string; values: string[] }[];
 }
 export interface Shop {
@@ -42,3 +45,8 @@ const usd = new Intl.NumberFormat("es-SV", {
   currency: "USD",
 });
 export const price = (cents: number) => usd.format(cents / 100);
+
+export function productImage(product: Product) {
+  if (product.imageUrl) return product.imageUrl;
+  if (product.artwork) return "/obras/" + encodeURIComponent(product.artwork) + ".svg";
+}
