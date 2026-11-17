@@ -16,6 +16,14 @@ export function PanelCatalog({ shop }: { shop: PanelShop }) {
         <details key={item.slug}>
           <summary>{item.name} · {price(item.priceCents)}{item.hidden ? " · Oculto" : ""}</summary>
           <ItemForm shopSlug={shop.slug} item={item} />
+          <details className="panel-cancel">
+            <summary>Eliminar ficha</summary>
+            <PanelForm submit="Confirmar eliminación" payload={() => ({
+              action: "eliminar-item", shopSlug: shop.slug, item: { slug: item.slug },
+            })}>
+              <p>La ficha y su enlace dejarán de existir. Si solo querés retirarla un tiempo, marcala como oculta.</p>
+            </PanelForm>
+          </details>
         </details>
       ))}
     </section>

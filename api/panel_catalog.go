@@ -81,3 +81,24 @@ func validatePanelItem(item *product) error {
 	}
 	return nil
 }
+
+// deletePanelItem removes an item that has never been booked; booked services keep their history and can only be hidden.
+func deletePanelItem(db *gorm.DB, shopSlug, slug string) error {
+	if !validSlug(slug) {
+		return panelValidation("Indicá una ficha válida")
+	}
+	return withShopAgenda(db, shopSlug, func(tx *gorm.DB) error {
+		var count int64
+		if err := tx.Model(&reservation{}).Where("shop_slug = ? AND service_slug = ?", shopSlug, slug).Count(&count).Error; err != nil {
+			return err
+		}
+		if count > 0 {
+			return panelValidation("Este servicio tiene citas registradas. Ocultalo del catálogo en lugar de eliminarlo.")
+		}
+		result := tx.Where("shop_slug = ? AND slug = ?", shopSlug, slug).Delete(&product{})
+		if result.Error == nil && result.RowsAffected == 0 {
+			return gorm.ErrRecordNotFound
+		}
+		return result.Error
+	})
+}

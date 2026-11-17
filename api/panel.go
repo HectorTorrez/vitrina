@@ -174,6 +174,8 @@ func changePanel(db *gorm.DB, account seller, input panelInput) error {
 			Select("name", "description", "theme", "instagram", "tiktok", "whatsapp", "hours").Updates(&profile).Error
 	case "crear-item", "editar-item":
 		return savePanelItem(db, input.ShopSlug, input.Item, input.Action == "crear-item")
+	case "eliminar-item":
+		return deletePanelItem(db, input.ShopSlug, input.Item.Slug)
 	case "agendar", "reprogramar", "cancelar":
 		return changePanelBooking(db, input)
 	default:

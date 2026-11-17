@@ -143,4 +143,16 @@ func TestPanelShopPermissionsAndManagement(t *testing.T) {
 	if len(bookings) != 2 || !bookings[1].Cancelled || bookings[1].Editable || bookings[1].StartsAt != shift.Booking.StartsAt {
 		t.Fatalf("unexpected bookings after cancellation: %+v", bookings)
 	}
+
+	remove := panelInput{Action: "eliminar-item", ShopSlug: first, Item: product{Slug: item.Slug}}
+	request(ownerToken, &remove, 400) // booked services keep their history
+	extra := panelInput{Action: "crear-item", ShopSlug: first, Item: product{Slug: "lamina", Name: "Lámina", Kind: "product", Available: true}}
+	request(ownerToken, &extra, 204)
+	remove.Item.Slug = "lamina"
+	request(login(other), &remove, 403)
+	request(ownerToken, &remove, 204)
+	request(ownerToken, &remove, 404)
+	if items := load(ownerToken).Shops[0].Products; len(items) != 1 {
+		t.Fatalf("unexpected catalog after delete: %+v", items)
+	}
 }
