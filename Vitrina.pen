@@ -1,0 +1,3334 @@
+{
+  "version": "2.21",
+  "children": [
+    {
+      "type": "frame",
+      "id": "exLBy",
+      "x": 0,
+      "y": 0,
+      "name": "Acceso del vendedor",
+      "clip": true,
+      "width": 360,
+      "height": 674,
+      "fill": "#FBF8F0",
+      "layout": "none",
+      "children": [
+        {
+          "type": "text",
+          "id": "E7DPOh",
+          "x": 20,
+          "y": 17,
+          "name": "vitrina.",
+          "fill": "#25221E",
+          "content": "vitrina.",
+          "fontFamily": "Inter",
+          "fontSize": 23,
+          "fontWeight": "700"
+        },
+        {
+          "type": "text",
+          "id": "GSm4x",
+          "x": 232,
+          "y": 26,
+          "name": "Para vendedores",
+          "fill": "#666157",
+          "content": "Para vendedores",
+          "fontFamily": "Inter",
+          "fontSize": 12,
+          "fontWeight": "500"
+        },
+        {
+          "type": "rectangle",
+          "id": "T1UkHE",
+          "x": 20,
+          "y": 58,
+          "name": "Superficie",
+          "fill": "#D8D2C5",
+          "width": 320,
+          "height": 1
+        },
+        {
+          "type": "frame",
+          "id": "ZscKE",
+          "x": 20,
+          "y": 80,
+          "name": "Obra · Sol de tarde",
+          "clip": true,
+          "width": 320,
+          "height": 170,
+          "fill": "#E7AA85",
+          "layout": "none",
+          "children": [
+            {
+              "type": "ellipse",
+              "id": "Aou4j",
+              "x": 185.6,
+              "y": 22.1,
+              "name": "Sol",
+              "fill": "#F5D176",
+              "width": 45.900000000000006,
+              "height": 45.900000000000006
+            },
+            {
+              "type": "path",
+              "id": "rikdP",
+              "x": 0,
+              "y": 68,
+              "name": "Onda 1",
+              "geometry": "M0 24q25-24 50-10t50-4l0 12q-25 16-50 3t-50 11z",
+              "viewBox": [
+                0,
+                0,
+                100,
+                40
+              ],
+              "fill": "#9C3322",
+              "width": 320,
+              "height": 45.900000000000006
+            },
+            {
+              "type": "path",
+              "id": "I3y0k5",
+              "x": 0,
+              "y": 82.96,
+              "name": "Onda 2",
+              "geometry": "M0 24q25-24 50-10t50-4l0 12q-25 16-50 3t-50 11z",
+              "viewBox": [
+                0,
+                0,
+                100,
+                40
+              ],
+              "fill": "#71312B",
+              "width": 320,
+              "height": 45.900000000000006
+            },
+            {
+              "type": "path",
+              "id": "r92CMo",
+              "x": 0,
+              "y": 97.92000000000002,
+              "name": "Onda 3",
+              "geometry": "M0 24q25-24 50-10t50-4l0 12q-25 16-50 3t-50 11z",
+              "viewBox": [
+                0,
+                0,
+                100,
+                40
+              ],
+              "fill": "#9C3322",
+              "width": 320,
+              "height": 45.900000000000006
+            },
+            {
+              "type": "path",
+              "id": "c3bPP0",
+              "x": 0,
+              "y": 112.88000000000001,
+              "name": "Onda 4",
+              "geometry": "M0 24q25-24 50-10t50-4l0 12q-25 16-50 3t-50 11z",
+              "viewBox": [
+                0,
+                0,
+                100,
+                40
+              ],
+              "fill": "#71312B",
+              "width": 320,
+              "height": 45.900000000000006
+            },
+            {
+              "type": "path",
+              "id": "i9ufp9",
+              "x": 0,
+              "y": 127.84,
+              "name": "Onda 5",
+              "geometry": "M0 24q25-24 50-10t50-4l0 12q-25 16-50 3t-50 11z",
+              "viewBox": [
+                0,
+                0,
+                100,
+                40
+              ],
+              "fill": "#9C3322",
+              "width": 320,
+              "height": 45.900000000000006
+            },
+            {
+              "type": "path",
+              "id": "GQvfy",
+              "x": 0,
+              "y": 142.79999999999998,
+              "name": "Onda 6",
+              "geometry": "M0 24q25-24 50-10t50-4l0 12q-25 16-50 3t-50 11z",
+              "viewBox": [
+                0,
+                0,
+                100,
+                40
+              ],
+              "fill": "#71312B",
+              "width": 320,
+              "height": 45.900000000000006
+            }
+          ]
+        },
+        {
+          "type": "text",
+          "id": "Z3ozFi",
+          "x": 20,
+          "y": 277,
+          "name": "Entrá a tu tienda",
+          "fill": "#25221E",
+          "content": "Entrá a tu tienda",
+          "fontFamily": "Georgia",
+          "fontSize": 33
+        },
+        {
+          "type": "text",
+          "id": "nXW7G",
+          "x": 20,
+          "y": 334,
+          "name": "Usá tu correo para crear o administrar",
+          "fill": "#25221E",
+          "content": "Usá tu correo para crear o administrar",
+          "fontFamily": "Inter",
+          "fontSize": 16
+        },
+        {
+          "type": "text",
+          "id": "C3Shk",
+          "x": 20,
+          "y": 357,
+          "name": "tu mini tienda.",
+          "fill": "#25221E",
+          "content": "tu mini tienda.",
+          "fontFamily": "Inter",
+          "fontSize": 16
+        },
+        {
+          "type": "text",
+          "id": "VJV4x",
+          "x": 20,
+          "y": 409,
+          "name": "Correo electrónico",
+          "fill": "#25221E",
+          "content": "Correo electrónico",
+          "fontFamily": "Inter",
+          "fontSize": 13,
+          "fontWeight": "600"
+        },
+        {
+          "type": "rectangle",
+          "cornerRadius": 6,
+          "id": "fqmeJ",
+          "x": 20,
+          "y": 431,
+          "name": "Correo electrónico",
+          "fill": "#EAE6DB",
+          "width": 320,
+          "height": 44
+        },
+        {
+          "type": "text",
+          "id": "YngAa",
+          "x": 32,
+          "y": 444,
+          "name": "tu@correo.com",
+          "fill": "#25221E",
+          "content": "tu@correo.com",
+          "fontFamily": "Inter",
+          "fontSize": 15
+        },
+        {
+          "type": "rectangle",
+          "cornerRadius": 9,
+          "id": "iULr3",
+          "x": 20,
+          "y": 506,
+          "name": "Enviarme un enlace",
+          "fill": "#25221E",
+          "width": 320,
+          "height": 50
+        },
+        {
+          "type": "text",
+          "id": "ojoSw",
+          "x": 36,
+          "y": 521,
+          "name": "Enviarme un enlace",
+          "fill": "#FFFFFF",
+          "content": "Enviarme un enlace",
+          "fontFamily": "Inter",
+          "fontSize": 15,
+          "fontWeight": "600"
+        },
+        {
+          "type": "text",
+          "id": "pGeCF",
+          "x": 307,
+          "y": 517,
+          "name": "→",
+          "fill": "#DAEA86",
+          "content": "→",
+          "fontFamily": "Inter",
+          "fontSize": 20,
+          "fontWeight": "500"
+        },
+        {
+          "type": "text",
+          "id": "CXuRe",
+          "x": 20,
+          "y": 580,
+          "name": "Recibirás un enlace de acceso por correo.",
+          "fill": "#666157",
+          "content": "Recibirás un enlace de acceso por correo.",
+          "fontFamily": "Inter",
+          "fontSize": 13
+        }
+      ]
+    },
+    {
+      "type": "frame",
+      "id": "Cd3VN",
+      "x": 404,
+      "y": 0,
+      "name": "Crear tienda",
+      "clip": true,
+      "width": 360,
+      "height": 674,
+      "fill": "#FBF8F0",
+      "layout": "none",
+      "children": [
+        {
+          "type": "text",
+          "id": "s7qgaZ",
+          "x": 20,
+          "y": 17,
+          "name": "vitrina.",
+          "fill": "#25221E",
+          "content": "vitrina.",
+          "fontFamily": "Inter",
+          "fontSize": 23,
+          "fontWeight": "700"
+        },
+        {
+          "type": "text",
+          "id": "sOsWw",
+          "x": 232,
+          "y": 26,
+          "name": "Para vendedores",
+          "fill": "#666157",
+          "content": "Para vendedores",
+          "fontFamily": "Inter",
+          "fontSize": 12,
+          "fontWeight": "500"
+        },
+        {
+          "type": "rectangle",
+          "id": "TAAhX",
+          "x": 20,
+          "y": 58,
+          "name": "Superficie",
+          "fill": "#D8D2C5",
+          "width": 320,
+          "height": 1
+        },
+        {
+          "type": "text",
+          "id": "kDCju",
+          "x": 20,
+          "y": 93,
+          "name": "Creá tu tienda",
+          "fill": "#25221E",
+          "content": "Creá tu tienda",
+          "fontFamily": "Georgia",
+          "fontSize": 33
+        },
+        {
+          "type": "text",
+          "id": "ds2c2",
+          "x": 20,
+          "y": 151,
+          "name": "Estos datos aparecerán en tu catálogo.",
+          "fill": "#666157",
+          "content": "Estos datos aparecerán en tu catálogo.",
+          "fontFamily": "Inter",
+          "fontSize": 15
+        },
+        {
+          "type": "text",
+          "id": "w1UDb",
+          "x": 20,
+          "y": 209,
+          "name": "Nombre de la tienda",
+          "fill": "#25221E",
+          "content": "Nombre de la tienda",
+          "fontFamily": "Inter",
+          "fontSize": 13,
+          "fontWeight": "600"
+        },
+        {
+          "type": "rectangle",
+          "cornerRadius": 6,
+          "id": "UsEVI",
+          "x": 20,
+          "y": 231,
+          "name": "Nombre de la tienda",
+          "fill": "#EAE6DB",
+          "width": 320,
+          "height": 44
+        },
+        {
+          "type": "text",
+          "id": "KTFUk",
+          "x": 32,
+          "y": 244,
+          "name": "Marea Estudio",
+          "fill": "#25221E",
+          "content": "Marea Estudio",
+          "fontFamily": "Inter",
+          "fontSize": 15
+        },
+        {
+          "type": "text",
+          "id": "rLIcK",
+          "x": 20,
+          "y": 304,
+          "name": "Enlace para tu bio",
+          "fill": "#25221E",
+          "content": "Enlace para tu bio",
+          "fontFamily": "Inter",
+          "fontSize": 13,
+          "fontWeight": "600"
+        },
+        {
+          "type": "rectangle",
+          "cornerRadius": 6,
+          "id": "ICYtn",
+          "x": 20,
+          "y": 326,
+          "name": "Enlace para tu bio",
+          "fill": "#EAE6DB",
+          "width": 320,
+          "height": 44
+        },
+        {
+          "type": "text",
+          "id": "UgJjx",
+          "x": 32,
+          "y": 339,
+          "name": "vitrina / marea-estudio",
+          "fill": "#25221E",
+          "content": "vitrina / marea-estudio",
+          "fontFamily": "Inter",
+          "fontSize": 15
+        },
+        {
+          "type": "text",
+          "id": "W648K",
+          "x": 20,
+          "y": 399,
+          "name": "WhatsApp para pedidos",
+          "fill": "#25221E",
+          "content": "WhatsApp para pedidos",
+          "fontFamily": "Inter",
+          "fontSize": 13,
+          "fontWeight": "600"
+        },
+        {
+          "type": "rectangle",
+          "cornerRadius": 6,
+          "id": "H95l9",
+          "x": 20,
+          "y": 421,
+          "name": "WhatsApp para pedidos",
+          "fill": "#EAE6DB",
+          "width": 320,
+          "height": 44
+        },
+        {
+          "type": "text",
+          "id": "r0bSYj",
+          "x": 32,
+          "y": 434,
+          "name": "+503 7000 0000",
+          "fill": "#25221E",
+          "content": "+503 7000 0000",
+          "fontFamily": "Inter",
+          "fontSize": 15
+        },
+        {
+          "type": "rectangle",
+          "cornerRadius": 9,
+          "id": "L23jv9",
+          "x": 20,
+          "y": 548,
+          "name": "Crear mi tienda",
+          "fill": "#25221E",
+          "width": 320,
+          "height": 50
+        },
+        {
+          "type": "text",
+          "id": "M7EL1",
+          "x": 36,
+          "y": 563,
+          "name": "Crear mi tienda",
+          "fill": "#FFFFFF",
+          "content": "Crear mi tienda",
+          "fontFamily": "Inter",
+          "fontSize": 15,
+          "fontWeight": "600"
+        },
+        {
+          "type": "text",
+          "id": "g2tqV1",
+          "x": 307,
+          "y": 559,
+          "name": "→",
+          "fill": "#DAEA86",
+          "content": "→",
+          "fontFamily": "Inter",
+          "fontSize": 20,
+          "fontWeight": "500"
+        }
+      ]
+    },
+    {
+      "type": "frame",
+      "id": "xxmyZ",
+      "x": 808,
+      "y": 0,
+      "name": "Administrar catálogo",
+      "clip": true,
+      "width": 360,
+      "height": 674,
+      "fill": "#FBF8F0",
+      "layout": "none",
+      "children": [
+        {
+          "type": "text",
+          "id": "lIHh4",
+          "x": 20,
+          "y": 17,
+          "name": "vitrina.",
+          "fill": "#25221E",
+          "content": "vitrina.",
+          "fontFamily": "Inter",
+          "fontSize": 23,
+          "fontWeight": "700"
+        },
+        {
+          "type": "text",
+          "id": "R2FIH4",
+          "x": 232,
+          "y": 26,
+          "name": "Para vendedores",
+          "fill": "#666157",
+          "content": "Para vendedores",
+          "fontFamily": "Inter",
+          "fontSize": 12,
+          "fontWeight": "500"
+        },
+        {
+          "type": "rectangle",
+          "id": "h6V8V",
+          "x": 20,
+          "y": 58,
+          "name": "Superficie",
+          "fill": "#D8D2C5",
+          "width": 320,
+          "height": 1
+        },
+        {
+          "type": "text",
+          "id": "tThWz",
+          "x": 20,
+          "y": 86,
+          "name": "Mi tienda",
+          "fill": "#25221E",
+          "content": "Mi tienda",
+          "fontFamily": "Georgia",
+          "fontSize": 33
+        },
+        {
+          "type": "rectangle",
+          "cornerRadius": 9,
+          "id": "K383Sz",
+          "x": 20,
+          "y": 149,
+          "name": "Superficie",
+          "fill": "#E7E9CE",
+          "width": 320,
+          "height": 100
+        },
+        {
+          "type": "text",
+          "id": "yyYb0",
+          "x": 34,
+          "y": 163,
+          "name": "Marea Estudio",
+          "fill": "#25221E",
+          "content": "Marea Estudio",
+          "fontFamily": "Georgia",
+          "fontSize": 23,
+          "fontWeight": "500"
+        },
+        {
+          "type": "text",
+          "id": "jiF6A",
+          "x": 34,
+          "y": 211,
+          "name": "Copiar enlace de la tienda  ↗",
+          "fill": "#25221E",
+          "content": "Copiar enlace de la tienda  ↗",
+          "fontFamily": "Inter",
+          "fontSize": 14,
+          "fontWeight": "600"
+        },
+        {
+          "type": "text",
+          "id": "swqmC",
+          "x": 20,
+          "y": 287,
+          "name": "Mis productos",
+          "fill": "#25221E",
+          "content": "Mis productos",
+          "fontFamily": "Inter",
+          "fontSize": 21,
+          "fontWeight": "600"
+        },
+        {
+          "type": "frame",
+          "id": "i3UV18",
+          "x": 20,
+          "y": 333,
+          "name": "Obra · Sol de tarde",
+          "clip": true,
+          "width": 60,
+          "height": 60,
+          "fill": "#E7AA85",
+          "layout": "none",
+          "children": [
+            {
+              "type": "ellipse",
+              "id": "zJyUJ",
+              "x": 34.8,
+              "y": 7.800000000000001,
+              "name": "Sol",
+              "fill": "#F5D176",
+              "width": 16.200000000000003,
+              "height": 16.200000000000003
+            },
+            {
+              "type": "path",
+              "id": "n5G87",
+              "x": 0,
+              "y": 24,
+              "name": "Onda 1",
+              "geometry": "M0 24q25-24 50-10t50-4l0 12q-25 16-50 3t-50 11z",
+              "viewBox": [
+                0,
+                0,
+                100,
+                40
+              ],
+              "fill": "#9C3322",
+              "width": 60,
+              "height": 16.200000000000003
+            },
+            {
+              "type": "path",
+              "id": "J3o8pN",
+              "x": 0,
+              "y": 29.28,
+              "name": "Onda 2",
+              "geometry": "M0 24q25-24 50-10t50-4l0 12q-25 16-50 3t-50 11z",
+              "viewBox": [
+                0,
+                0,
+                100,
+                40
+              ],
+              "fill": "#71312B",
+              "width": 60,
+              "height": 16.200000000000003
+            },
+            {
+              "type": "path",
+              "id": "sTLQT",
+              "x": 0,
+              "y": 34.56,
+              "name": "Onda 3",
+              "geometry": "M0 24q25-24 50-10t50-4l0 12q-25 16-50 3t-50 11z",
+              "viewBox": [
+                0,
+                0,
+                100,
+                40
+              ],
+              "fill": "#9C3322",
+              "width": 60,
+              "height": 16.200000000000003
+            },
+            {
+              "type": "path",
+              "id": "dRUha",
+              "x": 0,
+              "y": 39.84,
+              "name": "Onda 4",
+              "geometry": "M0 24q25-24 50-10t50-4l0 12q-25 16-50 3t-50 11z",
+              "viewBox": [
+                0,
+                0,
+                100,
+                40
+              ],
+              "fill": "#71312B",
+              "width": 60,
+              "height": 16.200000000000003
+            },
+            {
+              "type": "path",
+              "id": "A3l7zP",
+              "x": 0,
+              "y": 45.12,
+              "name": "Onda 5",
+              "geometry": "M0 24q25-24 50-10t50-4l0 12q-25 16-50 3t-50 11z",
+              "viewBox": [
+                0,
+                0,
+                100,
+                40
+              ],
+              "fill": "#9C3322",
+              "width": 60,
+              "height": 16.200000000000003
+            },
+            {
+              "type": "path",
+              "id": "i4BhNI",
+              "x": 0,
+              "y": 50.4,
+              "name": "Onda 6",
+              "geometry": "M0 24q25-24 50-10t50-4l0 12q-25 16-50 3t-50 11z",
+              "viewBox": [
+                0,
+                0,
+                100,
+                40
+              ],
+              "fill": "#71312B",
+              "width": 60,
+              "height": 16.200000000000003
+            }
+          ]
+        },
+        {
+          "type": "text",
+          "id": "vKPt8",
+          "x": 94,
+          "y": 337,
+          "name": "Sol de tarde",
+          "fill": "#25221E",
+          "content": "Sol de tarde",
+          "fontFamily": "Inter",
+          "fontSize": 17,
+          "fontWeight": "600"
+        },
+        {
+          "type": "text",
+          "id": "OxZ22",
+          "x": 94,
+          "y": 365,
+          "name": "$18 · Disponible",
+          "fill": "#666157",
+          "content": "$18 · Disponible",
+          "fontFamily": "Inter",
+          "fontSize": 13,
+          "fontWeight": "500"
+        },
+        {
+          "type": "text",
+          "id": "VsPJT",
+          "x": 299,
+          "y": 356,
+          "name": "Editar",
+          "fill": "#25221E",
+          "content": "Editar",
+          "fontFamily": "Inter",
+          "fontSize": 13,
+          "fontWeight": "500"
+        },
+        {
+          "type": "rectangle",
+          "id": "abbPL",
+          "x": 20,
+          "y": 405,
+          "name": "Superficie",
+          "fill": "#D8D2C5",
+          "width": 320,
+          "height": 1
+        },
+        {
+          "type": "frame",
+          "id": "lTJ37",
+          "x": 20,
+          "y": 415,
+          "name": "Obra · Marea baja",
+          "clip": true,
+          "width": 60,
+          "height": 60,
+          "fill": "#CED7AD",
+          "layout": "none",
+          "children": [
+            {
+              "type": "ellipse",
+              "id": "HaePW",
+              "x": 34.8,
+              "y": 7.800000000000001,
+              "name": "Sol",
+              "fill": "#F3B573",
+              "width": 16.200000000000003,
+              "height": 16.200000000000003
+            },
+            {
+              "type": "path",
+              "id": "z2ULd",
+              "x": 0,
+              "y": 24,
+              "name": "Onda 1",
+              "geometry": "M0 10q25 29 50 5t50-3l0 13q-30-19-50 2t-50-4z",
+              "viewBox": [
+                0,
+                0,
+                100,
+                40
+              ],
+              "fill": "#29675F",
+              "width": 60,
+              "height": 16.200000000000003
+            },
+            {
+              "type": "path",
+              "id": "d3QnPq",
+              "x": 0,
+              "y": 29.28,
+              "name": "Onda 2",
+              "geometry": "M0 10q25 29 50 5t50-3l0 13q-30-19-50 2t-50-4z",
+              "viewBox": [
+                0,
+                0,
+                100,
+                40
+              ],
+              "fill": "#173C34",
+              "width": 60,
+              "height": 16.200000000000003
+            },
+            {
+              "type": "path",
+              "id": "mPuBp",
+              "x": 0,
+              "y": 34.56,
+              "name": "Onda 3",
+              "geometry": "M0 10q25 29 50 5t50-3l0 13q-30-19-50 2t-50-4z",
+              "viewBox": [
+                0,
+                0,
+                100,
+                40
+              ],
+              "fill": "#29675F",
+              "width": 60,
+              "height": 16.200000000000003
+            },
+            {
+              "type": "path",
+              "id": "yreGA",
+              "x": 0,
+              "y": 39.84,
+              "name": "Onda 4",
+              "geometry": "M0 10q25 29 50 5t50-3l0 13q-30-19-50 2t-50-4z",
+              "viewBox": [
+                0,
+                0,
+                100,
+                40
+              ],
+              "fill": "#173C34",
+              "width": 60,
+              "height": 16.200000000000003
+            },
+            {
+              "type": "path",
+              "id": "rQKhN",
+              "x": 0,
+              "y": 45.12,
+              "name": "Onda 5",
+              "geometry": "M0 10q25 29 50 5t50-3l0 13q-30-19-50 2t-50-4z",
+              "viewBox": [
+                0,
+                0,
+                100,
+                40
+              ],
+              "fill": "#29675F",
+              "width": 60,
+              "height": 16.200000000000003
+            },
+            {
+              "type": "path",
+              "id": "datcS",
+              "x": 0,
+              "y": 50.4,
+              "name": "Onda 6",
+              "geometry": "M0 10q25 29 50 5t50-3l0 13q-30-19-50 2t-50-4z",
+              "viewBox": [
+                0,
+                0,
+                100,
+                40
+              ],
+              "fill": "#173C34",
+              "width": 60,
+              "height": 16.200000000000003
+            }
+          ]
+        },
+        {
+          "type": "text",
+          "id": "C05t3N",
+          "x": 94,
+          "y": 419,
+          "name": "Marea baja",
+          "fill": "#25221E",
+          "content": "Marea baja",
+          "fontFamily": "Inter",
+          "fontSize": 17,
+          "fontWeight": "600"
+        },
+        {
+          "type": "text",
+          "id": "SIfBW",
+          "x": 94,
+          "y": 447,
+          "name": "$18 · Disponible",
+          "fill": "#666157",
+          "content": "$18 · Disponible",
+          "fontFamily": "Inter",
+          "fontSize": 13,
+          "fontWeight": "500"
+        },
+        {
+          "type": "text",
+          "id": "wKI7W",
+          "x": 299,
+          "y": 438,
+          "name": "Editar",
+          "fill": "#25221E",
+          "content": "Editar",
+          "fontFamily": "Inter",
+          "fontSize": 13,
+          "fontWeight": "500"
+        },
+        {
+          "type": "rectangle",
+          "id": "T6tpV",
+          "x": 20,
+          "y": 487,
+          "name": "Superficie",
+          "fill": "#D8D2C5",
+          "width": 320,
+          "height": 1
+        },
+        {
+          "type": "frame",
+          "id": "HlTWO",
+          "x": 20,
+          "y": 497,
+          "name": "Obra · Noche azul",
+          "clip": true,
+          "width": 60,
+          "height": 60,
+          "fill": "#B5C6D2",
+          "layout": "none",
+          "children": [
+            {
+              "type": "ellipse",
+              "id": "f93pyg",
+              "x": 34.8,
+              "y": 7.800000000000001,
+              "name": "Sol",
+              "fill": "#F4DDA9",
+              "width": 16.200000000000003,
+              "height": 16.200000000000003
+            },
+            {
+              "type": "path",
+              "id": "rdreY",
+              "x": 0,
+              "y": 24,
+              "name": "Onda 1",
+              "geometry": "M0 24q25-24 50-10t50-4l0 12q-25 16-50 3t-50 11z",
+              "viewBox": [
+                0,
+                0,
+                100,
+                40
+              ],
+              "fill": "#343F65",
+              "width": 60,
+              "height": 16.200000000000003
+            },
+            {
+              "type": "path",
+              "id": "dmBD7",
+              "x": 0,
+              "y": 29.28,
+              "name": "Onda 2",
+              "geometry": "M0 24q25-24 50-10t50-4l0 12q-25 16-50 3t-50 11z",
+              "viewBox": [
+                0,
+                0,
+                100,
+                40
+              ],
+              "fill": "#313559",
+              "width": 60,
+              "height": 16.200000000000003
+            },
+            {
+              "type": "path",
+              "id": "DHWJ5",
+              "x": 0,
+              "y": 34.56,
+              "name": "Onda 3",
+              "geometry": "M0 24q25-24 50-10t50-4l0 12q-25 16-50 3t-50 11z",
+              "viewBox": [
+                0,
+                0,
+                100,
+                40
+              ],
+              "fill": "#343F65",
+              "width": 60,
+              "height": 16.200000000000003
+            },
+            {
+              "type": "path",
+              "id": "aTNE8",
+              "x": 0,
+              "y": 39.84,
+              "name": "Onda 4",
+              "geometry": "M0 24q25-24 50-10t50-4l0 12q-25 16-50 3t-50 11z",
+              "viewBox": [
+                0,
+                0,
+                100,
+                40
+              ],
+              "fill": "#313559",
+              "width": 60,
+              "height": 16.200000000000003
+            },
+            {
+              "type": "path",
+              "id": "iRION",
+              "x": 0,
+              "y": 45.12,
+              "name": "Onda 5",
+              "geometry": "M0 24q25-24 50-10t50-4l0 12q-25 16-50 3t-50 11z",
+              "viewBox": [
+                0,
+                0,
+                100,
+                40
+              ],
+              "fill": "#343F65",
+              "width": 60,
+              "height": 16.200000000000003
+            },
+            {
+              "type": "path",
+              "id": "QCOBK",
+              "x": 0,
+              "y": 50.4,
+              "name": "Onda 6",
+              "geometry": "M0 24q25-24 50-10t50-4l0 12q-25 16-50 3t-50 11z",
+              "viewBox": [
+                0,
+                0,
+                100,
+                40
+              ],
+              "fill": "#313559",
+              "width": 60,
+              "height": 16.200000000000003
+            }
+          ]
+        },
+        {
+          "type": "text",
+          "id": "p02SA6",
+          "x": 94,
+          "y": 501,
+          "name": "Noche azul",
+          "fill": "#25221E",
+          "content": "Noche azul",
+          "fontFamily": "Inter",
+          "fontSize": 17,
+          "fontWeight": "600"
+        },
+        {
+          "type": "text",
+          "id": "tjQcj",
+          "x": 94,
+          "y": 529,
+          "name": "$18 · Agotado",
+          "fill": "#A63422",
+          "content": "$18 · Agotado",
+          "fontFamily": "Inter",
+          "fontSize": 13,
+          "fontWeight": "500"
+        },
+        {
+          "type": "text",
+          "id": "A5ThE",
+          "x": 299,
+          "y": 520,
+          "name": "Editar",
+          "fill": "#25221E",
+          "content": "Editar",
+          "fontFamily": "Inter",
+          "fontSize": 13,
+          "fontWeight": "500"
+        },
+        {
+          "type": "rectangle",
+          "id": "F7XbT",
+          "x": 20,
+          "y": 569,
+          "name": "Superficie",
+          "fill": "#D8D2C5",
+          "width": 320,
+          "height": 1
+        },
+        {
+          "type": "rectangle",
+          "cornerRadius": 9,
+          "id": "oId83",
+          "x": 20,
+          "y": 599,
+          "name": "Agregar producto",
+          "fill": "#25221E",
+          "width": 320,
+          "height": 50
+        },
+        {
+          "type": "text",
+          "id": "NVd5c",
+          "x": 36,
+          "y": 614,
+          "name": "Agregar producto",
+          "fill": "#FFFFFF",
+          "content": "Agregar producto",
+          "fontFamily": "Inter",
+          "fontSize": 15,
+          "fontWeight": "600"
+        },
+        {
+          "type": "text",
+          "id": "qqUhO",
+          "x": 307,
+          "y": 610,
+          "name": "→",
+          "fill": "#DAEA86",
+          "content": "→",
+          "fontFamily": "Inter",
+          "fontSize": 20,
+          "fontWeight": "500"
+        },
+        {
+          "type": "text",
+          "id": "z6z5EC",
+          "x": 242,
+          "y": 173,
+          "name": "Editar perfil  ›",
+          "fill": "#194E47",
+          "content": "Editar perfil  ›",
+          "fontFamily": "Inter",
+          "fontSize": 13,
+          "fontWeight": "600"
+        }
+      ]
+    },
+    {
+      "type": "frame",
+      "id": "OwKUF",
+      "x": 0,
+      "y": 734,
+      "name": "Crear producto",
+      "clip": true,
+      "width": 360,
+      "height": 810,
+      "fill": "#FBF8F0",
+      "layout": "none",
+      "children": [
+        {
+          "type": "text",
+          "id": "FRhJX",
+          "x": 20,
+          "y": 17,
+          "name": "vitrina.",
+          "fill": "#25221E",
+          "content": "vitrina.",
+          "fontFamily": "Inter",
+          "fontSize": 23,
+          "fontWeight": "700"
+        },
+        {
+          "type": "text",
+          "id": "ZUc1g",
+          "x": 232,
+          "y": 26,
+          "name": "Para vendedores",
+          "fill": "#666157",
+          "content": "Para vendedores",
+          "fontFamily": "Inter",
+          "fontSize": 12,
+          "fontWeight": "500"
+        },
+        {
+          "type": "rectangle",
+          "id": "BeMIM",
+          "x": 20,
+          "y": 58,
+          "name": "Superficie",
+          "fill": "#D8D2C5",
+          "width": 320,
+          "height": 1
+        },
+        {
+          "type": "text",
+          "id": "SbLU6",
+          "x": 20,
+          "y": 82,
+          "name": "Crear producto",
+          "fill": "#25221E",
+          "content": "Crear producto",
+          "fontFamily": "Georgia",
+          "fontSize": 33
+        },
+        {
+          "type": "frame",
+          "id": "t4zXM0",
+          "x": 20,
+          "y": 148,
+          "name": "Obra · Sol de tarde",
+          "clip": true,
+          "width": 110,
+          "height": 100,
+          "fill": "#E7AA85",
+          "layout": "none",
+          "children": [
+            {
+              "type": "ellipse",
+              "id": "T0ohik",
+              "x": 63.8,
+              "y": 13,
+              "name": "Sol",
+              "fill": "#F5D176",
+              "width": 27,
+              "height": 27
+            },
+            {
+              "type": "path",
+              "id": "gQscw",
+              "x": 0,
+              "y": 40,
+              "name": "Onda 1",
+              "geometry": "M0 24q25-24 50-10t50-4l0 12q-25 16-50 3t-50 11z",
+              "viewBox": [
+                0,
+                0,
+                100,
+                40
+              ],
+              "fill": "#9C3322",
+              "width": 110,
+              "height": 27
+            },
+            {
+              "type": "path",
+              "id": "beFmR",
+              "x": 0,
+              "y": 48.8,
+              "name": "Onda 2",
+              "geometry": "M0 24q25-24 50-10t50-4l0 12q-25 16-50 3t-50 11z",
+              "viewBox": [
+                0,
+                0,
+                100,
+                40
+              ],
+              "fill": "#71312B",
+              "width": 110,
+              "height": 27
+            },
+            {
+              "type": "path",
+              "id": "rAAQz",
+              "x": 0,
+              "y": 57.60000000000001,
+              "name": "Onda 3",
+              "geometry": "M0 24q25-24 50-10t50-4l0 12q-25 16-50 3t-50 11z",
+              "viewBox": [
+                0,
+                0,
+                100,
+                40
+              ],
+              "fill": "#9C3322",
+              "width": 110,
+              "height": 27
+            },
+            {
+              "type": "path",
+              "id": "G0UVRg",
+              "x": 0,
+              "y": 66.4,
+              "name": "Onda 4",
+              "geometry": "M0 24q25-24 50-10t50-4l0 12q-25 16-50 3t-50 11z",
+              "viewBox": [
+                0,
+                0,
+                100,
+                40
+              ],
+              "fill": "#71312B",
+              "width": 110,
+              "height": 27
+            },
+            {
+              "type": "path",
+              "id": "kWlhp",
+              "x": 0,
+              "y": 75.2,
+              "name": "Onda 5",
+              "geometry": "M0 24q25-24 50-10t50-4l0 12q-25 16-50 3t-50 11z",
+              "viewBox": [
+                0,
+                0,
+                100,
+                40
+              ],
+              "fill": "#9C3322",
+              "width": 110,
+              "height": 27
+            },
+            {
+              "type": "path",
+              "id": "FRMGE",
+              "x": 0,
+              "y": 84,
+              "name": "Onda 6",
+              "geometry": "M0 24q25-24 50-10t50-4l0 12q-25 16-50 3t-50 11z",
+              "viewBox": [
+                0,
+                0,
+                100,
+                40
+              ],
+              "fill": "#71312B",
+              "width": 110,
+              "height": 27
+            }
+          ]
+        },
+        {
+          "type": "text",
+          "id": "I1tVU5",
+          "x": 150,
+          "y": 184,
+          "name": "Cambiar imagen",
+          "fill": "#25221E",
+          "content": "Cambiar imagen",
+          "fontFamily": "Inter",
+          "fontSize": 14,
+          "fontWeight": "600"
+        },
+        {
+          "type": "text",
+          "id": "Xig3L",
+          "x": 20,
+          "y": 275,
+          "name": "Nombre",
+          "fill": "#25221E",
+          "content": "Nombre",
+          "fontFamily": "Inter",
+          "fontSize": 13,
+          "fontWeight": "600"
+        },
+        {
+          "type": "rectangle",
+          "cornerRadius": 6,
+          "id": "R2GlF",
+          "x": 20,
+          "y": 297,
+          "name": "Nombre",
+          "fill": "#EAE6DB",
+          "width": 320,
+          "height": 44
+        },
+        {
+          "type": "text",
+          "id": "INSDt",
+          "x": 32,
+          "y": 310,
+          "name": "Sol de tarde",
+          "fill": "#25221E",
+          "content": "Sol de tarde",
+          "fontFamily": "Inter",
+          "fontSize": 15
+        },
+        {
+          "type": "text",
+          "id": "RLPAT",
+          "x": 20,
+          "y": 359,
+          "name": "Precio en USD",
+          "fill": "#25221E",
+          "content": "Precio en USD",
+          "fontFamily": "Inter",
+          "fontSize": 13,
+          "fontWeight": "600"
+        },
+        {
+          "type": "rectangle",
+          "cornerRadius": 6,
+          "id": "OIfZZ",
+          "x": 20,
+          "y": 381,
+          "name": "Precio en USD",
+          "fill": "#EAE6DB",
+          "width": 320,
+          "height": 44
+        },
+        {
+          "type": "text",
+          "id": "Zg0TT",
+          "x": 32,
+          "y": 394,
+          "name": "18.00",
+          "fill": "#25221E",
+          "content": "18.00",
+          "fontFamily": "Inter",
+          "fontSize": 15
+        },
+        {
+          "type": "text",
+          "id": "iCGD7",
+          "x": 20,
+          "y": 446,
+          "name": "Opciones del producto",
+          "fill": "#25221E",
+          "content": "Opciones del producto",
+          "fontFamily": "Inter",
+          "fontSize": 20,
+          "fontWeight": "600"
+        },
+        {
+          "type": "text",
+          "id": "NbAVo",
+          "x": 282,
+          "y": 453,
+          "name": "Opcional",
+          "fill": "#666157",
+          "content": "Opcional",
+          "fontFamily": "Inter",
+          "fontSize": 12
+        },
+        {
+          "type": "rectangle",
+          "cornerRadius": 8,
+          "id": "z1kwDg",
+          "x": 20,
+          "y": 489,
+          "name": "Tamaño",
+          "fill": "#EAE6DB",
+          "width": 320,
+          "height": 62
+        },
+        {
+          "type": "text",
+          "id": "DUPiQ",
+          "x": 33,
+          "y": 497,
+          "name": "Tamaño",
+          "fill": "#25221E",
+          "content": "Tamaño",
+          "fontFamily": "Inter",
+          "fontSize": 15,
+          "fontWeight": "600"
+        },
+        {
+          "type": "text",
+          "id": "YL2kW",
+          "x": 33,
+          "y": 522,
+          "name": "A4  ·  A3",
+          "fill": "#666157",
+          "content": "A4  ·  A3",
+          "fontFamily": "Inter",
+          "fontSize": 14
+        },
+        {
+          "type": "text",
+          "id": "iT9qy",
+          "x": 284,
+          "y": 511,
+          "name": "Editar",
+          "fill": "#25221E",
+          "content": "Editar",
+          "fontFamily": "Inter",
+          "fontSize": 13
+        },
+        {
+          "type": "rectangle",
+          "cornerRadius": 8,
+          "id": "d5c0z",
+          "x": 20,
+          "y": 559,
+          "name": "Tipo de papel",
+          "fill": "#EAE6DB",
+          "width": 320,
+          "height": 62
+        },
+        {
+          "type": "text",
+          "id": "BnSUZ",
+          "x": 33,
+          "y": 567,
+          "name": "Tipo de papel",
+          "fill": "#25221E",
+          "content": "Tipo de papel",
+          "fontFamily": "Inter",
+          "fontSize": 15,
+          "fontWeight": "600"
+        },
+        {
+          "type": "text",
+          "id": "gArAF",
+          "x": 33,
+          "y": 592,
+          "name": "Mate  ·  Satinado",
+          "fill": "#666157",
+          "content": "Mate  ·  Satinado",
+          "fontFamily": "Inter",
+          "fontSize": 14
+        },
+        {
+          "type": "text",
+          "id": "VBhkM",
+          "x": 284,
+          "y": 581,
+          "name": "Editar",
+          "fill": "#25221E",
+          "content": "Editar",
+          "fontFamily": "Inter",
+          "fontSize": 13
+        },
+        {
+          "type": "text",
+          "id": "baYhW",
+          "x": 20,
+          "y": 651,
+          "name": "+ Agregar opción",
+          "fill": "#25221E",
+          "content": "+ Agregar opción",
+          "fontFamily": "Inter",
+          "fontSize": 15,
+          "fontWeight": "600"
+        },
+        {
+          "type": "rectangle",
+          "cornerRadius": 8,
+          "id": "uvmC2",
+          "x": 20,
+          "y": 726,
+          "name": "Crear producto",
+          "fill": "#25221E",
+          "width": 320,
+          "height": 48
+        },
+        {
+          "type": "text",
+          "id": "c2N1R",
+          "x": 36,
+          "y": 740,
+          "name": "Crear producto",
+          "fill": "#FFFFFF",
+          "content": "Crear producto",
+          "fontFamily": "Inter",
+          "fontSize": 15,
+          "fontWeight": "600"
+        },
+        {
+          "type": "text",
+          "id": "phpPa",
+          "x": 305,
+          "y": 736,
+          "name": "→",
+          "fill": "#DAEA86",
+          "content": "→",
+          "fontFamily": "Inter",
+          "fontSize": 20
+        }
+      ]
+    },
+    {
+      "type": "frame",
+      "id": "of94b",
+      "x": 404,
+      "y": 734,
+      "name": "Catálogo público",
+      "clip": true,
+      "width": 360,
+      "height": 720,
+      "fill": "#EEF4EB",
+      "layout": "none",
+      "children": [
+        {
+          "type": "text",
+          "id": "u8asP",
+          "x": 20,
+          "y": 17,
+          "name": "Marea Estudio",
+          "fill": "#194E47",
+          "content": "Marea Estudio",
+          "fontFamily": "Inter",
+          "fontSize": 19,
+          "fontWeight": "700"
+        },
+        {
+          "type": "text",
+          "id": "gyEXu",
+          "x": 236,
+          "y": 26,
+          "name": "@marea.estudio",
+          "fill": "#194E47",
+          "content": "@marea.estudio",
+          "fontFamily": "Inter",
+          "fontSize": 12,
+          "fontWeight": "500"
+        },
+        {
+          "type": "rectangle",
+          "id": "S9im7",
+          "x": 20,
+          "y": 58,
+          "name": "Superficie",
+          "fill": "#D8D2C5",
+          "width": 320,
+          "height": 1
+        },
+        {
+          "type": "text",
+          "id": "DPEEZ",
+          "x": 18,
+          "y": 80,
+          "name": "Marea",
+          "fill": "#194E47",
+          "content": "Marea",
+          "fontFamily": "Georgia",
+          "fontSize": 62
+        },
+        {
+          "type": "text",
+          "id": "sYq85",
+          "x": 18,
+          "y": 141,
+          "name": "Estudio",
+          "fill": "#194E47",
+          "content": "Estudio",
+          "fontFamily": "Georgia",
+          "fontSize": 62
+        },
+        {
+          "type": "text",
+          "id": "J8YFoS",
+          "x": 20,
+          "y": 228,
+          "name": "Láminas de autor impresas en San Salvador.",
+          "fill": "#25221E",
+          "content": "Láminas de autor impresas en San Salvador.",
+          "fontFamily": "Inter",
+          "fontSize": 14
+        },
+        {
+          "type": "rectangle",
+          "id": "P64eRt",
+          "x": 20,
+          "y": 309,
+          "name": "Superficie",
+          "fill": "#D8D2C5",
+          "width": 320,
+          "height": 1
+        },
+        {
+          "type": "text",
+          "id": "o4g3t",
+          "x": 20,
+          "y": 330,
+          "name": "Catálogo",
+          "fill": "#25221E",
+          "content": "Catálogo",
+          "fontFamily": "Inter",
+          "fontSize": 22,
+          "fontWeight": "600"
+        },
+        {
+          "type": "text",
+          "id": "bkr6T",
+          "x": 276,
+          "y": 338,
+          "name": "3 láminas",
+          "fill": "#666157",
+          "content": "3 láminas",
+          "fontFamily": "Inter",
+          "fontSize": 13,
+          "fontWeight": "500"
+        },
+        {
+          "type": "frame",
+          "id": "yrhtm",
+          "x": 20,
+          "y": 378,
+          "name": "Obra · Sol de tarde",
+          "clip": true,
+          "width": 153,
+          "height": 101,
+          "fill": "#E7AA85",
+          "layout": "none",
+          "children": [
+            {
+              "type": "ellipse",
+              "id": "GCTl4",
+              "x": 88.74,
+              "y": 13.13,
+              "name": "Sol",
+              "fill": "#F5D176",
+              "width": 27.270000000000003,
+              "height": 27.270000000000003
+            },
+            {
+              "type": "path",
+              "id": "q42Vs",
+              "x": 0,
+              "y": 40.400000000000006,
+              "name": "Onda 1",
+              "geometry": "M0 24q25-24 50-10t50-4l0 12q-25 16-50 3t-50 11z",
+              "viewBox": [
+                0,
+                0,
+                100,
+                40
+              ],
+              "fill": "#9C3322",
+              "width": 153,
+              "height": 27.270000000000003
+            },
+            {
+              "type": "path",
+              "id": "VSTNV",
+              "x": 0,
+              "y": 49.288,
+              "name": "Onda 2",
+              "geometry": "M0 24q25-24 50-10t50-4l0 12q-25 16-50 3t-50 11z",
+              "viewBox": [
+                0,
+                0,
+                100,
+                40
+              ],
+              "fill": "#71312B",
+              "width": 153,
+              "height": 27.270000000000003
+            },
+            {
+              "type": "path",
+              "id": "sQsi4",
+              "x": 0,
+              "y": 58.17600000000001,
+              "name": "Onda 3",
+              "geometry": "M0 24q25-24 50-10t50-4l0 12q-25 16-50 3t-50 11z",
+              "viewBox": [
+                0,
+                0,
+                100,
+                40
+              ],
+              "fill": "#9C3322",
+              "width": 153,
+              "height": 27.270000000000003
+            },
+            {
+              "type": "path",
+              "id": "XQIof",
+              "x": 0,
+              "y": 67.06400000000001,
+              "name": "Onda 4",
+              "geometry": "M0 24q25-24 50-10t50-4l0 12q-25 16-50 3t-50 11z",
+              "viewBox": [
+                0,
+                0,
+                100,
+                40
+              ],
+              "fill": "#71312B",
+              "width": 153,
+              "height": 27.270000000000003
+            },
+            {
+              "type": "path",
+              "id": "NtpZZ",
+              "x": 0,
+              "y": 75.952,
+              "name": "Onda 5",
+              "geometry": "M0 24q25-24 50-10t50-4l0 12q-25 16-50 3t-50 11z",
+              "viewBox": [
+                0,
+                0,
+                100,
+                40
+              ],
+              "fill": "#9C3322",
+              "width": 153,
+              "height": 27.270000000000003
+            },
+            {
+              "type": "path",
+              "id": "P6z7Oz",
+              "x": 0,
+              "y": 84.84,
+              "name": "Onda 6",
+              "geometry": "M0 24q25-24 50-10t50-4l0 12q-25 16-50 3t-50 11z",
+              "viewBox": [
+                0,
+                0,
+                100,
+                40
+              ],
+              "fill": "#71312B",
+              "width": 153,
+              "height": 27.270000000000003
+            }
+          ]
+        },
+        {
+          "type": "text",
+          "id": "drsvH",
+          "x": 20,
+          "y": 488,
+          "name": "Sol de tarde",
+          "fill": "#25221E",
+          "content": "Sol de tarde",
+          "fontFamily": "Inter",
+          "fontSize": 16,
+          "fontWeight": "600"
+        },
+        {
+          "type": "text",
+          "id": "IK2iN",
+          "x": 20,
+          "y": 512,
+          "name": "Desde $18",
+          "fill": "#666157",
+          "content": "Desde $18",
+          "fontFamily": "Inter",
+          "fontSize": 13,
+          "fontWeight": "500"
+        },
+        {
+          "type": "frame",
+          "id": "sgFXv",
+          "x": 187,
+          "y": 378,
+          "name": "Obra · Marea baja",
+          "clip": true,
+          "width": 153,
+          "height": 101,
+          "fill": "#CED7AD",
+          "layout": "none",
+          "children": [
+            {
+              "type": "ellipse",
+              "id": "YqhgP",
+              "x": 88.74,
+              "y": 13.13,
+              "name": "Sol",
+              "fill": "#F3B573",
+              "width": 27.270000000000003,
+              "height": 27.270000000000003
+            },
+            {
+              "type": "path",
+              "id": "UPmZV",
+              "x": 0,
+              "y": 40.400000000000006,
+              "name": "Onda 1",
+              "geometry": "M0 10q25 29 50 5t50-3l0 13q-30-19-50 2t-50-4z",
+              "viewBox": [
+                0,
+                0,
+                100,
+                40
+              ],
+              "fill": "#29675F",
+              "width": 153,
+              "height": 27.270000000000003
+            },
+            {
+              "type": "path",
+              "id": "GWFB4",
+              "x": 0,
+              "y": 49.288,
+              "name": "Onda 2",
+              "geometry": "M0 10q25 29 50 5t50-3l0 13q-30-19-50 2t-50-4z",
+              "viewBox": [
+                0,
+                0,
+                100,
+                40
+              ],
+              "fill": "#173C34",
+              "width": 153,
+              "height": 27.270000000000003
+            },
+            {
+              "type": "path",
+              "id": "t2iwUa",
+              "x": 0,
+              "y": 58.17600000000001,
+              "name": "Onda 3",
+              "geometry": "M0 10q25 29 50 5t50-3l0 13q-30-19-50 2t-50-4z",
+              "viewBox": [
+                0,
+                0,
+                100,
+                40
+              ],
+              "fill": "#29675F",
+              "width": 153,
+              "height": 27.270000000000003
+            },
+            {
+              "type": "path",
+              "id": "J6OaHt",
+              "x": 0,
+              "y": 67.06400000000001,
+              "name": "Onda 4",
+              "geometry": "M0 10q25 29 50 5t50-3l0 13q-30-19-50 2t-50-4z",
+              "viewBox": [
+                0,
+                0,
+                100,
+                40
+              ],
+              "fill": "#173C34",
+              "width": 153,
+              "height": 27.270000000000003
+            },
+            {
+              "type": "path",
+              "id": "E8Lb1Z",
+              "x": 0,
+              "y": 75.952,
+              "name": "Onda 5",
+              "geometry": "M0 10q25 29 50 5t50-3l0 13q-30-19-50 2t-50-4z",
+              "viewBox": [
+                0,
+                0,
+                100,
+                40
+              ],
+              "fill": "#29675F",
+              "width": 153,
+              "height": 27.270000000000003
+            },
+            {
+              "type": "path",
+              "id": "asRz2",
+              "x": 0,
+              "y": 84.84,
+              "name": "Onda 6",
+              "geometry": "M0 10q25 29 50 5t50-3l0 13q-30-19-50 2t-50-4z",
+              "viewBox": [
+                0,
+                0,
+                100,
+                40
+              ],
+              "fill": "#173C34",
+              "width": 153,
+              "height": 27.270000000000003
+            }
+          ]
+        },
+        {
+          "type": "text",
+          "id": "meTyA",
+          "x": 187,
+          "y": 488,
+          "name": "Marea baja",
+          "fill": "#25221E",
+          "content": "Marea baja",
+          "fontFamily": "Inter",
+          "fontSize": 16,
+          "fontWeight": "600"
+        },
+        {
+          "type": "text",
+          "id": "GDeNQ",
+          "x": 187,
+          "y": 512,
+          "name": "Desde $18",
+          "fill": "#666157",
+          "content": "Desde $18",
+          "fontFamily": "Inter",
+          "fontSize": 13,
+          "fontWeight": "500"
+        },
+        {
+          "type": "frame",
+          "id": "qnwOc",
+          "x": 20,
+          "y": 542,
+          "name": "Obra · Noche azul",
+          "clip": true,
+          "width": 153,
+          "height": 101,
+          "fill": "#B5C6D2",
+          "layout": "none",
+          "children": [
+            {
+              "type": "ellipse",
+              "id": "zv6vC",
+              "x": 88.74,
+              "y": 13.13,
+              "name": "Sol",
+              "fill": "#F4DDA9",
+              "width": 27.270000000000003,
+              "height": 27.270000000000003
+            },
+            {
+              "type": "path",
+              "id": "TSAQ7",
+              "x": 0,
+              "y": 40.400000000000006,
+              "name": "Onda 1",
+              "geometry": "M0 24q25-24 50-10t50-4l0 12q-25 16-50 3t-50 11z",
+              "viewBox": [
+                0,
+                0,
+                100,
+                40
+              ],
+              "fill": "#343F65",
+              "width": 153,
+              "height": 27.270000000000003
+            },
+            {
+              "type": "path",
+              "id": "Cheb2",
+              "x": 0,
+              "y": 49.288,
+              "name": "Onda 2",
+              "geometry": "M0 24q25-24 50-10t50-4l0 12q-25 16-50 3t-50 11z",
+              "viewBox": [
+                0,
+                0,
+                100,
+                40
+              ],
+              "fill": "#313559",
+              "width": 153,
+              "height": 27.270000000000003
+            },
+            {
+              "type": "path",
+              "id": "jGxle",
+              "x": 0,
+              "y": 58.17600000000001,
+              "name": "Onda 3",
+              "geometry": "M0 24q25-24 50-10t50-4l0 12q-25 16-50 3t-50 11z",
+              "viewBox": [
+                0,
+                0,
+                100,
+                40
+              ],
+              "fill": "#343F65",
+              "width": 153,
+              "height": 27.270000000000003
+            },
+            {
+              "type": "path",
+              "id": "YL3V0",
+              "x": 0,
+              "y": 67.06400000000001,
+              "name": "Onda 4",
+              "geometry": "M0 24q25-24 50-10t50-4l0 12q-25 16-50 3t-50 11z",
+              "viewBox": [
+                0,
+                0,
+                100,
+                40
+              ],
+              "fill": "#313559",
+              "width": 153,
+              "height": 27.270000000000003
+            },
+            {
+              "type": "path",
+              "id": "b5RCgm",
+              "x": 0,
+              "y": 75.952,
+              "name": "Onda 5",
+              "geometry": "M0 24q25-24 50-10t50-4l0 12q-25 16-50 3t-50 11z",
+              "viewBox": [
+                0,
+                0,
+                100,
+                40
+              ],
+              "fill": "#343F65",
+              "width": 153,
+              "height": 27.270000000000003
+            },
+            {
+              "type": "path",
+              "id": "D8Zog",
+              "x": 0,
+              "y": 84.84,
+              "name": "Onda 6",
+              "geometry": "M0 24q25-24 50-10t50-4l0 12q-25 16-50 3t-50 11z",
+              "viewBox": [
+                0,
+                0,
+                100,
+                40
+              ],
+              "fill": "#313559",
+              "width": 153,
+              "height": 27.270000000000003
+            }
+          ]
+        },
+        {
+          "type": "text",
+          "id": "HrOve",
+          "x": 20,
+          "y": 652,
+          "name": "Noche azul",
+          "fill": "#25221E",
+          "content": "Noche azul",
+          "fontFamily": "Inter",
+          "fontSize": 16,
+          "fontWeight": "600"
+        },
+        {
+          "type": "text",
+          "id": "NfCu1",
+          "x": 20,
+          "y": 676,
+          "name": "Agotado",
+          "fill": "#A63422",
+          "content": "Agotado",
+          "fontFamily": "Inter",
+          "fontSize": 13,
+          "fontWeight": "500"
+        },
+        {
+          "type": "text",
+          "id": "Jn6PU",
+          "x": 20,
+          "y": 265,
+          "name": "Instagram  ↗",
+          "fill": "#194E47",
+          "content": "Instagram  ↗",
+          "fontFamily": "Inter",
+          "fontSize": 14,
+          "fontWeight": "600"
+        },
+        {
+          "type": "text",
+          "id": "I0uKmu",
+          "x": 148,
+          "y": 265,
+          "name": "TikTok  ↗",
+          "fill": "#194E47",
+          "content": "TikTok  ↗",
+          "fontFamily": "Inter",
+          "fontSize": 14,
+          "fontWeight": "600"
+        }
+      ]
+    },
+    {
+      "type": "frame",
+      "id": "v1ckJ",
+      "x": 808,
+      "y": 734,
+      "name": "Producto y pedido como invitado",
+      "clip": true,
+      "width": 360,
+      "height": 674,
+      "fill": "#EEF4EB",
+      "layout": "none",
+      "children": [
+        {
+          "type": "text",
+          "id": "uMFPj",
+          "x": 20,
+          "y": 17,
+          "name": "Marea Estudio",
+          "fill": "#194E47",
+          "content": "Marea Estudio",
+          "fontFamily": "Inter",
+          "fontSize": 19,
+          "fontWeight": "700"
+        },
+        {
+          "type": "text",
+          "id": "TO9we",
+          "x": 236,
+          "y": 26,
+          "name": "@marea.estudio",
+          "fill": "#194E47",
+          "content": "@marea.estudio",
+          "fontFamily": "Inter",
+          "fontSize": 12,
+          "fontWeight": "500"
+        },
+        {
+          "type": "rectangle",
+          "id": "zYh1v",
+          "x": 20,
+          "y": 58,
+          "name": "Superficie",
+          "fill": "#D8D2C5",
+          "width": 320,
+          "height": 1
+        },
+        {
+          "type": "text",
+          "id": "kbNDe",
+          "x": 20,
+          "y": 78,
+          "name": "‹  Catálogo",
+          "fill": "#25221E",
+          "content": "‹  Catálogo",
+          "fontFamily": "Inter",
+          "fontSize": 14,
+          "fontWeight": "500"
+        },
+        {
+          "type": "frame",
+          "id": "VSczM",
+          "x": 20,
+          "y": 115,
+          "name": "Obra · Sol de tarde",
+          "clip": true,
+          "width": 320,
+          "height": 211,
+          "fill": "#E7AA85",
+          "layout": "none",
+          "children": [
+            {
+              "type": "ellipse",
+              "id": "W8d0He",
+              "x": 185.6,
+              "y": 27.43,
+              "name": "Sol",
+              "fill": "#F5D176",
+              "width": 56.970000000000006,
+              "height": 56.970000000000006
+            },
+            {
+              "type": "path",
+              "id": "m1D6F",
+              "x": 0,
+              "y": 84.4,
+              "name": "Onda 1",
+              "geometry": "M0 24q25-24 50-10t50-4l0 12q-25 16-50 3t-50 11z",
+              "viewBox": [
+                0,
+                0,
+                100,
+                40
+              ],
+              "fill": "#9C3322",
+              "width": 320,
+              "height": 56.970000000000006
+            },
+            {
+              "type": "path",
+              "id": "QRGvT",
+              "x": 0,
+              "y": 102.968,
+              "name": "Onda 2",
+              "geometry": "M0 24q25-24 50-10t50-4l0 12q-25 16-50 3t-50 11z",
+              "viewBox": [
+                0,
+                0,
+                100,
+                40
+              ],
+              "fill": "#71312B",
+              "width": 320,
+              "height": 56.970000000000006
+            },
+            {
+              "type": "path",
+              "id": "PT8IU",
+              "x": 0,
+              "y": 121.53600000000002,
+              "name": "Onda 3",
+              "geometry": "M0 24q25-24 50-10t50-4l0 12q-25 16-50 3t-50 11z",
+              "viewBox": [
+                0,
+                0,
+                100,
+                40
+              ],
+              "fill": "#9C3322",
+              "width": 320,
+              "height": 56.970000000000006
+            },
+            {
+              "type": "path",
+              "id": "meyIV",
+              "x": 0,
+              "y": 140.104,
+              "name": "Onda 4",
+              "geometry": "M0 24q25-24 50-10t50-4l0 12q-25 16-50 3t-50 11z",
+              "viewBox": [
+                0,
+                0,
+                100,
+                40
+              ],
+              "fill": "#71312B",
+              "width": 320,
+              "height": 56.970000000000006
+            },
+            {
+              "type": "path",
+              "id": "N8pibw",
+              "x": 0,
+              "y": 158.672,
+              "name": "Onda 5",
+              "geometry": "M0 24q25-24 50-10t50-4l0 12q-25 16-50 3t-50 11z",
+              "viewBox": [
+                0,
+                0,
+                100,
+                40
+              ],
+              "fill": "#9C3322",
+              "width": 320,
+              "height": 56.970000000000006
+            },
+            {
+              "type": "path",
+              "id": "ezx23",
+              "x": 0,
+              "y": 177.23999999999998,
+              "name": "Onda 6",
+              "geometry": "M0 24q25-24 50-10t50-4l0 12q-25 16-50 3t-50 11z",
+              "viewBox": [
+                0,
+                0,
+                100,
+                40
+              ],
+              "fill": "#71312B",
+              "width": 320,
+              "height": 56.970000000000006
+            }
+          ]
+        },
+        {
+          "type": "text",
+          "id": "ctqWf",
+          "x": 20,
+          "y": 348,
+          "name": "Sol de tarde",
+          "fill": "#25221E",
+          "content": "Sol de tarde",
+          "fontFamily": "Georgia",
+          "fontSize": 33
+        },
+        {
+          "type": "text",
+          "id": "ASy3j",
+          "x": 20,
+          "y": 400,
+          "name": "$18",
+          "fill": "#25221E",
+          "content": "$18",
+          "fontFamily": "Inter",
+          "fontSize": 20,
+          "fontWeight": "600"
+        },
+        {
+          "type": "text",
+          "id": "sx4n5",
+          "x": 20,
+          "y": 443,
+          "name": "Lámina impresa en papel mate.",
+          "fill": "#25221E",
+          "content": "Lámina impresa en papel mate.",
+          "fontFamily": "Inter",
+          "fontSize": 15
+        },
+        {
+          "type": "text",
+          "id": "wJNB9",
+          "x": 20,
+          "y": 493,
+          "name": "Tamaño",
+          "fill": "#25221E",
+          "content": "Tamaño",
+          "fontFamily": "Inter",
+          "fontSize": 14,
+          "fontWeight": "600"
+        },
+        {
+          "type": "rectangle",
+          "cornerRadius": 7,
+          "id": "eXoVD",
+          "x": 20,
+          "y": 520,
+          "name": "Superficie",
+          "fill": "#194E47",
+          "width": 73,
+          "height": 37
+        },
+        {
+          "type": "text",
+          "id": "FfT5x",
+          "x": 43,
+          "y": 529,
+          "name": "A4",
+          "fill": "#FFFFFF",
+          "content": "A4",
+          "fontFamily": "Inter",
+          "fontSize": 15,
+          "fontWeight": "600"
+        },
+        {
+          "type": "rectangle",
+          "cornerRadius": 7,
+          "id": "wh2uJ",
+          "x": 101,
+          "y": 520,
+          "name": "Superficie",
+          "fill": "#EAE6DB",
+          "width": 74,
+          "height": 37
+        },
+        {
+          "type": "text",
+          "id": "VvAl7",
+          "x": 125,
+          "y": 529,
+          "name": "A3",
+          "fill": "#25221E",
+          "content": "A3",
+          "fontFamily": "Inter",
+          "fontSize": 15
+        },
+        {
+          "type": "rectangle",
+          "cornerRadius": 9,
+          "id": "oMvoq",
+          "x": 20,
+          "y": 581,
+          "name": "Pedir por WhatsApp",
+          "fill": "#194E47",
+          "width": 320,
+          "height": 50
+        },
+        {
+          "type": "text",
+          "id": "FM0Gf",
+          "x": 36,
+          "y": 596,
+          "name": "Pedir por WhatsApp",
+          "fill": "#FFFFFF",
+          "content": "Pedir por WhatsApp",
+          "fontFamily": "Inter",
+          "fontSize": 15,
+          "fontWeight": "600"
+        },
+        {
+          "type": "text",
+          "id": "ReffN",
+          "x": 307,
+          "y": 592,
+          "name": "→",
+          "fill": "#DAEA86",
+          "content": "→",
+          "fontFamily": "Inter",
+          "fontSize": 20,
+          "fontWeight": "500"
+        },
+        {
+          "type": "text",
+          "id": "AN9IH",
+          "x": 20,
+          "y": 643,
+          "name": "Revisá tu mensaje antes de enviarlo.",
+          "fill": "#666157",
+          "content": "Revisá tu mensaje antes de enviarlo.",
+          "fontFamily": "Inter",
+          "fontSize": 12
+        }
+      ]
+    },
+    {
+      "type": "frame",
+      "id": "cLjQo",
+      "x": 1212,
+      "y": 734,
+      "name": "Agregar opción al producto",
+      "clip": true,
+      "width": 360,
+      "height": 674,
+      "fill": "#FBF8F0",
+      "layout": "none",
+      "children": [
+        {
+          "type": "text",
+          "id": "SpG5W",
+          "x": 20,
+          "y": 24,
+          "name": "‹  Crear producto",
+          "fill": "#25221E",
+          "content": "‹  Crear producto",
+          "fontFamily": "Inter",
+          "fontSize": 15
+        },
+        {
+          "type": "rectangle",
+          "id": "j7PeE",
+          "x": 20,
+          "y": 58,
+          "name": "Divisor",
+          "fill": "#D8D2C5",
+          "width": 320,
+          "height": 1
+        },
+        {
+          "type": "text",
+          "id": "iKCKP",
+          "x": 20,
+          "y": 87,
+          "name": "Agregar opción",
+          "fill": "#25221E",
+          "content": "Agregar opción",
+          "fontFamily": "Inter",
+          "fontSize": 30,
+          "fontWeight": "600"
+        },
+        {
+          "type": "text",
+          "id": "YvRhT",
+          "x": 20,
+          "y": 166,
+          "name": "Nombre de la opción",
+          "fill": "#25221E",
+          "content": "Nombre de la opción",
+          "fontFamily": "Inter",
+          "fontSize": 14,
+          "fontWeight": "600"
+        },
+        {
+          "type": "rectangle",
+          "cornerRadius": 6,
+          "id": "A15FOI",
+          "x": 20,
+          "y": 190,
+          "name": "Nombre editable",
+          "fill": "#EAE6DB",
+          "width": 320,
+          "height": 46
+        },
+        {
+          "type": "text",
+          "id": "ALqZ1",
+          "x": 33,
+          "y": 203,
+          "name": "Color",
+          "fill": "#25221E",
+          "content": "Color",
+          "fontFamily": "Inter",
+          "fontSize": 16
+        },
+        {
+          "type": "text",
+          "id": "KXoKX",
+          "x": 20,
+          "y": 253,
+          "name": "Sugerencias",
+          "fill": "#666157",
+          "content": "Sugerencias",
+          "fontFamily": "Inter",
+          "fontSize": 12
+        },
+        {
+          "type": "rectangle",
+          "cornerRadius": 16,
+          "id": "kphDU",
+          "x": 20,
+          "y": 279,
+          "name": "Tipo",
+          "fill": "#EAE6DB",
+          "width": 67,
+          "height": 32
+        },
+        {
+          "type": "text",
+          "id": "V6CMFt",
+          "x": 34,
+          "y": 286,
+          "name": "Tipo",
+          "fill": "#25221E",
+          "content": "Tipo",
+          "fontFamily": "Inter",
+          "fontSize": 13
+        },
+        {
+          "type": "rectangle",
+          "cornerRadius": 16,
+          "id": "d9sRqh",
+          "x": 95,
+          "y": 279,
+          "name": "Tamaño",
+          "fill": "#EAE6DB",
+          "width": 80,
+          "height": 32
+        },
+        {
+          "type": "text",
+          "id": "LxxId",
+          "x": 109,
+          "y": 286,
+          "name": "Tamaño",
+          "fill": "#25221E",
+          "content": "Tamaño",
+          "fontFamily": "Inter",
+          "fontSize": 13
+        },
+        {
+          "type": "rectangle",
+          "cornerRadius": 16,
+          "id": "p5iGVg",
+          "x": 183,
+          "y": 279,
+          "name": "Color",
+          "fill": "#DAEA86",
+          "width": 70,
+          "height": 32
+        },
+        {
+          "type": "text",
+          "id": "IrO1k",
+          "x": 197,
+          "y": 286,
+          "name": "Color",
+          "fill": "#25221E",
+          "content": "Color",
+          "fontFamily": "Inter",
+          "fontSize": 13
+        },
+        {
+          "type": "text",
+          "id": "AVZVR",
+          "x": 20,
+          "y": 329,
+          "name": "También podés escribir un nombre propio.",
+          "fill": "#666157",
+          "content": "También podés escribir un nombre propio.",
+          "fontFamily": "Inter",
+          "fontSize": 14
+        },
+        {
+          "type": "text",
+          "id": "t5P3bV",
+          "x": 20,
+          "y": 390,
+          "name": "Valores de la opción",
+          "fill": "#25221E",
+          "content": "Valores de la opción",
+          "fontFamily": "Inter",
+          "fontSize": 17,
+          "fontWeight": "600"
+        },
+        {
+          "type": "rectangle",
+          "cornerRadius": 6,
+          "id": "Z6yRl",
+          "x": 20,
+          "y": 427,
+          "name": "Valores ingresados",
+          "fill": "#EAE6DB",
+          "width": 320,
+          "height": 45
+        },
+        {
+          "type": "text",
+          "id": "UwJiA",
+          "x": 32,
+          "y": 441,
+          "name": "Arena   ×",
+          "fill": "#25221E",
+          "content": "Arena   ×",
+          "fontFamily": "Inter",
+          "fontSize": 14
+        },
+        {
+          "type": "text",
+          "id": "Thyi2",
+          "x": 134,
+          "y": 441,
+          "name": "Oliva   ×",
+          "fill": "#25221E",
+          "content": "Oliva   ×",
+          "fontFamily": "Inter",
+          "fontSize": 14
+        },
+        {
+          "type": "text",
+          "id": "kMD0z",
+          "x": 20,
+          "y": 493,
+          "name": "+ Agregar valor",
+          "fill": "#25221E",
+          "content": "+ Agregar valor",
+          "fontFamily": "Inter",
+          "fontSize": 15,
+          "fontWeight": "600"
+        },
+        {
+          "type": "rectangle",
+          "cornerRadius": 8,
+          "id": "Jbi4v",
+          "x": 20,
+          "y": 582,
+          "name": "Guardar opción",
+          "fill": "#25221E",
+          "width": 320,
+          "height": 48
+        },
+        {
+          "type": "text",
+          "id": "a0wiH",
+          "x": 36,
+          "y": 596,
+          "name": "Guardar opción",
+          "fill": "#FFFFFF",
+          "content": "Guardar opción",
+          "fontFamily": "Inter",
+          "fontSize": 15,
+          "fontWeight": "600"
+        },
+        {
+          "type": "text",
+          "id": "jsCDM",
+          "x": 305,
+          "y": 592,
+          "name": "→",
+          "fill": "#DAEA86",
+          "content": "→",
+          "fontFamily": "Inter",
+          "fontSize": 20
+        }
+      ]
+    },
+    {
+      "type": "frame",
+      "id": "V07DqV",
+      "x": 1212,
+      "y": 0,
+      "name": "Perfil de la tienda",
+      "clip": true,
+      "width": 360,
+      "height": 674,
+      "fill": "#FBF8F0",
+      "layout": "none",
+      "children": [
+        {
+          "type": "text",
+          "id": "eTKEC",
+          "x": 20,
+          "y": 24,
+          "name": "‹  Mi tienda",
+          "fill": "#25221E",
+          "content": "‹  Mi tienda",
+          "fontFamily": "Inter",
+          "fontSize": 14
+        },
+        {
+          "type": "rectangle",
+          "id": "i33Ls",
+          "x": 20,
+          "y": 58,
+          "name": "Divisor",
+          "fill": "#D8D2C5",
+          "width": 320,
+          "height": 1
+        },
+        {
+          "type": "text",
+          "id": "LjJAM",
+          "x": 20,
+          "y": 76,
+          "name": "Perfil de la tienda",
+          "fill": "#25221E",
+          "content": "Perfil de la tienda",
+          "fontFamily": "Georgia",
+          "fontSize": 31
+        },
+        {
+          "type": "text",
+          "id": "E2gUVx",
+          "x": 20,
+          "y": 137,
+          "name": "Nombre público",
+          "fill": "#25221E",
+          "content": "Nombre público",
+          "fontFamily": "Inter",
+          "fontSize": 13,
+          "fontWeight": "600"
+        },
+        {
+          "type": "rectangle",
+          "cornerRadius": 6,
+          "id": "mCn5U",
+          "x": 20,
+          "y": 158,
+          "name": "Nombre público",
+          "fill": "#EAE6DB",
+          "width": 320,
+          "height": 39
+        },
+        {
+          "type": "text",
+          "id": "j2u1Ge",
+          "x": 32,
+          "y": 168,
+          "name": "Marea Estudio",
+          "fill": "#25221E",
+          "content": "Marea Estudio",
+          "fontFamily": "Inter",
+          "fontSize": 14
+        },
+        {
+          "type": "text",
+          "id": "T7l1K7",
+          "x": 20,
+          "y": 209,
+          "name": "Descripción",
+          "fill": "#25221E",
+          "content": "Descripción",
+          "fontFamily": "Inter",
+          "fontSize": 13,
+          "fontWeight": "600"
+        },
+        {
+          "type": "rectangle",
+          "cornerRadius": 6,
+          "id": "Eowdb",
+          "x": 20,
+          "y": 230,
+          "name": "Descripción",
+          "fill": "#EAE6DB",
+          "width": 320,
+          "height": 39
+        },
+        {
+          "type": "text",
+          "id": "G9ymkc",
+          "x": 32,
+          "y": 240,
+          "name": "Láminas de autor impresas en San Salvador.",
+          "fill": "#25221E",
+          "content": "Láminas de autor impresas en San Salvador.",
+          "fontFamily": "Inter",
+          "fontSize": 14
+        },
+        {
+          "type": "text",
+          "id": "m9KhS6",
+          "x": 20,
+          "y": 300,
+          "name": "Redes sociales",
+          "fill": "#25221E",
+          "content": "Redes sociales",
+          "fontFamily": "Inter",
+          "fontSize": 20,
+          "fontWeight": "600"
+        },
+        {
+          "type": "text",
+          "id": "buA9T",
+          "x": 20,
+          "y": 339,
+          "name": "Instagram",
+          "fill": "#25221E",
+          "content": "Instagram",
+          "fontFamily": "Inter",
+          "fontSize": 13,
+          "fontWeight": "600"
+        },
+        {
+          "type": "rectangle",
+          "cornerRadius": 6,
+          "id": "L8pWy",
+          "x": 20,
+          "y": 360,
+          "name": "Instagram",
+          "fill": "#EAE6DB",
+          "width": 320,
+          "height": 39
+        },
+        {
+          "type": "text",
+          "id": "WCzgi",
+          "x": 32,
+          "y": 370,
+          "name": "@marea.estudio",
+          "fill": "#25221E",
+          "content": "@marea.estudio",
+          "fontFamily": "Inter",
+          "fontSize": 14
+        },
+        {
+          "type": "text",
+          "id": "x30AX",
+          "x": 20,
+          "y": 411,
+          "name": "TikTok",
+          "fill": "#25221E",
+          "content": "TikTok",
+          "fontFamily": "Inter",
+          "fontSize": 13,
+          "fontWeight": "600"
+        },
+        {
+          "type": "rectangle",
+          "cornerRadius": 6,
+          "id": "Txk4R",
+          "x": 20,
+          "y": 432,
+          "name": "TikTok",
+          "fill": "#EAE6DB",
+          "width": 320,
+          "height": 39
+        },
+        {
+          "type": "text",
+          "id": "w7JaG4",
+          "x": 32,
+          "y": 442,
+          "name": "@marea.prints",
+          "fill": "#25221E",
+          "content": "@marea.prints",
+          "fontFamily": "Inter",
+          "fontSize": 14
+        },
+        {
+          "type": "text",
+          "id": "w1dNX",
+          "x": 20,
+          "y": 484,
+          "name": "+ Agregar otra red",
+          "fill": "#194E47",
+          "content": "+ Agregar otra red",
+          "fontFamily": "Inter",
+          "fontSize": 14,
+          "fontWeight": "600"
+        },
+        {
+          "type": "rectangle",
+          "cornerRadius": 8,
+          "id": "D3ZfmP",
+          "x": 20,
+          "y": 530,
+          "name": "Selector de tema",
+          "fill": "#E5EDDF",
+          "width": 320,
+          "height": 52
+        },
+        {
+          "type": "text",
+          "id": "UfFr4",
+          "x": 33,
+          "y": 548,
+          "name": "Tema de la tienda",
+          "fill": "#25221E",
+          "content": "Tema de la tienda",
+          "fontFamily": "Inter",
+          "fontSize": 14,
+          "fontWeight": "600"
+        },
+        {
+          "type": "text",
+          "id": "wsoPN",
+          "x": 265,
+          "y": 548,
+          "name": "Costa   ›",
+          "fill": "#194E47",
+          "content": "Costa   ›",
+          "fontFamily": "Inter",
+          "fontSize": 14,
+          "fontWeight": "600"
+        },
+        {
+          "type": "rectangle",
+          "cornerRadius": 8,
+          "id": "LlXHE",
+          "x": 20,
+          "y": 604,
+          "name": "Guardar perfil",
+          "fill": "#25221E",
+          "width": 320,
+          "height": 47
+        },
+        {
+          "type": "text",
+          "id": "k1ptu",
+          "x": 35,
+          "y": 618,
+          "name": "Guardar perfil",
+          "fill": "#FFFFFF",
+          "content": "Guardar perfil",
+          "fontFamily": "Inter",
+          "fontSize": 15,
+          "fontWeight": "600"
+        },
+        {
+          "type": "text",
+          "id": "M4uFNH",
+          "x": 304,
+          "y": 614,
+          "name": "→",
+          "fill": "#DAEA86",
+          "content": "→",
+          "fontFamily": "Inter",
+          "fontSize": 20
+        }
+      ]
+    },
+    {
+      "type": "frame",
+      "id": "IFjGE",
+      "x": 1616,
+      "y": 0,
+      "name": "Elegir tema de la tienda",
+      "clip": true,
+      "width": 360,
+      "height": 674,
+      "fill": "#FBF8F0",
+      "layout": "none",
+      "children": [
+        {
+          "type": "text",
+          "id": "HZJJj",
+          "x": 20,
+          "y": 24,
+          "name": "‹  Perfil de la tienda",
+          "fill": "#25221E",
+          "content": "‹  Perfil de la tienda",
+          "fontFamily": "Inter",
+          "fontSize": 14
+        },
+        {
+          "type": "rectangle",
+          "id": "TeUg4",
+          "x": 20,
+          "y": 58,
+          "name": "Divisor",
+          "fill": "#D8D2C5",
+          "width": 320,
+          "height": 1
+        },
+        {
+          "type": "text",
+          "id": "t0kdQi",
+          "x": 20,
+          "y": 76,
+          "name": "Tema de la tienda",
+          "fill": "#25221E",
+          "content": "Tema de la tienda",
+          "fontFamily": "Georgia",
+          "fontSize": 31
+        },
+        {
+          "type": "text",
+          "id": "I8nwE8",
+          "x": 20,
+          "y": 138,
+          "name": "Vista previa",
+          "fill": "#645F56",
+          "content": "Vista previa",
+          "fontFamily": "Inter",
+          "fontSize": 13,
+          "fontWeight": "600"
+        },
+        {
+          "type": "rectangle",
+          "cornerRadius": 10,
+          "id": "MMoOH",
+          "x": 20,
+          "y": 168,
+          "name": "Vista previa de Costa",
+          "fill": "#EEF4EB",
+          "width": 320,
+          "height": 151
+        },
+        {
+          "type": "text",
+          "id": "ufVDm",
+          "x": 37,
+          "y": 186,
+          "name": "Marea Estudio",
+          "fill": "#194E47",
+          "content": "Marea Estudio",
+          "fontFamily": "Georgia",
+          "fontSize": 26
+        },
+        {
+          "type": "text",
+          "id": "YB0mK",
+          "x": 37,
+          "y": 227,
+          "name": "@marea.estudio",
+          "fill": "#194E47",
+          "content": "@marea.estudio",
+          "fontFamily": "Inter",
+          "fontSize": 13
+        },
+        {
+          "type": "rectangle",
+          "cornerRadius": 6,
+          "id": "VS2w2",
+          "x": 37,
+          "y": 262,
+          "name": "Botón de muestra",
+          "fill": "#194E47",
+          "width": 141,
+          "height": 34
+        },
+        {
+          "type": "text",
+          "id": "K0tADS",
+          "x": 49,
+          "y": 270,
+          "name": "Ver catálogo  →",
+          "fill": "#FFFFFF",
+          "content": "Ver catálogo  →",
+          "fontFamily": "Inter",
+          "fontSize": 13,
+          "fontWeight": "600"
+        },
+        {
+          "type": "rectangle",
+          "cornerRadius": 8,
+          "id": "J0M1TH",
+          "x": 20,
+          "y": 352,
+          "name": "Costa",
+          "fill": "#DCE7D8",
+          "width": 320,
+          "height": 53
+        },
+        {
+          "type": "rectangle",
+          "cornerRadius": 5,
+          "id": "zesFD",
+          "x": 33,
+          "y": 362,
+          "name": "Fondo Costa",
+          "fill": "#EEF4EB",
+          "width": 41,
+          "height": 32
+        },
+        {
+          "type": "rectangle",
+          "cornerRadius": 3,
+          "id": "V1wWv",
+          "x": 42,
+          "y": 378,
+          "name": "Acento Costa",
+          "fill": "#194E47",
+          "width": 23,
+          "height": 6
+        },
+        {
+          "type": "text",
+          "id": "dNzHg",
+          "x": 89,
+          "y": 367,
+          "name": "Costa",
+          "fill": "#25221E",
+          "content": "Costa",
+          "fontFamily": "Inter",
+          "fontSize": 16,
+          "fontWeight": "600"
+        },
+        {
+          "type": "text",
+          "id": "s81mp",
+          "x": 258,
+          "y": 370,
+          "name": "✓ Elegido",
+          "fill": "#194E47",
+          "content": "✓ Elegido",
+          "fontFamily": "Inter",
+          "fontSize": 12,
+          "fontWeight": "600"
+        },
+        {
+          "type": "rectangle",
+          "cornerRadius": 8,
+          "id": "SbVyg",
+          "x": 20,
+          "y": 417,
+          "name": "Arena",
+          "fill": "#EEEAE0",
+          "width": 320,
+          "height": 53
+        },
+        {
+          "type": "rectangle",
+          "cornerRadius": 5,
+          "id": "ttcJX",
+          "x": 33,
+          "y": 427,
+          "name": "Fondo Arena",
+          "fill": "#F8EFE2",
+          "width": 41,
+          "height": 32
+        },
+        {
+          "type": "rectangle",
+          "cornerRadius": 3,
+          "id": "eMvRf",
+          "x": 42,
+          "y": 443,
+          "name": "Acento Arena",
+          "fill": "#7D4535",
+          "width": 23,
+          "height": 6
+        },
+        {
+          "type": "text",
+          "id": "pKWbp",
+          "x": 89,
+          "y": 432,
+          "name": "Arena",
+          "fill": "#25221E",
+          "content": "Arena",
+          "fontFamily": "Inter",
+          "fontSize": 16,
+          "fontWeight": "600"
+        },
+        {
+          "type": "rectangle",
+          "cornerRadius": 8,
+          "id": "O3RmM",
+          "x": 20,
+          "y": 482,
+          "name": "Noche",
+          "fill": "#EEEAE0",
+          "width": 320,
+          "height": 53
+        },
+        {
+          "type": "rectangle",
+          "cornerRadius": 5,
+          "id": "sLqyD",
+          "x": 33,
+          "y": 492,
+          "name": "Fondo Noche",
+          "fill": "#292933",
+          "width": 41,
+          "height": 32
+        },
+        {
+          "type": "rectangle",
+          "cornerRadius": 3,
+          "id": "AsY6Q",
+          "x": 42,
+          "y": 508,
+          "name": "Acento Noche",
+          "fill": "#D8D3FF",
+          "width": 23,
+          "height": 6
+        },
+        {
+          "type": "text",
+          "id": "J7EssN",
+          "x": 89,
+          "y": 497,
+          "name": "Noche",
+          "fill": "#25221E",
+          "content": "Noche",
+          "fontFamily": "Inter",
+          "fontSize": 16,
+          "fontWeight": "600"
+        },
+        {
+          "type": "rectangle",
+          "cornerRadius": 8,
+          "id": "L0fo8k",
+          "x": 20,
+          "y": 604,
+          "name": "Aplicar tema",
+          "fill": "#25221E",
+          "width": 320,
+          "height": 47
+        },
+        {
+          "type": "text",
+          "id": "s4Uxs6",
+          "x": 35,
+          "y": 618,
+          "name": "Aplicar tema",
+          "fill": "#FFFFFF",
+          "content": "Aplicar tema",
+          "fontFamily": "Inter",
+          "fontSize": 15,
+          "fontWeight": "600"
+        },
+        {
+          "type": "text",
+          "id": "GHax8",
+          "x": 304,
+          "y": 614,
+          "name": "→",
+          "fill": "#DAEA86",
+          "content": "→",
+          "fontFamily": "Inter",
+          "fontSize": 20
+        }
+      ]
+    }
+  ]
+}

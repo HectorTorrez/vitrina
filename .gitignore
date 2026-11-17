@@ -1,0 +1,9 @@
+node_modules/
+dist/
+.tanstack/
+.vite/
+*.db
+*.db-shm
+*.db-wal
+
+.local/

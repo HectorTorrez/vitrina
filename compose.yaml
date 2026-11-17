@@ -1,0 +1,19 @@
+name: vitrina
+services:
+  db:
+    image: postgres:17-alpine
+    environment:
+      POSTGRES_DB: vitrina
+      POSTGRES_USER: vitrina
+      POSTGRES_PASSWORD: ${VITRINA_DB_PASSWORD:-vitrina_local}
+    ports:
+      - "127.0.0.1:55448:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -h 127.0.0.1 -U vitrina -d vitrina"]
+      interval: 2s
+      timeout: 3s
+      retries: 30
+volumes:
+  postgres_data:
