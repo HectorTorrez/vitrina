@@ -188,3 +188,37 @@ pre {
 .detail:not(:has(.poster)) {
   grid-template-columns: minmax(0, 580px);
 }
+
+.seller-access {
+  width: min(100%, 460px);
+  padding-top: 64px;
+}
+.seller-access h1 {
+  font: normal 42px/1.08 Georgia, serif;
+}
+.seller-access form,
+.seller-access label {
+  display: grid;
+  gap: 8px;
+}
+.seller-access form {
+  gap: 16px;
+}
+.seller-access input,
+.seller-access button {
+  font: inherit;
+  padding: 10px 12px;
+  border: 1px solid #627c73;
+  border-radius: 6px;
+}
+.seller-access button {
+  justify-self: start;
+  background: #194e47;
+  color: white;
+  cursor: pointer;
+}
+.store-footer {
+  max-width: 1120px;
+  margin: auto;
+  padding: 16px 32px 32px;
+}

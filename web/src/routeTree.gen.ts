@@ -10,12 +10,36 @@
 
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as IndexRouteImport } from './routes/index'
+import { Route as AuthRouteImport } from './routes/auth'
+import { Route as ConfirmarAccesoRouteImport } from './routes/confirmar-acceso'
+import { Route as IngresarRouteImport } from './routes/ingresar'
+import { Route as PanelRouteImport } from './routes/panel'
 import { Route as TiendaShopIndexRouteImport } from './routes/tienda.$shop.index'
 import { Route as TiendaShopProductRouteImport } from './routes/tienda.$shop.$product'
 
 const IndexRoute = IndexRouteImport.update({
   id: '/',
   path: '/',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const AuthRoute = AuthRouteImport.update({
+  id: '/auth',
+  path: '/auth',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ConfirmarAccesoRoute = ConfirmarAccesoRouteImport.update({
+  id: '/confirmar-acceso',
+  path: '/confirmar-acceso',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const IngresarRoute = IngresarRouteImport.update({
+  id: '/ingresar',
+  path: '/ingresar',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const PanelRoute = PanelRouteImport.update({
+  id: '/panel',
+  path: '/panel',
   getParentRoute: () => rootRouteImport,
 } as any)
 const TiendaShopIndexRoute = TiendaShopIndexRouteImport.update({
@@ -31,30 +55,68 @@ const TiendaShopProductRoute = TiendaShopProductRouteImport.update({
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
+  '/auth': typeof AuthRoute
+  '/confirmar-acceso': typeof ConfirmarAccesoRoute
+  '/ingresar': typeof IngresarRoute
+  '/panel': typeof PanelRoute
   '/tienda/$shop/$product': typeof TiendaShopProductRoute
   '/tienda/$shop/': typeof TiendaShopIndexRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
+  '/auth': typeof AuthRoute
+  '/confirmar-acceso': typeof ConfirmarAccesoRoute
+  '/ingresar': typeof IngresarRoute
+  '/panel': typeof PanelRoute
   '/tienda/$shop/$product': typeof TiendaShopProductRoute
   '/tienda/$shop': typeof TiendaShopIndexRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
+  '/auth': typeof AuthRoute
+  '/confirmar-acceso': typeof ConfirmarAccesoRoute
+  '/ingresar': typeof IngresarRoute
+  '/panel': typeof PanelRoute
   '/tienda/$shop/$product': typeof TiendaShopProductRoute
   '/tienda/$shop/': typeof TiendaShopIndexRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: '/' | '/tienda/$shop/$product' | '/tienda/$shop/'
+  fullPaths:
+    | '/'
+    | '/auth'
+    | '/confirmar-acceso'
+    | '/ingresar'
+    | '/panel'
+    | '/tienda/$shop/$product'
+    | '/tienda/$shop/'
   fileRoutesByTo: FileRoutesByTo
-  to: '/' | '/tienda/$shop/$product' | '/tienda/$shop'
-  id: '__root__' | '/' | '/tienda/$shop/$product' | '/tienda/$shop/'
+  to:
+    | '/'
+    | '/auth'
+    | '/confirmar-acceso'
+    | '/ingresar'
+    | '/panel'
+    | '/tienda/$shop/$product'
+    | '/tienda/$shop'
+  id:
+    | '__root__'
+    | '/'
+    | '/auth'
+    | '/confirmar-acceso'
+    | '/ingresar'
+    | '/panel'
+    | '/tienda/$shop/$product'
+    | '/tienda/$shop/'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
+  AuthRoute: typeof AuthRoute
+  ConfirmarAccesoRoute: typeof ConfirmarAccesoRoute
+  IngresarRoute: typeof IngresarRoute
+  PanelRoute: typeof PanelRoute
   TiendaShopProductRoute: typeof TiendaShopProductRoute
   TiendaShopIndexRoute: typeof TiendaShopIndexRoute
 }
@@ -66,6 +128,34 @@ declare module '@tanstack/react-router' {
       path: '/'
       fullPath: '/'
       preLoaderRoute: typeof IndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/auth': {
+      id: '/auth'
+      path: '/auth'
+      fullPath: '/auth'
+      preLoaderRoute: typeof AuthRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/confirmar-acceso': {
+      id: '/confirmar-acceso'
+      path: '/confirmar-acceso'
+      fullPath: '/confirmar-acceso'
+      preLoaderRoute: typeof ConfirmarAccesoRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/ingresar': {
+      id: '/ingresar'
+      path: '/ingresar'
+      fullPath: '/ingresar'
+      preLoaderRoute: typeof IngresarRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/panel': {
+      id: '/panel'
+      path: '/panel'
+      fullPath: '/panel'
+      preLoaderRoute: typeof PanelRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/tienda/$shop/': {
@@ -87,6 +177,10 @@ declare module '@tanstack/react-router' {
 
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
+  AuthRoute: AuthRoute,
+  ConfirmarAccesoRoute: ConfirmarAccesoRoute,
+  IngresarRoute: IngresarRoute,
+  PanelRoute: PanelRoute,
   TiendaShopProductRoute: TiendaShopProductRoute,
   TiendaShopIndexRoute: TiendaShopIndexRoute,
 }

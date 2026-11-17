@@ -1,4 +1,5 @@
 import type { ReactNode } from "react";
+import { Link } from "@tanstack/react-router";
 import type { Shop } from "./catalog";
 export function StoreLayout({
   shop,
@@ -14,6 +15,7 @@ export function StoreLayout({
         <span>{shop.name}</span>
       </header>
       <main>{children}</main>
+      <footer className="store-footer"><Link to="/ingresar">Acceso para vendedores</Link></footer>
     </div>
   );
 }

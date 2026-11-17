@@ -27,12 +27,17 @@ func main() {
 		switch os.Args[1] {
 		case "init":
 			err = db.AutoMigrate(&shop{}, &product{}, &reservation{})
+			if err == nil {
+				err = migrateAuth(db)
+			}
 			if err == nil && len(os.Args) == 3 {
 				err = importCatalog(db, os.Args[2])
 			}
 			if err == nil {
 				err = seed(db)
 			}
+		case "crear-vendedor":
+			err = createSeller(db, os.Args[2:])
 		case "reservar":
 			err = reserveCommand(db, os.Args[2:])
 		default:
@@ -44,6 +49,11 @@ func main() {
 		return
 	}
 	mux := http.NewServeMux()
+	delivery, err := configureResend()
+	if err != nil {
+		log.Fatal(err)
+	}
+	authRoutes(mux, db, delivery)
 	mux.HandleFunc("GET /api/shops/{slug}", func(w http.ResponseWriter, r *http.Request) {
 		slug := r.PathValue("slug")
 		var s shop
@@ -60,7 +70,7 @@ func main() {
 		w.Header().Set("Content-Type", "application/json")
 		json.NewEncoder(w).Encode(s)
 	})
-	server := http.Server{Addr: "127.0.0.1:8080", Handler: mux, ReadHeaderTimeout: 5 * time.Second}
+	server := http.Server{Addr: "127.0.0.1:8080", Handler: mux, ReadHeaderTimeout: 5 * time.Second, ReadTimeout: 10 * time.Second}
 	log.Printf("API PostgreSQL en %s", server.Addr)
 	log.Fatal(server.ListenAndServe())
 }

@@ -36,8 +36,31 @@ sh scripts/dev-api.sh reservar luna-unas manicura-gel '2027-02-18T10:00:00-06:00
 
 La duración proviene del servicio. Dos servicios de una tienda comparten la misma agenda. La transacción bloquea la fila de la tienda mientras comprueba los cruces y guarda la reserva. En la ficha pública solo se consulta el horario al negocio. Si se configura el número internacional en shops.whatsapp, la consulta abre WhatsApp.
 
-El comando administrativo requiere acceso al entorno del servidor y a la base de datos. El panel web para vendedores y la autenticación por correo siguen pendientes.
+El comando administrativo requiere acceso al entorno del servidor y a la base de datos.
+
+## Acceso para vendedores
+
+El operador habilita los correos que pueden acceder a `/panel`. Con PostgreSQL activo, inicializá las tablas y habilitá un correo desde la raíz:
+
+```sh
+sh scripts/dev-api.sh init
+sh scripts/dev-api.sh crear-vendedor vendedor@example.com
+```
+
+En `/ingresar`, el vendedor pide un enlace y confirma el acceso al abrirlo. El enlace vence en 15 minutos, se usa una vez y se reemplaza al emitir uno nuevo. Cada correo habilitado puede pedir un enlace por minuto. La sesión vence a los siete días y se revoca al cerrar sesión. Si ya habías creado vendedores en la versión con contraseña, sus correos siguen habilitados y deben volver a ingresar.
+
+### Configurar Resend
+
+Verificá el dominio remitente en Resend y mantené desactivado el seguimiento de clics para evitar que reescriba el enlace de acceso. [Configuración de dominios en Resend](https://resend.com/blog/introducing-custom-tracking-domain).
+
+| Variable | Dónde configurarla | Valor |
+| --- | --- | --- |
+| `RESEND_API_KEY` | API Go | Clave de Resend con permiso de envío. Guardala como secreto del entorno. |
+| `RESEND_FROM` | API Go | Remitente de un dominio verificado, como `Vitrina <acceso@vitrina.example>`. |
+| `VITRINA_WEB_ORIGIN` | API Go y servidor web | Origen al que apunta el correo, como `https://vitrina.example` o `http://127.0.0.1:5173` en desarrollo local. Abrí la web con ese mismo origen. |
+
+Reiniciá la API y el servidor web después de configurar las variables. Sin la clave, el catálogo funciona y el formulario informa que el acceso no está disponible. El envío se solicita a Resend en segundo plano y los fallos se registran en la API.
 
 ## Verificación
 
-En web, ejecutá pnpm build y pnpm check. En api, la prueba de concurrencia usa TEST_DATABASE_URL para conectar con una base PostgreSQL de prueba inicializada mediante el comando init.
+En web, ejecutá pnpm build y pnpm check. En api, las pruebas de concurrencia y autenticación usan TEST_DATABASE_URL para conectar con una base PostgreSQL de prueba inicializada mediante el comando init.
