@@ -7,6 +7,8 @@ export interface Booking {
   id: number;
   serviceSlug: string;
   customer: string;
+  phone: string;
+  source: "panel" | "web";
   startsAt: string;
   endsAt: string;
   cancelled: boolean;

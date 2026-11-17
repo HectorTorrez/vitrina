@@ -34,7 +34,18 @@ Desde la raíz, con la base Docker activa, el operador puede confirmar una cita 
 sh scripts/dev-api.sh reservar luna-unas manicura-gel '2027-02-18T10:00:00-06:00' 'Cliente de ejemplo'
 ```
 
-La duración proviene del servicio. Dos servicios de una tienda comparten la misma agenda. La transacción bloquea la fila de la tienda mientras comprueba los cruces y guarda la reserva. En la ficha pública solo se consulta el horario al negocio. Si se configura el número internacional en shops.whatsapp, la consulta abre WhatsApp.
+La duración proviene del servicio. Dos servicios de una tienda comparten la misma agenda. La transacción bloquea la fila de la tienda mientras comprueba los cruces y guarda la reserva. Si se configura el número internacional en shops.whatsapp, la ficha también ofrece consultar por WhatsApp.
+
+## Reservas en línea
+
+Cuando el vendedor activa las reservas en línea y define el horario de atención en `/panel`, la ficha de cada servicio visible y disponible muestra un calendario. El cliente elige fecha y hora, deja su nombre y teléfono, y la cita queda agendada al instante.
+
+- Los horarios se ofrecen cada 15 minutos, desde una hora después del momento actual y hasta 60 días adelante. El servicio debe terminar antes del cierre.
+- Cada teléfono puede tener hasta dos citas futuras por tienda, y cada tienda acepta hasta 30 reservas en línea por hora.
+- Si Resend está configurado, los vendedores de la tienda reciben un correo con los datos de la cita.
+- En la agenda del panel, las reservas en línea se marcan como tales y muestran un enlace para escribirle al cliente por WhatsApp.
+
+Las citas que agenda el vendedor desde el panel no están limitadas por el horario de atención.
 
 El comando administrativo requiere acceso al entorno del servidor y a la base de datos.
 

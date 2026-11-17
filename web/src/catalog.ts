@@ -21,6 +21,8 @@ export interface Shop {
   instagram: string;
   tiktok: string;
   whatsapp: string;
+  /** Seven entries, Sunday first; empty when online booking is off. */
+  hours: { open: string; close: string }[];
   products: Product[];
   /** Public origin of the site, added by the web server for absolute share links. */
   origin: string;

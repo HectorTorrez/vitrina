@@ -55,18 +55,27 @@ func (d *resendDelivery) sendLoginLink(ctx context.Context, email, token string)
 	link := d.origin
 	link.Path = "/confirmar-acceso"
 	link.Fragment = token
+	return d.sendMessage(ctx, []string{email}, "Tu enlace de acceso a Vitrina",
+		"Ingresá a Vitrina con este enlace: "+link.String()+"\n\nVence en 15 minutos y se puede usar una sola vez. Si no lo pediste, podés ignorar este correo.",
+		"<p><a href=\""+html.EscapeString(link.String())+"\">Ingresar a Vitrina</a></p>"+
+			"<p>El enlace vence en 15 minutos y se puede usar una sola vez. Si no lo pediste, podés ignorar este correo.</p>",
+		"vitrina-login/"+tokenHash(token))
+}
+
+// send delivers a plain-text notification; the HTML part is the escaped text.
+func (d *resendDelivery) send(ctx context.Context, to []string, subject, text, idempotencyKey string) error {
+	body := "<p>" + strings.ReplaceAll(html.EscapeString(text), "\n", "<br>") + "</p>"
+	return d.sendMessage(ctx, to, subject, text, body, idempotencyKey)
+}
+
+func (d *resendDelivery) sendMessage(ctx context.Context, to []string, subject, text, htmlBody, idempotencyKey string) error {
 	message := struct {
 		From    string   `json:"from"`
 		To      []string `json:"to"`
 		Subject string   `json:"subject"`
 		Text    string   `json:"text"`
 		HTML    string   `json:"html"`
-	}{
-		From: d.from, To: []string{email}, Subject: "Tu enlace de acceso a Vitrina",
-		Text: "Ingresá a Vitrina con este enlace: " + link.String() + "\n\nVence en 15 minutos y se puede usar una sola vez. Si no lo pediste, podés ignorar este correo.",
-		HTML: "<p><a href=\"" + html.EscapeString(link.String()) + "\">Ingresar a Vitrina</a></p>" +
-			"<p>El enlace vence en 15 minutos y se puede usar una sola vez. Si no lo pediste, podés ignorar este correo.</p>",
-	}
+	}{From: d.from, To: to, Subject: subject, Text: text, HTML: htmlBody}
 	body, err := json.Marshal(message)
 	if err != nil {
 		return err
@@ -77,7 +86,7 @@ func (d *resendDelivery) sendLoginLink(ctx context.Context, email, token string)
 	}
 	req.Header.Set("Authorization", "Bearer "+d.key)
 	req.Header.Set("Content-Type", "application/json")
-	req.Header.Set("Idempotency-Key", "vitrina-login/"+tokenHash(token))
+	req.Header.Set("Idempotency-Key", idempotencyKey)
 	res, err := d.client.Do(req)
 	if err != nil {
 		return err

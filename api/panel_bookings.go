@@ -14,6 +14,8 @@ type panelBooking struct {
 	ID          uint   `json:"id"`
 	ServiceSlug string `json:"serviceSlug"`
 	Customer    string `json:"customer"`
+	Phone       string `json:"phone"`
+	Source      string `json:"source"`
 	StartsAt    string `json:"startsAt"`
 	EndsAt      string `json:"endsAt"`
 	Cancelled   bool   `json:"cancelled"`
@@ -38,6 +40,8 @@ func loadPanelBookings(db *gorm.DB, email string) (map[string][]panelBooking, er
 			ID:          r.ID,
 			ServiceSlug: r.ServiceSlug,
 			Customer:    r.Customer,
+			Phone:       r.Phone,
+			Source:      r.Source,
 			StartsAt:    r.StartsAt.In(zone).Format("2006-01-02T15:04"),
 			EndsAt:      r.EndsAt.In(zone).Format("2006-01-02T15:04"),
 			Cancelled:   r.CancelledAt != nil,
@@ -74,6 +78,13 @@ func changePanelBooking(db *gorm.DB, input panelInput) error {
 	if err != nil || !start.After(time.Now()) || !validSlug(booking.ServiceSlug) || customer == "" || utf8.RuneCountInString(customer) > 160 {
 		return panelValidation("Elegí un servicio, una fecha futura y un nombre de cliente de hasta 160 caracteres")
 	}
-	_, err = saveBooking(db, input.ShopSlug, booking.ServiceSlug, start, customer, booking.ID)
+	phone := ""
+	if strings.TrimSpace(booking.Phone) != "" {
+		var ok bool
+		if phone, ok = normalizePhone(booking.Phone); !ok {
+			return panelValidation("Indicá un teléfono válido, con código de país")
+		}
+	}
+	_, err = saveBooking(db, input.ShopSlug, booking.ServiceSlug, start, customer, phone, booking.ID)
 	return err
 }

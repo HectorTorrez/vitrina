@@ -1,4 +1,5 @@
 import type { Product } from "./catalog";
+import { formatLocal } from "./booking";
 import { PanelForm } from "./PanelForm";
 import { field, type Booking, type PanelShop } from "./panel";
 
@@ -25,6 +26,15 @@ export function PanelAgenda({ shop }: { shop: PanelShop }) {
         return (
           <details key={booking.id}>
             <summary>{bookingLabel(booking, name)}</summary>
+            {booking.phone && (
+              <p>
+                <a href={"https://wa.me/" + booking.phone + "?text=" + encodeURIComponent(
+                  "Hola " + booking.customer + ", te escribimos de " + shop.name + " por tu cita de " +
+                  (name ?? booking.serviceSlug) + " el " + formatLocal(booking.startsAt) + ".",
+                )} target="_blank" rel="noreferrer">Escribir al cliente por WhatsApp ↗</a>
+                {" · +" + booking.phone}
+              </p>
+            )}
             <BookingForm shopSlug={shop.slug} services={services} booking={booking} />
             <details className="panel-cancel">
               <summary>Cancelar cita</summary>
@@ -55,8 +65,9 @@ export function PanelAgenda({ shop }: { shop: PanelShop }) {
 }
 
 function bookingLabel(booking: Booking, service?: string) {
-  return booking.startsAt.replace("T", " ") + " a " + booking.endsAt.replace("T", " ") +
-    " · " + (service ?? booking.serviceSlug) + " · " + booking.customer;
+  return formatLocal(booking.startsAt) + "–" + booking.endsAt.slice(11) +
+    " · " + (service ?? booking.serviceSlug) + " · " + booking.customer +
+    (booking.source === "web" ? " · Reserva en línea" : "");
 }
 
 function BookingForm({ shopSlug, services, booking }: {
@@ -72,6 +83,7 @@ function BookingForm({ shopSlug, services, booking }: {
         id: booking?.id ?? 0,
         serviceSlug: field(form, "serviceSlug"),
         customer: field(form, "customer"),
+        phone: field(form, "phone"),
         startsAt: field(form, "startsAt"),
       },
     })}>
@@ -85,6 +97,7 @@ function BookingForm({ shopSlug, services, booking }: {
           </select>
         </label>
         <label>Cliente<input name="customer" defaultValue={booking?.customer} required maxLength={160} /></label>
+        <label>Teléfono (opcional)<input name="phone" type="tel" defaultValue={booking?.phone ? "+" + booking.phone : ""} placeholder="+50370000000" maxLength={24} /></label>
         <label>Fecha y hora<input name="startsAt" type="datetime-local" defaultValue={booking?.startsAt} required /></label>
       </div>
     </PanelForm>

@@ -30,10 +30,10 @@ func reserveCommand(db *gorm.DB, args []string) error {
 	return err
 }
 func book(db *gorm.DB, slug, service string, start time.Time, customer string) (reservation, error) {
-	return saveBooking(db, slug, service, start, customer, 0)
+	return saveBooking(db, slug, service, start, customer, "", 0)
 }
 
-func saveBooking(db *gorm.DB, slug, service string, start time.Time, customer string, id uint) (reservation, error) {
+func saveBooking(db *gorm.DB, slug, service string, start time.Time, customer, phone string, id uint) (reservation, error) {
 	var r reservation
 	err := withShopAgenda(db, slug, func(tx *gorm.DB) error {
 		if id != 0 {
@@ -62,11 +62,11 @@ func saveBooking(db *gorm.DB, slug, service string, start time.Time, customer st
 		if count > 0 {
 			return errOccupied
 		}
-		r = reservation{ID: id, ShopSlug: slug, ServiceSlug: service, Customer: customer, StartsAt: start, EndsAt: end}
+		r = reservation{ID: id, ShopSlug: slug, ServiceSlug: service, Customer: customer, Phone: phone, Source: "panel", StartsAt: start, EndsAt: end}
 		if id == 0 {
 			return tx.Create(&r).Error
 		}
-		return tx.Model(&r).Select("service_slug", "customer", "starts_at", "ends_at").Updates(&r).Error
+		return tx.Model(&r).Select("service_slug", "customer", "phone", "starts_at", "ends_at").Updates(&r).Error
 	})
 	return r, err
 }

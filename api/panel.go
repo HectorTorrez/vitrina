@@ -171,7 +171,7 @@ func changePanel(db *gorm.DB, account seller, input panelInput) error {
 			return err
 		}
 		return db.Model(&shop{}).Where("slug = ?", input.ShopSlug).
-			Select("name", "description", "theme", "instagram", "tiktok", "whatsapp").Updates(&profile).Error
+			Select("name", "description", "theme", "instagram", "tiktok", "whatsapp", "hours").Updates(&profile).Error
 	case "crear-item", "editar-item":
 		return savePanelItem(db, input.ShopSlug, input.Item, input.Action == "crear-item")
 	case "agendar", "reprogramar", "cancelar":
@@ -216,6 +216,11 @@ func validatedProfile(input shop) (shop, error) {
 		TikTok:      strings.TrimPrefix(strings.TrimSpace(input.TikTok), "@"),
 		Whatsapp:    strings.TrimPrefix(strings.TrimSpace(input.Whatsapp), "+"),
 	}
+	hours, err := validatedHours(input.Hours)
+	if err != nil {
+		return shop{}, err
+	}
+	profile.Hours = hours
 	if profile.Name == "" || utf8.RuneCountInString(profile.Name) > 100 || utf8.RuneCountInString(profile.Description) > 500 {
 		return shop{}, panelValidation("Indicá un nombre de hasta 100 caracteres y una descripción de hasta 500")
 	}

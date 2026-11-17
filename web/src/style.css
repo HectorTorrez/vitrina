@@ -370,3 +370,66 @@ pre {
   background: transparent;
   color: var(--ink);
 }
+
+.booking {
+  margin: 28px 0;
+  padding: 22px;
+  border: 1px solid var(--rule);
+  border-radius: 8px;
+}
+.booking h2 {
+  margin-top: 0;
+}
+.booking .slots {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+.booking .slots label {
+  margin: 0;
+}
+.booking .slots input {
+  position: absolute;
+  opacity: 0;
+}
+.booking .slots label:has(:focus-visible) {
+  outline: 2px solid var(--ink);
+}
+.booking-contact {
+  display: grid;
+  gap: 12px;
+}
+.booking-contact label,
+.booking-date {
+  display: grid;
+  gap: 4px;
+  border: 0;
+  padding: 0;
+  margin: 0;
+  cursor: auto;
+}
+.booking input[type="date"],
+.booking-contact input {
+  font: inherit;
+  padding: 10px 12px;
+  border: 1px solid var(--rule);
+  border-radius: 6px;
+  background: transparent;
+  color: inherit;
+}
+.booking [role="alert"] {
+  font-weight: 600;
+}
+.panel-hours {
+  display: grid;
+  gap: 8px;
+}
+.panel-hours-row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 12px;
+}
+.panel-hours-row .panel-check {
+  min-width: 120px;
+}

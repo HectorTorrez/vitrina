@@ -23,7 +23,43 @@ function readProfile(form: FormData): Profile {
     instagram: field(form, "instagram"),
     tiktok: field(form, "tiktok"),
     whatsapp: field(form, "whatsapp"),
+    hours: form.has("booking") ? weekdays.map((_, day) => form.has("open-day-" + day)
+      ? { open: field(form, "open-" + day), close: field(form, "close-" + day) }
+      : { open: "", close: "" }) : [],
   };
+}
+
+const weekdays = ["Domingo", "Lunes", "Martes", "Miércoles", "Jueves", "Viernes", "Sábado"];
+
+function HoursFields({ hours }: { hours?: Profile["hours"] }) {
+  const [enabled, setEnabled] = useState(Boolean(hours?.some((day) => day.open)));
+  return (
+    <fieldset className="panel-hours">
+      <legend>Reservas en línea</legend>
+      <label className="panel-check">
+        <input name="booking" type="checkbox" checked={enabled} onChange={(event) => setEnabled(event.target.checked)} />
+        Permitir que los clientes reserven servicios en la tienda pública
+      </label>
+      {enabled && (
+        <>
+          <p>Horario de atención (hora de El Salvador). Las reservas se ofrecen cada 15 minutos con al menos una hora de anticipación.</p>
+          {weekdays.map((name, day) => {
+            const current = hours?.[day];
+            return (
+              <div className="panel-hours-row" key={day}>
+                <label className="panel-check">
+                  <input name={"open-day-" + day} type="checkbox" defaultChecked={hours?.length ? Boolean(current?.open) : day > 0} />
+                  {name}
+                </label>
+                <label>Abre<input name={"open-" + day} type="time" step={900} defaultValue={current?.open || "09:00"} /></label>
+                <label>Cierra<input name={"close-" + day} type="time" step={900} defaultValue={current?.close || "18:00"} /></label>
+              </div>
+            );
+          })}
+        </>
+      )}
+    </fieldset>
+  );
 }
 
 function ProfileFields({ profile }: { profile?: Profile }) {
@@ -41,6 +77,7 @@ function ProfileFields({ profile }: { profile?: Profile }) {
         <label>Usuario de TikTok<input name="tiktok" defaultValue={profile?.tiktok} maxLength={33} /></label>
         <label>WhatsApp internacional<input name="whatsapp" type="tel" placeholder="+50370000000" defaultValue={profile?.whatsapp} maxLength={16} /></label>
       </div>
+      <HoursFields hours={profile?.hours} />
     </>
   );
 }

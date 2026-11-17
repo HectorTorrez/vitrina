@@ -1,7 +1,8 @@
 import { StoreLayout } from "../StoreLayout";
+import { PublicBooking } from "../PublicBooking";
 import { createFileRoute, Link, notFound } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
-import { useState } from "react";
+import { useState, type ReactNode } from "react";
 import { shopQuery, price, productImage, shareMeta, type Product } from "../catalog";
 export const Route = createFileRoute("/tienda/$shop/$product")({
   loader: async ({ context, params }) => {
@@ -48,12 +49,14 @@ function Details() {
             alt={p.name}
           />
         )}
-        <Order key={p.slug} product={p} phone={data.whatsapp} />
+        <Order key={p.slug} product={p} phone={data.whatsapp}
+          booking={p.kind === "service" && p.available && (data.hours ?? []).some((day) => day.open)
+            ? <PublicBooking shop={params.shop} service={p} /> : null} />
       </div>
     </StoreLayout>
   );
 }
-function Order({ product, phone }: { product: Product; phone: string }) {
+function Order({ product, phone, booking }: { product: Product; phone: string; booking: ReactNode }) {
   const [choices, setChoices] = useState<Record<string, string>>({});
   const [showMessage, setShowMessage] = useState(false);
   const service = product.kind === "service";
@@ -70,7 +73,7 @@ function Order({ product, phone }: { product: Product; phone: string }) {
     <section>
       <h1>{product.name}</h1>
       {service && (
-        <p>{product.durationMinutes} min · El negocio confirma tu cita.</p>
+        <p>{product.durationMinutes} min{booking ? "" : " · El negocio confirma tu cita."}</p>
       )}
       <p className="price">{price(product.priceCents)}</p>
       {(product.options ?? []).map((o) => (
@@ -89,6 +92,7 @@ function Order({ product, phone }: { product: Product; phone: string }) {
           ))}
         </fieldset>
       ))}
+      {booking}
       {product.available ? (
         phone ? (
           <a
@@ -98,10 +102,10 @@ function Order({ product, phone }: { product: Product; phone: string }) {
             }
           >
             {service
-              ? "Consultar horarios por WhatsApp ↗"
+              ? (booking ? "Consultar por WhatsApp ↗" : "Consultar horarios por WhatsApp ↗")
               : "Pedir por WhatsApp ↗"}
           </a>
-        ) : (
+        ) : booking ? null : (
           <>
             <button onClick={() => setShowMessage(true)}>
               {service ? "Preparar consulta" : "Preparar pedido"}
