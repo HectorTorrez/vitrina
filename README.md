@@ -24,7 +24,7 @@ La contraseña predeterminada es para desarrollo local. Podés exportar VITRINA_
 
 Para importar el catálogo SQLite previo en un volumen vacío, ejecutá `docker compose up -d --wait db` y `sh scripts/dev-api.sh init vitrina.db` antes del primer `pnpm dev`.
 
-La portada abre Marea Estudio. La tienda de servicios está en /tienda/luna-unas. La API escucha en 127.0.0.1:8080. El servidor de TanStack Start admite VITRINA_API_URL para elegir otra dirección. Cada tienda tiene una agenda, y cada ficha tiene un enlace compartible.
+La portada muestra el directorio de tiendas. Con `VITRINA_HOME_SHOP=<enlace>` en el servidor web, abre directamente esa tienda. La tienda de servicios está en /tienda/luna-unas. La API escucha en 127.0.0.1:8080. El servidor de TanStack Start admite VITRINA_API_URL para elegir otra dirección. Cada tienda tiene una agenda, y cada ficha tiene un enlace compartible.
 
 ## Registrar una cita
 
@@ -91,6 +91,8 @@ La carpeta `deploy` contiene todo lo necesario para producción en un servidor c
 
 Para actualizar, ejecutá `git pull` y repetí el paso 3. Para ver los registros, usá `docker compose --env-file .env logs -f api web`.
 
+Cada tienda y ficha publica título, descripción e imagen Open Graph con el dominio de `VITRINA_WEB_ORIGIN`, para que WhatsApp e Instagram muestren una vista previa. El sitio publica `/robots.txt` y `/sitemap.xml`.
+
 ### Respaldos
 
 `deploy/backup.sh` guarda un volcado de PostgreSQL en `deploy/backups` y conserva los últimos 14. Programalo con cron, por ejemplo todos los días a las 3:15:
@@ -108,6 +110,7 @@ Copiá periódicamente esa carpeta fuera del VPS. Para restaurar, ejecutá `depl
 | `VITRINA_DOMAIN` | Dominio público, sin `https://`. |
 | `ACME_EMAIL` | Correo para los avisos del certificado HTTPS. |
 | `VITRINA_DB_PASSWORD` | Contraseña de PostgreSQL. |
+| `VITRINA_HOME_SHOP` | Opcional. Tienda que abre la portada en lugar del directorio. |
 | `RESEND_API_KEY`, `RESEND_FROM` | Envío de correos. Ver la sección de Resend. |
 
 La API acepta `VITRINA_API_ADDR` para elegir la dirección de escucha (por defecto `127.0.0.1:8080`) y expone `GET /api/health`. El servidor web de producción (`pnpm --filter vitrina-web start`) usa `HOST` y `PORT`.

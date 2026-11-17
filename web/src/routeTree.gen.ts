@@ -15,6 +15,8 @@ import { Route as ConfirmarAccesoRouteImport } from './routes/confirmar-acceso'
 import { Route as GestionRouteImport } from './routes/gestion'
 import { Route as IngresarRouteImport } from './routes/ingresar'
 import { Route as PanelRouteImport } from './routes/panel'
+import { Route as RobotsDottxtRouteImport } from './routes/robots[.]txt'
+import { Route as SitemapDotxmlRouteImport } from './routes/sitemap[.]xml'
 import { Route as TiendaShopIndexRouteImport } from './routes/tienda.$shop.index'
 import { Route as TiendaShopProductRouteImport } from './routes/tienda.$shop.$product'
 
@@ -48,6 +50,16 @@ const PanelRoute = PanelRouteImport.update({
   path: '/panel',
   getParentRoute: () => rootRouteImport,
 } as any)
+const RobotsDottxtRoute = RobotsDottxtRouteImport.update({
+  id: '/robots.txt',
+  path: '/robots.txt',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const SitemapDotxmlRoute = SitemapDotxmlRouteImport.update({
+  id: '/sitemap.xml',
+  path: '/sitemap.xml',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const TiendaShopIndexRoute = TiendaShopIndexRouteImport.update({
   id: '/tienda/$shop/',
   path: '/tienda/$shop/',
@@ -66,6 +78,8 @@ export interface FileRoutesByFullPath {
   '/gestion': typeof GestionRoute
   '/ingresar': typeof IngresarRoute
   '/panel': typeof PanelRoute
+  '/robots.txt': typeof RobotsDottxtRoute
+  '/sitemap.xml': typeof SitemapDotxmlRoute
   '/tienda/$shop/$product': typeof TiendaShopProductRoute
   '/tienda/$shop/': typeof TiendaShopIndexRoute
 }
@@ -76,6 +90,8 @@ export interface FileRoutesByTo {
   '/gestion': typeof GestionRoute
   '/ingresar': typeof IngresarRoute
   '/panel': typeof PanelRoute
+  '/robots.txt': typeof RobotsDottxtRoute
+  '/sitemap.xml': typeof SitemapDotxmlRoute
   '/tienda/$shop/$product': typeof TiendaShopProductRoute
   '/tienda/$shop': typeof TiendaShopIndexRoute
 }
@@ -87,6 +103,8 @@ export interface FileRoutesById {
   '/gestion': typeof GestionRoute
   '/ingresar': typeof IngresarRoute
   '/panel': typeof PanelRoute
+  '/robots.txt': typeof RobotsDottxtRoute
+  '/sitemap.xml': typeof SitemapDotxmlRoute
   '/tienda/$shop/$product': typeof TiendaShopProductRoute
   '/tienda/$shop/': typeof TiendaShopIndexRoute
 }
@@ -99,6 +117,8 @@ export interface FileRouteTypes {
     | '/gestion'
     | '/ingresar'
     | '/panel'
+    | '/robots.txt'
+    | '/sitemap.xml'
     | '/tienda/$shop/$product'
     | '/tienda/$shop/'
   fileRoutesByTo: FileRoutesByTo
@@ -109,6 +129,8 @@ export interface FileRouteTypes {
     | '/gestion'
     | '/ingresar'
     | '/panel'
+    | '/robots.txt'
+    | '/sitemap.xml'
     | '/tienda/$shop/$product'
     | '/tienda/$shop'
   id:
@@ -119,6 +141,8 @@ export interface FileRouteTypes {
     | '/gestion'
     | '/ingresar'
     | '/panel'
+    | '/robots.txt'
+    | '/sitemap.xml'
     | '/tienda/$shop/$product'
     | '/tienda/$shop/'
   fileRoutesById: FileRoutesById
@@ -130,6 +154,8 @@ export interface RootRouteChildren {
   GestionRoute: typeof GestionRoute
   IngresarRoute: typeof IngresarRoute
   PanelRoute: typeof PanelRoute
+  RobotsDottxtRoute: typeof RobotsDottxtRoute
+  SitemapDotxmlRoute: typeof SitemapDotxmlRoute
   TiendaShopProductRoute: typeof TiendaShopProductRoute
   TiendaShopIndexRoute: typeof TiendaShopIndexRoute
 }
@@ -178,6 +204,20 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof PanelRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/robots.txt': {
+      id: '/robots.txt'
+      path: '/robots.txt'
+      fullPath: '/robots.txt'
+      preLoaderRoute: typeof RobotsDottxtRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/sitemap.xml': {
+      id: '/sitemap.xml'
+      path: '/sitemap.xml'
+      fullPath: '/sitemap.xml'
+      preLoaderRoute: typeof SitemapDotxmlRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/tienda/$shop/': {
       id: '/tienda/$shop/'
       path: '/tienda/$shop'
@@ -202,6 +242,8 @@ const rootRouteChildren: RootRouteChildren = {
   GestionRoute: GestionRoute,
   IngresarRoute: IngresarRoute,
   PanelRoute: PanelRoute,
+  RobotsDottxtRoute: RobotsDottxtRoute,
+  SitemapDotxmlRoute: SitemapDotxmlRoute,
   TiendaShopProductRoute: TiendaShopProductRoute,
   TiendaShopIndexRoute: TiendaShopIndexRoute,
 }

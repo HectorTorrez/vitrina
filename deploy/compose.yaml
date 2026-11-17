@@ -46,6 +46,7 @@ services:
     environment:
       VITRINA_API_URL: http://api:8080
       VITRINA_WEB_ORIGIN: https://${VITRINA_DOMAIN}
+      VITRINA_HOME_SHOP: ${VITRINA_HOME_SHOP:-}
     depends_on:
       - api
 

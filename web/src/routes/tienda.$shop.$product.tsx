@@ -2,7 +2,7 @@ import { StoreLayout } from "../StoreLayout";
 import { createFileRoute, Link, notFound } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
 import { useState } from "react";
-import { shopQuery, price, productImage, type Product } from "../catalog";
+import { shopQuery, price, productImage, shareMeta, type Product } from "../catalog";
 export const Route = createFileRoute("/tienda/$shop/$product")({
   loader: async ({ context, params }) => {
     const shop = await context.queryClient.ensureQueryData(
@@ -10,6 +10,19 @@ export const Route = createFileRoute("/tienda/$shop/$product")({
     );
     if (!shop.products.some((p) => p.slug === params.product)) throw notFound();
     return shop;
+  },
+  head: ({ loaderData, params }) => {
+    const p = loaderData?.products.find((item) => item.slug === params.product);
+    if (!loaderData || !p) return {};
+    const image = productImage(p);
+    const detail = p.kind === "service" ? p.durationMinutes + " min · " : "";
+    return shareMeta({
+      title: p.name + " · " + loaderData.name,
+      description: detail + (p.available ? price(p.priceCents) : "No disponible") + " · " + loaderData.name +
+        (loaderData.description ? ". " + loaderData.description : ""),
+      url: loaderData.origin + "/tienda/" + params.shop + "/" + params.product,
+      image: image && new URL(image, loaderData.origin).href,
+    });
   },
   component: Details,
 });

@@ -1,10 +1,20 @@
 import { StoreLayout } from "../StoreLayout";
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
-import { shopQuery, price, productImage } from "../catalog";
+import { shopQuery, price, productImage, shareMeta } from "../catalog";
 export const Route = createFileRoute("/tienda/$shop/")({
   loader: ({ context, params }) =>
     context.queryClient.ensureQueryData(shopQuery(params.shop)),
+  head: ({ loaderData, params }) => {
+    if (!loaderData) return {};
+    const first = loaderData.products.map(productImage).find(Boolean);
+    return shareMeta({
+      title: loaderData.name + " · Vitrina",
+      description: loaderData.description || "Catálogo de " + loaderData.name,
+      url: loaderData.origin + "/tienda/" + params.shop,
+      image: first && new URL(first, loaderData.origin).href,
+    });
+  },
   component: Catalog,
 });
 function Catalog() {

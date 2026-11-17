@@ -2,7 +2,7 @@ import { createServerFn } from "@tanstack/react-start";
 import { getRequest, setResponseHeader } from "@tanstack/react-start/server";
 import type { Shop } from "./catalog";
 
-export type Profile = Omit<Shop, "products">;
+export type Profile = Omit<Shop, "products" | "origin">;
 export interface Booking {
   id: number;
   serviceSlug: string;
@@ -13,7 +13,7 @@ export interface Booking {
   editable: boolean;
 }
 
-export type PanelShop = Shop & { slug: string; bookings: Booking[] | null };
+export type PanelShop = Omit<Shop, "origin"> & { slug: string; bookings: Booking[] | null };
 export interface PanelAccess {
   email: string;
   operator: boolean;

@@ -62,6 +62,34 @@ func main() {
 	}
 	authRoutes(mux, db, delivery)
 	panelRoutes(mux, db)
+	mux.HandleFunc("GET /api/shops", func(w http.ResponseWriter, r *http.Request) {
+		type entry struct {
+			Slug        string   `json:"slug"`
+			Name        string   `json:"name"`
+			Description string   `json:"description"`
+			Theme       string   `json:"theme"`
+			Products    []string `json:"products"`
+		}
+		var shops []shop
+		err := db.WithContext(r.Context()).Preload("Products", func(q *gorm.DB) *gorm.DB {
+			return q.Select("shop_slug", "slug").Where("hidden = ?", false).Order("position, slug")
+		}).Order("name, slug").Find(&shops).Error
+		if err != nil {
+			log.Print(err)
+			http.Error(w, "No se pudieron cargar las tiendas", 500)
+			return
+		}
+		list := make([]entry, 0, len(shops))
+		for _, s := range shops {
+			e := entry{Slug: s.Slug, Name: s.Name, Description: s.Description, Theme: s.Theme, Products: []string{}}
+			for _, p := range s.Products {
+				e.Products = append(e.Products, p.Slug)
+			}
+			list = append(list, e)
+		}
+		w.Header().Set("Content-Type", "application/json")
+		json.NewEncoder(w).Encode(list)
+	})
 	mux.HandleFunc("GET /api/shops/{slug}", func(w http.ResponseWriter, r *http.Request) {
 		slug := r.PathValue("slug")
 		var s shop
