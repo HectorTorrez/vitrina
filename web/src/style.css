@@ -343,3 +343,30 @@ pre {
 .panel-section h3, .panel-section p { margin: 0; }
 .panel-section .panel-cancel { margin-top: 1rem; }
 .panel-form [role] { margin-top: .75rem; }
+
+.panel-variants, .panel-variant {
+  display: grid;
+  gap: .6rem;
+}
+
+.panel-variant {
+  padding: .75rem;
+  border: 1px solid var(--rule);
+  border-radius: .4rem;
+}
+
+.panel-variant-row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: end;
+  gap: .6rem;
+}
+
+.panel-variant-row label {
+  flex: 1 1 12rem;
+}
+
+.panel-variants button {
+  background: transparent;
+  color: var(--ink);
+}

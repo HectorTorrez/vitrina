@@ -1,6 +1,6 @@
 import type { Product } from "./catalog";
-import { field, PanelForm } from "./PanelForm";
-import type { Booking, PanelShop } from "./panel";
+import { PanelForm } from "./PanelForm";
+import { field, type Booking, type PanelShop } from "./panel";
 
 export function PanelAgenda({ shop }: { shop: PanelShop }) {
   const services = (shop.products ?? []).filter((item) => item.kind === "service");

@@ -5,9 +5,9 @@ export const Route = createFileRoute("/auth")({
   server: {
     handlers: {
       POST: async ({ request }) => {
-        const origin = new URL(process.env.VITRINA_WEB_ORIGIN || request.url);
+        const origin = URL.parse(process.env.VITRINA_WEB_ORIGIN || request.url);
         const headers = new Headers({ "Cache-Control": "no-store" });
-        if (request.headers.get("Origin") !== origin.origin) {
+        if (!origin || request.headers.get("Origin") !== origin.origin) {
           return new Response("Origen inválido", { status: 403, headers });
         }
         const form = await readForm(request);

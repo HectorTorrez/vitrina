@@ -6,8 +6,8 @@ export const Route = createFileRoute("/gestion")({
     handlers: {
       POST: async ({ request }) => {
         const headers = { "Cache-Control": "no-store", "Content-Type": "text/plain; charset=utf-8" };
-        const origin = new URL(process.env.VITRINA_WEB_ORIGIN || request.url).origin;
-        if (request.headers.get("Origin") !== origin) {
+        const origin = URL.parse(process.env.VITRINA_WEB_ORIGIN || request.url);
+        if (!origin || request.headers.get("Origin") !== origin.origin) {
           return new Response("Origen inválido", { status: 403, headers });
         }
         if (request.headers.get("Content-Type") !== "application/json" || !request.body) {
@@ -15,7 +15,7 @@ export const Route = createFileRoute("/gestion")({
         }
         try {
           const reader = request.body.getReader();
-          const buffer = new Uint8Array(8192);
+          const buffer = new Uint8Array(32 * 1024);
           let length = 0;
           try {
             while (true) {

@@ -3,12 +3,13 @@ import { useRouter } from "@tanstack/react-router";
 import { useQueryClient } from "@tanstack/react-query";
 
 export function PanelForm({
-  children, submit, payload, clear = false,
+  children, submit, payload, clear = false, onSaved,
 }: {
   children: ReactNode;
   submit: string;
   payload: (form: FormData) => Record<string, unknown>;
   clear?: boolean;
+  onSaved?: () => void;
 }) {
   const router = useRouter();
   const queryClient = useQueryClient();
@@ -34,6 +35,7 @@ export function PanelForm({
       }
       if (!response.ok) throw new Error((await response.text()).trim() || "No se pudo guardar");
       if (clear) form.reset();
+      onSaved?.();
       setMessage({ text: "Cambios guardados." });
       if (typeof input.shopSlug === "string") {
         void queryClient.invalidateQueries({ queryKey: ["shop", input.shopSlug] });
@@ -55,8 +57,4 @@ export function PanelForm({
       {message && <p role={message.error ? "alert" : "status"}>{message.text}</p>}
     </form>
   );
-}
-
-export function field(form: FormData, name: string) {
-  return String(form.get(name) ?? "").trim();
 }

@@ -7,6 +7,7 @@ import (
 	"encoding/hex"
 	"encoding/json"
 	"errors"
+	"io"
 	"log"
 	"net/http"
 	"net/mail"
@@ -85,12 +86,17 @@ func tokenHash(token string) string {
 
 func readAuthJSON(w http.ResponseWriter, r *http.Request, data any) bool {
 	w.Header().Set("Cache-Control", "no-store")
+	return readJSON(w, r, data, 8192)
+}
+
+func readJSON(w http.ResponseWriter, r *http.Request, data any, limit int64) bool {
 	if r.Header.Get("Content-Type") != "application/json" {
 		w.WriteHeader(http.StatusUnsupportedMediaType)
 		return false
 	}
-	r.Body = http.MaxBytesReader(w, r.Body, 8192)
-	if json.NewDecoder(r.Body).Decode(data) != nil {
+	r.Body = http.MaxBytesReader(w, r.Body, limit)
+	decoder := json.NewDecoder(r.Body)
+	if decoder.Decode(data) != nil || decoder.Decode(new(any)) != io.EOF {
 		http.Error(w, "Datos inválidos", http.StatusBadRequest)
 		return false
 	}

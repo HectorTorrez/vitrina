@@ -28,3 +28,7 @@ export const getPanel = createServerFn({ method: "GET" }).handler(async (): Prom
   if (!response.ok) throw new Error("No se pudo cargar el panel");
   return response.json();
 });
+
+export function field(form: FormData, name: string) {
+  return String(form.get(name) ?? "").trim();
+}

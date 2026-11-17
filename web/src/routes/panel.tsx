@@ -1,9 +1,9 @@
 import { createFileRoute, Link, redirect } from "@tanstack/react-router";
 import { useState } from "react";
-import { getPanel, type Profile } from "../panel";
+import { field, getPanel, type Profile } from "../panel";
 import { PanelAgenda } from "../PanelAgenda";
 import { PanelCatalog } from "../PanelCatalog";
-import { field, PanelForm } from "../PanelForm";
+import { PanelForm } from "../PanelForm";
 
 export const Route = createFileRoute("/panel")({
   beforeLoad: async () => {

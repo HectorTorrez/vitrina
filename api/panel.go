@@ -93,7 +93,7 @@ func panelRoutes(mux *http.ServeMux, db *gorm.DB) {
 			return
 		}
 		var input panelInput
-		if !readAuthJSON(w, r, &input) {
+		if !readJSON(w, r, &input, 32*1024) {
 			return
 		}
 		if err := changePanel(q, account, input); err != nil {
