@@ -40,14 +40,21 @@ El comando administrativo requiere acceso al entorno del servidor y a la base de
 
 ## Acceso para vendedores
 
-El operador habilita los correos que pueden acceder a `/panel`. Con PostgreSQL activo, inicializá las tablas y habilitá un correo desde la raíz:
+El acceso a `/panel` es por correo. Para habilitar al primer operador y asignar una tienda existente a un vendedor, ejecutá estos comandos desde la raíz con PostgreSQL activo:
 
 ```sh
 sh scripts/dev-api.sh init
-sh scripts/dev-api.sh crear-vendedor vendedor@example.com
+sh scripts/dev-api.sh crear-operador operador@example.com
+sh scripts/dev-api.sh asignar-tienda vendedor@example.com luna-unas
 ```
 
 En `/ingresar`, el vendedor pide un enlace y confirma el acceso al abrirlo. El enlace vence en 15 minutos, se usa una vez y se reemplaza al emitir uno nuevo. Cada correo habilitado puede pedir un enlace por minuto. La sesión vence a los siete días y se revoca al cerrar sesión. Si ya habías creado vendedores en la versión con contraseña, sus correos siguen habilitados y deben volver a ingresar.
+
+### Administrar tiendas
+
+- El operador puede crear una tienda en `/panel`, elegir su enlace público `/tienda/<enlace>` y habilitar el correo del vendedor en el mismo paso. El vendedor pide su enlace de acceso en `/ingresar`.
+- Los vendedores pueden gestionar las tiendas que tengan asignadas. Pueden editar su perfil público y crear o modificar productos y servicios. La posición ordena las fichas de menor a mayor. Las fichas ocultas desaparecen tanto del catálogo como de su enlace público. Las fichas marcadas como no disponibles siguen visibles. Para una foto personalizada, usá una URL HTTPS de la imagen.
+- La agenda usa la hora de El Salvador. Para agendar una cita, el servicio debe estar visible y disponible. Se pueden reprogramar y cancelar citas futuras. Las citas canceladas quedan en el historial y su horario vuelve a estar disponible.
 
 ### Configurar Resend
 
@@ -63,4 +70,4 @@ Reiniciá la API y el servidor web después de configurar las variables. Sin la 
 
 ## Verificación
 
-En web, ejecutá pnpm build y pnpm check. En api, las pruebas de concurrencia y autenticación usan TEST_DATABASE_URL para conectar con una base PostgreSQL de prueba inicializada mediante el comando init.
+En web, ejecutá pnpm build y pnpm check. En api, las pruebas de concurrencia, autenticación y administración usan TEST_DATABASE_URL para conectar con una base PostgreSQL de prueba inicializada mediante el comando init.

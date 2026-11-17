@@ -1,6 +1,7 @@
 import { createFileRoute, Link, redirect } from "@tanstack/react-router";
 import { useState } from "react";
 import { getPanel, type Profile } from "../panel";
+import { PanelAgenda } from "../PanelAgenda";
 import { PanelCatalog } from "../PanelCatalog";
 import { field, PanelForm } from "../PanelForm";
 
@@ -76,6 +77,7 @@ function Panel() {
         </section>
       )}
       {shop && <PanelCatalog key={shop.slug} shop={shop} />}
+      {shop && <PanelAgenda key={shop.slug} shop={shop} />}
       {!shop && !panel.operator && <p>Tu cuenta todavía no tiene una tienda asignada.</p>}
       {panel.operator && (
         <section className="panel-section">

@@ -41,6 +41,7 @@ type reservation struct {
 	Service     product   `gorm:"foreignKey:ShopSlug,ServiceSlug;references:ShopSlug,Slug"`
 	Customer    string    `gorm:"not null"`
 	StartsAt    time.Time `gorm:"index:agenda,priority:2;not null"`
+	CancelledAt *time.Time
 	EndsAt      time.Time `gorm:"not null;check:ends_at > starts_at"`
 }
 

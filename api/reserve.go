@@ -30,26 +30,57 @@ func reserveCommand(db *gorm.DB, args []string) error {
 	return err
 }
 func book(db *gorm.DB, slug, service string, start time.Time, customer string) (reservation, error) {
+	return saveBooking(db, slug, service, start, customer, 0)
+}
+
+func saveBooking(db *gorm.DB, slug, service string, start time.Time, customer string, id uint) (reservation, error) {
 	var r reservation
-	err := db.Transaction(func(tx *gorm.DB) error {
-		// Serialize all bookings in this shop, including concurrent bookings for different services.
-		if err := tx.Clauses(clause.Locking{Strength: "UPDATE"}).Where(map[string]any{"slug": slug}).Take(&shop{}).Error; err != nil {
-			return err
+	err := withShopAgenda(db, slug, func(tx *gorm.DB) error {
+		if id != 0 {
+			if err := activeBooking(tx, slug, id, &r); err != nil {
+				return err
+			}
+			if !r.StartsAt.After(time.Now()) {
+				return panelValidation("Solo podés reprogramar citas futuras")
+			}
 		}
-		var p product
-		if err := tx.Where(map[string]any{"shop_slug": slug, "slug": service, "kind": "service", "available": true}).Take(&p).Error; err != nil {
-			return err
+		duration := r.EndsAt.Sub(r.StartsAt)
+		if id == 0 || r.ServiceSlug != service {
+			var p product
+			if err := tx.Where(map[string]any{"shop_slug": slug, "slug": service, "kind": "service", "available": true, "hidden": false}).Take(&p).Error; err != nil {
+				return err
+			}
+			duration = time.Duration(p.DurationMinutes) * time.Minute
 		}
-		end := start.Add(time.Duration(p.DurationMinutes) * time.Minute)
+		end := start.Add(duration)
 		var count int64
-		if err := tx.Model(&reservation{}).Where(map[string]any{"shop_slug": slug}).Where(clause.Lt{Column: "starts_at", Value: end}, clause.Gt{Column: "ends_at", Value: start}).Count(&count).Error; err != nil {
+		overlaps := tx.Model(&reservation{}).Where("shop_slug = ? AND cancelled_at IS NULL AND id <> ?", slug, id).
+			Where(clause.Lt{Column: "starts_at", Value: end}, clause.Gt{Column: "ends_at", Value: start})
+		if err := overlaps.Count(&count).Error; err != nil {
 			return err
 		}
 		if count > 0 {
 			return errOccupied
 		}
-		r = reservation{ShopSlug: slug, ServiceSlug: service, Customer: customer, StartsAt: start, EndsAt: end}
-		return tx.Create(&r).Error
+		r = reservation{ID: id, ShopSlug: slug, ServiceSlug: service, Customer: customer, StartsAt: start, EndsAt: end}
+		if id == 0 {
+			return tx.Create(&r).Error
+		}
+		return tx.Model(&r).Select("service_slug", "customer", "starts_at", "ends_at").Updates(&r).Error
 	})
 	return r, err
+}
+
+func withShopAgenda(db *gorm.DB, slug string, change func(*gorm.DB) error) error {
+	return db.Transaction(func(tx *gorm.DB) error {
+		// Every booking change takes the same shop lock before reading the agenda.
+		if err := tx.Clauses(clause.Locking{Strength: "UPDATE"}).Where("slug = ?", slug).Take(&shop{}).Error; err != nil {
+			return err
+		}
+		return change(tx)
+	})
+}
+
+func activeBooking(db *gorm.DB, slug string, id uint, booking *reservation) error {
+	return db.Take(booking, "shop_slug = ? AND id = ? AND cancelled_at IS NULL", slug, id).Error
 }

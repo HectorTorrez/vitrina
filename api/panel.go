@@ -22,6 +22,7 @@ type shopMembership struct {
 }
 
 type panelShop struct {
+	Bookings []panelBooking `json:"bookings"`
 	shop
 	Slug string `json:"slug"`
 }
@@ -33,6 +34,7 @@ type panelAccess struct {
 }
 
 type panelInput struct {
+	Booking  panelBooking
 	Item     product
 	Action   string
 	ShopSlug string
@@ -110,10 +112,17 @@ func loadPanel(db *gorm.DB, account seller) (panelAccess, error) {
 	err := db.Preload("Products", func(q *gorm.DB) *gorm.DB { return q.Order("position, slug") }).
 		Where("slug IN (?)", db.Model(&shopMembership{}).Select("shop_slug").Where("seller_email = ?", account.Email)).
 		Order("name, slug").Find(&shops).Error
-	for _, s := range shops {
-		result.Shops = append(result.Shops, panelShop{shop: s, Slug: s.Slug})
+	if err != nil {
+		return result, err
 	}
-	return result, err
+	bookings, err := loadPanelBookings(db, account.Email)
+	if err != nil {
+		return result, err
+	}
+	for _, s := range shops {
+		result.Shops = append(result.Shops, panelShop{shop: s, Slug: s.Slug, Bookings: bookings[s.Slug]})
+	}
+	return result, nil
 }
 
 type panelValidation string
@@ -165,6 +174,8 @@ func changePanel(db *gorm.DB, account seller, input panelInput) error {
 			Select("name", "description", "theme", "instagram", "tiktok", "whatsapp").Updates(&profile).Error
 	case "crear-item", "editar-item":
 		return savePanelItem(db, input.ShopSlug, input.Item, input.Action == "crear-item")
+	case "agendar", "reprogramar", "cancelar":
+		return changePanelBooking(db, input)
 	default:
 		return panelValidation("Acción inválida")
 	}

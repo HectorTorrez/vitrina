@@ -339,3 +339,7 @@ pre {
 .seller-panel input[type="checkbox"] {
   width: auto;
 }
+
+.panel-section h3, .panel-section p { margin: 0; }
+.panel-section .panel-cancel { margin-top: 1rem; }
+.panel-form [role] { margin-top: .75rem; }
