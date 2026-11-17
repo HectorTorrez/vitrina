@@ -38,6 +38,10 @@ func main() {
 			}
 		case "crear-vendedor":
 			err = createSeller(db, os.Args[2:])
+		case "crear-operador":
+			err = grantPanelAccess(db, os.Args[2:], true)
+		case "asignar-tienda":
+			err = grantPanelAccess(db, os.Args[2:], false)
 		case "reservar":
 			err = reserveCommand(db, os.Args[2:])
 		default:
@@ -54,6 +58,7 @@ func main() {
 		log.Fatal(err)
 	}
 	authRoutes(mux, db, delivery)
+	panelRoutes(mux, db)
 	mux.HandleFunc("GET /api/shops/{slug}", func(w http.ResponseWriter, r *http.Request) {
 		slug := r.PathValue("slug")
 		var s shop

@@ -27,6 +27,7 @@ const sessionPrefix = "email_"
 type seller struct {
 	Email      string `gorm:"primaryKey"`
 	LastLinkAt *time.Time
+	Operator   bool `gorm:"not null;default:false"`
 }
 
 type sellerLoginLink struct {
@@ -45,7 +46,7 @@ type sellerSession struct {
 
 func migrateAuth(db *gorm.DB) error {
 	return db.Transaction(func(tx *gorm.DB) error {
-		if err := tx.AutoMigrate(&seller{}, &sellerLoginLink{}, &sellerSession{}); err != nil {
+		if err := tx.AutoMigrate(&seller{}, &sellerLoginLink{}, &sellerSession{}, &shopMembership{}); err != nil {
 			return err
 		}
 		// Allow email-only accounts in databases initialized with password credentials.
@@ -202,13 +203,7 @@ func authRoutes(mux *http.ServeMux, db *gorm.DB, delivery *resendDelivery) {
 	})
 	mux.HandleFunc("GET /api/auth/session", func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Cache-Control", "private, no-store")
-		cookie, err := r.Cookie(sessionCookie)
-		if err != nil || !strings.HasPrefix(cookie.Value, sessionPrefix) {
-			w.WriteHeader(http.StatusUnauthorized)
-			return
-		}
-		var session sellerSession
-		err = db.WithContext(r.Context()).First(&session, "token_hash = ? AND expires_at > ?", tokenHash(cookie.Value), time.Now()).Error
+		session, err := lookupSession(db.WithContext(r.Context()), r)
 		if errors.Is(err, gorm.ErrRecordNotFound) {
 			w.WriteHeader(http.StatusUnauthorized)
 			return

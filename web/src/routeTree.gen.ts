@@ -12,6 +12,7 @@ import { Route as rootRouteImport } from './routes/__root'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as AuthRouteImport } from './routes/auth'
 import { Route as ConfirmarAccesoRouteImport } from './routes/confirmar-acceso'
+import { Route as GestionRouteImport } from './routes/gestion'
 import { Route as IngresarRouteImport } from './routes/ingresar'
 import { Route as PanelRouteImport } from './routes/panel'
 import { Route as TiendaShopIndexRouteImport } from './routes/tienda.$shop.index'
@@ -30,6 +31,11 @@ const AuthRoute = AuthRouteImport.update({
 const ConfirmarAccesoRoute = ConfirmarAccesoRouteImport.update({
   id: '/confirmar-acceso',
   path: '/confirmar-acceso',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const GestionRoute = GestionRouteImport.update({
+  id: '/gestion',
+  path: '/gestion',
   getParentRoute: () => rootRouteImport,
 } as any)
 const IngresarRoute = IngresarRouteImport.update({
@@ -57,6 +63,7 @@ export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/auth': typeof AuthRoute
   '/confirmar-acceso': typeof ConfirmarAccesoRoute
+  '/gestion': typeof GestionRoute
   '/ingresar': typeof IngresarRoute
   '/panel': typeof PanelRoute
   '/tienda/$shop/$product': typeof TiendaShopProductRoute
@@ -66,6 +73,7 @@ export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/auth': typeof AuthRoute
   '/confirmar-acceso': typeof ConfirmarAccesoRoute
+  '/gestion': typeof GestionRoute
   '/ingresar': typeof IngresarRoute
   '/panel': typeof PanelRoute
   '/tienda/$shop/$product': typeof TiendaShopProductRoute
@@ -76,6 +84,7 @@ export interface FileRoutesById {
   '/': typeof IndexRoute
   '/auth': typeof AuthRoute
   '/confirmar-acceso': typeof ConfirmarAccesoRoute
+  '/gestion': typeof GestionRoute
   '/ingresar': typeof IngresarRoute
   '/panel': typeof PanelRoute
   '/tienda/$shop/$product': typeof TiendaShopProductRoute
@@ -87,6 +96,7 @@ export interface FileRouteTypes {
     | '/'
     | '/auth'
     | '/confirmar-acceso'
+    | '/gestion'
     | '/ingresar'
     | '/panel'
     | '/tienda/$shop/$product'
@@ -96,6 +106,7 @@ export interface FileRouteTypes {
     | '/'
     | '/auth'
     | '/confirmar-acceso'
+    | '/gestion'
     | '/ingresar'
     | '/panel'
     | '/tienda/$shop/$product'
@@ -105,6 +116,7 @@ export interface FileRouteTypes {
     | '/'
     | '/auth'
     | '/confirmar-acceso'
+    | '/gestion'
     | '/ingresar'
     | '/panel'
     | '/tienda/$shop/$product'
@@ -115,6 +127,7 @@ export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   AuthRoute: typeof AuthRoute
   ConfirmarAccesoRoute: typeof ConfirmarAccesoRoute
+  GestionRoute: typeof GestionRoute
   IngresarRoute: typeof IngresarRoute
   PanelRoute: typeof PanelRoute
   TiendaShopProductRoute: typeof TiendaShopProductRoute
@@ -142,6 +155,13 @@ declare module '@tanstack/react-router' {
       path: '/confirmar-acceso'
       fullPath: '/confirmar-acceso'
       preLoaderRoute: typeof ConfirmarAccesoRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/gestion': {
+      id: '/gestion'
+      path: '/gestion'
+      fullPath: '/gestion'
+      preLoaderRoute: typeof GestionRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/ingresar': {
@@ -179,6 +199,7 @@ const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   AuthRoute: AuthRoute,
   ConfirmarAccesoRoute: ConfirmarAccesoRoute,
+  GestionRoute: GestionRoute,
   IngresarRoute: IngresarRoute,
   PanelRoute: PanelRoute,
   TiendaShopProductRoute: TiendaShopProductRoute,
