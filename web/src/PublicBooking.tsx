@@ -1,16 +1,13 @@
 import { useEffect, useState, type FormEvent } from "react";
 import { CalendarCheck, CalendarDays, Loader2 } from "lucide-react";
-import { createBooking, formatLocal, getSlots, shopToday } from "./booking";
+import { createBooking, formatLocal, getSlots, monthShort, shopToday, weekdayShort } from "./booking";
 import type { Product } from "./catalog";
 import { cn } from "@/lib/utils";
-
-const dayNames = ["dom", "lun", "mar", "mié", "jue", "vie", "sáb"];
-const monthNames = ["ene", "feb", "mar", "abr", "may", "jun", "jul", "ago", "sep", "oct", "nov", "dic"];
 
 function parts(date: string) {
   const [y, m, d] = date.split("-").map(Number);
   const weekday = new Date(Date.UTC(y, m - 1, d)).getUTCDay();
-  return { day: d, weekday: dayNames[weekday], month: monthNames[m - 1] };
+  return { day: d, weekday: weekdayShort[weekday], month: monthShort[m - 1] };
 }
 
 function groupSlots(slots: string[]) {

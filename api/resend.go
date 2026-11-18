@@ -66,14 +66,13 @@ func (d *resendDelivery) sendLoginLink(ctx context.Context, email, token string)
 	link := d.origin
 	link.Path = "/confirmar-acceso"
 	link.Fragment = token
+	expiry := fmt.Sprintf("vence en %d minutos y se puede usar una sola vez. Si no lo pediste, podés ignorar este correo.", int(linkLifetime.Minutes()))
 	return d.sendMessage(ctx, []string{email}, "Tu enlace de acceso a Vitrina",
-		"Ingresá a Vitrina con este enlace: "+link.String()+"\n\nVence en 15 minutos y se puede usar una sola vez. Si no lo pediste, podés ignorar este correo.",
-		"<p><a href=\""+html.EscapeString(link.String())+"\">Ingresar a Vitrina</a></p>"+
-			"<p>El enlace vence en 15 minutos y se puede usar una sola vez. Si no lo pediste, podés ignorar este correo.</p>",
+		"Ingresá a Vitrina con este enlace: "+link.String()+"\n\nEl enlace "+expiry,
+		"<p><a href=\""+html.EscapeString(link.String())+"\">Ingresar a Vitrina</a></p><p>El enlace "+expiry+"</p>",
 		"vitrina-login/"+tokenHash(token))
 }
 
-// send delivers a plain-text notification; the HTML part is the escaped text.
 func (d *resendDelivery) send(ctx context.Context, to []string, subject, text, idempotencyKey string) error {
 	body := "<p>" + strings.ReplaceAll(html.EscapeString(text), "\n", "<br>") + "</p>"
 	return d.sendMessage(ctx, to, subject, text, body, idempotencyKey)

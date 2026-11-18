@@ -1,10 +1,24 @@
 package main
 
 import (
+	"time"
+	_ "time/tzdata"
+
 	"gorm.io/gorm"
 	"gorm.io/gorm/clause"
-	"time"
 )
+
+// Every shop keeps its agenda in El Salvador time; the web shows the same zone.
+var shopZone = func() *time.Location {
+	zone, err := time.LoadLocation("America/El_Salvador")
+	if err != nil {
+		panic(err)
+	}
+	return zone
+}()
+
+// localMinute is how shop-local times travel to and from the web.
+const localMinute = "2006-01-02T15:04"
 
 type option struct {
 	Name   string   `json:"name"`
@@ -27,13 +41,20 @@ type product struct {
 	DurationMinutes int      `json:"durationMinutes" gorm:"not null"`
 }
 
+func (p *product) AfterFind(*gorm.DB) error {
+	if p.Options == nil {
+		p.Options = []option{}
+	}
+	return nil
+}
+
 // dayHours is the opening window for one weekday in the shop's time zone. Empty Open means closed.
 type dayHours struct {
 	Open  string `json:"open"`
 	Close string `json:"close"`
 }
 type shop struct {
-	Slug        string `json:"-" gorm:"primaryKey"`
+	Slug        string `json:"slug" gorm:"primaryKey"`
 	Name        string `json:"name"`
 	Description string `json:"description"`
 	Theme       string `json:"theme"`
@@ -44,6 +65,17 @@ type shop struct {
 	Hours    []dayHours `json:"hours" gorm:"serializer:json;type:jsonb;not null;default:'[]'"`
 	Products []product  `json:"products" gorm:"foreignKey:ShopSlug;references:Slug"`
 }
+
+func (s *shop) AfterFind(*gorm.DB) error {
+	if s.Hours == nil {
+		s.Hours = []dayHours{}
+	}
+	if s.Products == nil {
+		s.Products = []product{}
+	}
+	return nil
+}
+
 type reservation struct {
 	ID          uint    `gorm:"primaryKey"`
 	ShopSlug    string  `gorm:"index:agenda,priority:1;not null"`

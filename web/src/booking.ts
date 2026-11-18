@@ -1,18 +1,15 @@
 import { createServerFn } from "@tanstack/react-start";
-import { apiURL } from "./catalog";
-
-const slugPattern = /^[a-z0-9-]{1,64}$/;
+import { apiFetch } from "./api";
+import { isSlug } from "./slug";
 
 export const getSlots = createServerFn({ method: "GET" })
   .validator((input: { shop: string; service: string; date: string }) => input)
   .handler(async ({ data }): Promise<{ slots: string[]; error?: string }> => {
-    if (!slugPattern.test(data.shop) || !slugPattern.test(data.service) || !/^\d{4}-\d{2}-\d{2}$/.test(data.date)) {
+    if (!isSlug(data.shop) || !isSlug(data.service) || !/^\d{4}-\d{2}-\d{2}$/.test(data.date)) {
       return { slots: [], error: "Fecha inválida" };
     }
     const query = new URLSearchParams({ service: data.service, date: data.date });
-    const res = await fetch(apiURL("/api/shops/" + data.shop + "/slots?" + query), {
-      signal: AbortSignal.timeout(5000),
-    }).catch(() => null);
+    const res = await apiFetch("/api/shops/" + data.shop + "/slots?" + query).catch(() => null);
     if (!res) return { slots: [], error: "No se pudo consultar la agenda" };
     if (!res.ok) return { slots: [], error: (await res.text()).trim() || "No se pudo consultar la agenda" };
     return res.json();
@@ -29,13 +26,13 @@ export interface BookingRequest {
 export const createBooking = createServerFn({ method: "POST" })
   .validator((input: BookingRequest) => input)
   .handler(async ({ data }): Promise<{ ok: true; startsAt: string; endsAt: string } | { ok: false; error: string }> => {
-    if (!slugPattern.test(data.shop)) return { ok: false, error: "Tienda inválida" };
+    if (!isSlug(data.shop)) return { ok: false, error: "Tienda inválida" };
     const { shop, ...booking } = data;
-    const res = await fetch(apiURL("/api/shops/" + shop + "/bookings"), {
+    const res = await apiFetch("/api/shops/" + shop + "/bookings", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify(booking),
-      signal: AbortSignal.timeout(7000),
+      timeout: 7000,
     }).catch(() => null);
     if (!res) return { ok: false, error: "No se pudo conectar con la agenda. Intentá de nuevo." };
     if (res.status === 404) return { ok: false, error: "Este servicio ya no admite reservas." };
@@ -44,9 +41,13 @@ export const createBooking = createServerFn({ method: "POST" })
     return { ok: true, startsAt: result.startsAt, endsAt: result.endsAt };
   });
 
+// Same zone as shopZone in api/models.go.
 const zone = "America/El_Salvador";
 
-/** Today in the shop's time zone as YYYY-MM-DD. */
+export const weekdayShort = ["dom", "lun", "mar", "mié", "jue", "vie", "sáb"];
+export const monthShort = ["ene", "feb", "mar", "abr", "may", "jun", "jul", "ago", "sep", "oct", "nov", "dic"];
+
+/** Today (plus `offsetDays`) in the shop's time zone as YYYY-MM-DD. */
 export function shopToday(offsetDays = 0) {
   const now = new Date(Date.now() + offsetDays * 86400000);
   return new Intl.DateTimeFormat("en-CA", { timeZone: zone, year: "numeric", month: "2-digit", day: "2-digit" }).format(now);

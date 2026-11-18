@@ -84,7 +84,6 @@ export const authInput = cn(
   "focus:border-[#111] focus:ring-4 focus:ring-[#111]/8 aria-invalid:border-red-600 aria-invalid:focus:ring-red-600/12",
 );
 
-/** Label, control slot, hint and error for the auth forms. */
 export function AuthField({ label, error, hint, htmlFor, children }: {
   label: string;
   error?: string | null;
@@ -106,7 +105,6 @@ export function AuthField({ label, error, hint, htmlFor, children }: {
 const localPart = /^[A-Za-z0-9!#$%&'*+/=?^_`{|}~-]+(\.[A-Za-z0-9!#$%&'*+/=?^_`{|}~-]+)*$/;
 const domainLabel = /^[A-Za-z0-9]([A-Za-z0-9-]*[A-Za-z0-9])?$/;
 
-/** Returns why an email address is invalid, or null when it looks deliverable. */
 export function emailError(input: string): string | null {
   const email = input.trim();
   if (!email) return "Ingresá tu correo.";
@@ -126,7 +124,6 @@ export function emailError(input: string): string | null {
   return null;
 }
 
-/** Email input that validates once the person leaves the field (and live after that). */
 export function EmailField({ label, autoFocus, value, onChange }: {
   label: string;
   autoFocus?: boolean;

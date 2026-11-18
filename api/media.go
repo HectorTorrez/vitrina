@@ -2,8 +2,6 @@ package main
 
 import (
 	"crypto/rand"
-	"encoding/json"
-	"errors"
 	"io"
 	"log"
 	"net/http"
@@ -30,7 +28,6 @@ func uploadDir() string {
 	return "uploads"
 }
 
-// validMediaPath reports whether a stored image URL points at an uploaded file.
 func validMediaPath(path string) bool {
 	name, ok := strings.CutPrefix(path, "/media/")
 	return ok && mediaName.MatchString(name)
@@ -42,16 +39,7 @@ func mediaRoutes(mux *http.ServeMux, db *gorm.DB) {
 		log.Fatalf("No se pudo crear la carpeta de fotos %s: %v", dir, err)
 	}
 
-	mux.HandleFunc("POST /api/panel/images", func(w http.ResponseWriter, r *http.Request) {
-		w.Header().Set("Cache-Control", "no-store")
-		if _, err := lookupSession(db.WithContext(r.Context()), r); err != nil {
-			if errors.Is(err, gorm.ErrRecordNotFound) {
-				w.WriteHeader(http.StatusUnauthorized)
-				return
-			}
-			panelError(w, err)
-			return
-		}
+	mux.HandleFunc("POST /api/panel/images", authenticated(db, func(w http.ResponseWriter, r *http.Request, _ *gorm.DB, _ seller) {
 		r.Body = http.MaxBytesReader(w, r.Body, maxImageBytes)
 		data, err := io.ReadAll(r.Body)
 		if err != nil {
@@ -82,10 +70,8 @@ func mediaRoutes(mux *http.ServeMux, db *gorm.DB) {
 			http.Error(w, "No se pudo guardar la foto", http.StatusInternalServerError)
 			return
 		}
-		w.Header().Set("Content-Type", "application/json")
-		w.WriteHeader(http.StatusCreated)
-		json.NewEncoder(w).Encode(map[string]string{"url": "/media/" + name})
-	})
+		writeJSON(w, http.StatusCreated, map[string]string{"url": "/media/" + name})
+	}))
 
 	mux.HandleFunc("GET /api/media/{name}", func(w http.ResponseWriter, r *http.Request) {
 		name := r.PathValue("name")

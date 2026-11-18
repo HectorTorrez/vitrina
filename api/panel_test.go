@@ -6,30 +6,19 @@ import (
 	"encoding/json"
 	"net/http"
 	"net/http/httptest"
-	"os"
 	"strings"
 	"testing"
 	"time"
-
-	"gorm.io/driver/postgres"
-	"gorm.io/gorm"
 )
 
 func TestPanelShopPermissionsAndManagement(t *testing.T) {
-	dsn := os.Getenv("TEST_DATABASE_URL")
-	if dsn == "" {
-		t.Skip("set TEST_DATABASE_URL to an initialized PostgreSQL test database")
-	}
-	db, err := gorm.Open(postgres.Open(dsn))
-	if err != nil {
-		t.Fatal(err)
-	}
+	db := testDB(t)
 	suffix := strings.ToLower(rand.Text())
 	operator := "operator-" + suffix + "@example.com"
 	owner := "owner-" + suffix + "@example.com"
 	other := "other-" + suffix + "@example.com"
 	first, second := "shop-"+suffix, "other-"+suffix
-	if err := grantPanelAccess(db, []string{operator}, true); err != nil {
+	if err := grantOperator(db, operator); err != nil {
 		t.Fatal(err)
 	}
 	t.Cleanup(func() {
@@ -56,6 +45,7 @@ func TestPanelShopPermissionsAndManagement(t *testing.T) {
 		var body []byte
 		if input != nil {
 			method = http.MethodPost
+			var err error
 			body, err = json.Marshal(input)
 			if err != nil {
 				t.Fatal(err)
@@ -114,12 +104,8 @@ func TestPanelShopPermissionsAndManagement(t *testing.T) {
 		t.Fatalf("unexpected catalog: %+v", items)
 	}
 
-	zone, err := time.LoadLocation(shopTimeZone)
-	if err != nil {
-		t.Fatal(err)
-	}
-	start := time.Now().In(zone).Add(24 * time.Hour).Truncate(time.Minute)
-	format := "2006-01-02T15:04"
+	start := time.Now().In(shopZone).Add(24 * time.Hour).Truncate(time.Minute)
+	format := localMinute
 	bookInput := panelInput{Action: "agendar", ShopSlug: first, Booking: panelBooking{ServiceSlug: item.Slug, Customer: "Ada", StartsAt: start.Format(format)}}
 	request(ownerToken, &bookInput, 404)
 	itemInput.Item.Hidden = false
@@ -145,7 +131,7 @@ func TestPanelShopPermissionsAndManagement(t *testing.T) {
 	}
 
 	remove := panelInput{Action: "eliminar-item", ShopSlug: first, Item: product{Slug: item.Slug}}
-	request(ownerToken, &remove, 400) // booked services keep their history
+	request(ownerToken, &remove, 400)
 	extra := panelInput{Action: "crear-item", ShopSlug: first, Item: product{Slug: "lamina", Name: "Lámina", Kind: "product", Available: true}}
 	request(ownerToken, &extra, 204)
 	remove.Item.Slug = "lamina"

@@ -1,12 +1,12 @@
-import { useState, type ReactNode } from "react";
+import { useState } from "react";
 import {
-  ArrowDown, ArrowUp, ChevronDown, Clock, CopyPlus, ExternalLink, Eye, EyeOff, ImageIcon, Layers, MoreHorizontal, Package,
+  ArrowDown, ArrowUp, Clock, CopyPlus, ExternalLink, Eye, EyeOff, ImageIcon, Layers, MoreHorizontal, Package,
   Pencil, Plus, Search, Trash2,
 } from "lucide-react";
 import { hasSurcharges, price, type Product } from "./catalog";
 import type { PanelShop } from "./panel";
 import { SectionHead, usePanelAction } from "./PanelForm";
-import { ItemEditor, itemPayload } from "./PanelItemEditor";
+import { ItemEditor, nextPosition } from "./PanelItemEditor";
 import { uniqueSlug } from "./slug";
 import {
   AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription,
@@ -14,7 +14,6 @@ import {
 } from "@/components/ui/alert-dialog";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import {
   DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
@@ -24,7 +23,7 @@ import { cn } from "@/lib/utils";
 type Filter = "all" | "product" | "service" | "hidden";
 
 export function PanelCatalog({ shop }: { shop: PanelShop }) {
-  const products = shop.products ?? [];
+  const products = shop.products;
   const [creating, setCreating] = useState(false);
   const [editing, setEditing] = useState<string | null>(null);
   const [deleting, setDeleting] = useState<Product | null>(null);
@@ -44,7 +43,6 @@ export function PanelCatalog({ shop }: { shop: PanelShop }) {
     hidden: products.filter((item) => item.hidden).length,
   };
 
-  /** Moves an item and renumbers positions (0, 10, 20…) so the order is stable. */
   function move(index: number, delta: number) {
     const order = [...products];
     const [item] = order.splice(index, 1);
@@ -52,16 +50,15 @@ export function PanelCatalog({ shop }: { shop: PanelShop }) {
     const updates = order
       .map((product, position) => ({ product, position: position * 10 }))
       .filter(({ product, position }) => product.position !== position)
-      .map(({ product, position }) => ({ action: "editar-item", shopSlug: shop.slug, item: itemPayload(product, { position }) }));
+      .map(({ product, position }) => ({ action: "editar-item", shopSlug: shop.slug, item: { ...product, position } }));
     void many(updates, "Orden actualizado");
   }
 
   function duplicate(item: Product) {
     const slug = uniqueSlug(item.slug.slice(0, 58) + "-copia", products.map((product) => product.slug));
-    const position = products.reduce((max, product) => Math.max(max, product.position + 10), 0);
     void run({
       action: "crear-item", shopSlug: shop.slug,
-      item: itemPayload(item, { slug, name: (item.name + " (copia)").slice(0, 120), hidden: true, position }),
+      item: { ...item, slug, name: (item.name + " (copia)").slice(0, 120), hidden: true, position: nextPosition(products) },
     }, "Ficha duplicada como oculta");
   }
 
@@ -130,7 +127,7 @@ export function PanelCatalog({ shop }: { shop: PanelShop }) {
                       <span className="inline-flex items-center gap-1">
                         {item.kind === "service" ? <><Clock className="size-3.5" /> {item.durationMinutes} min</> : <><Package className="size-3.5" /> Producto</>}
                       </span>
-                      {(item.options?.length ?? 0) > 0 && (
+                      {item.options.length > 0 && (
                         <span className="inline-flex items-center gap-1"><Layers className="size-3.5" /> {item.options.length} {item.options.length === 1 ? "variante" : "variantes"}</span>
                       )}
                       {item.hidden && <Badge variant="secondary" className="gap-1"><EyeOff /> Oculta</Badge>}
@@ -154,7 +151,7 @@ export function PanelCatalog({ shop }: { shop: PanelShop }) {
                       </DropdownMenuItem>
                     )}
                     <DropdownMenuItem onSelect={() => void run(
-                      { action: "editar-item", shopSlug: shop.slug, item: itemPayload(item, { hidden: !item.hidden }) },
+                      { action: "editar-item", shopSlug: shop.slug, item: { ...item, hidden: !item.hidden } },
                       item.hidden ? "Ficha visible en la tienda" : "Ficha oculta",
                     )}>
                       {item.hidden ? <><Eye /> Mostrar en la tienda</> : <><EyeOff /> Ocultar de la tienda</>}
@@ -193,7 +190,7 @@ export function PanelCatalog({ shop }: { shop: PanelShop }) {
             <AlertDialogCancel>Volver</AlertDialogCancel>
             {deleting && !deleting.hidden && (
               <Button variant="outline" onClick={() => {
-                void run({ action: "editar-item", shopSlug: shop.slug, item: itemPayload(deleting, { hidden: true }) }, "Ficha oculta");
+                void run({ action: "editar-item", shopSlug: shop.slug, item: { ...deleting, hidden: true } }, "Ficha oculta");
                 setDeleting(null);
               }}>
                 <EyeOff /> Ocultar
@@ -210,20 +207,5 @@ export function PanelCatalog({ shop }: { shop: PanelShop }) {
         </AlertDialogContent>
       </AlertDialog>
     </div>
-  );
-}
-
-/** Expandable list row used by the agenda. */
-export function Row({ summary, children }: { summary: ReactNode; children: ReactNode }) {
-  return (
-    <Collapsible className="group/row">
-      <CollapsibleTrigger asChild>
-        <button type="button" className="flex w-full items-center gap-3.5 px-4 py-3.5 text-left transition-colors hover:bg-muted/50">
-          {summary}
-          <ChevronDown className="size-4 shrink-0 text-muted-foreground transition-transform group-data-[state=open]/row:rotate-180" />
-        </button>
-      </CollapsibleTrigger>
-      <CollapsibleContent className="grid gap-6 border-t bg-muted/20 px-4 pt-5 pb-6">{children}</CollapsibleContent>
-    </Collapsible>
   );
 }

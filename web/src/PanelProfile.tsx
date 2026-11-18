@@ -1,10 +1,9 @@
 import { useMemo, useState, type FormEvent } from "react";
 import { ArrowLeft, ArrowRight, Check, Copy, Loader2, Sparkles, X } from "lucide-react";
-import type { Product } from "./catalog";
+import { acceptsBookings, type Product } from "./catalog";
 import type { PanelShop, Profile } from "./panel";
 import { AffixInput, Field, FormSection, SaveBar, Stepper, usePanelAction } from "./PanelForm";
-import { cleanSlugInput, slugError, slugify } from "./slug";
-import { useShopSlugStatus } from "./shopSlug";
+import { useShopSlugField, type ShopSlugStatus } from "./shopSlug";
 import { StorefrontPreview } from "./store/StorefrontPreview";
 import { emailError } from "./AuthLayout";
 import { themes } from "./themes";
@@ -14,10 +13,10 @@ import { Switch } from "@/components/ui/switch";
 import { Textarea } from "@/components/ui/textarea";
 import { cn } from "@/lib/utils";
 
-export const weekdays = ["Domingo", "Lunes", "Martes", "Miércoles", "Jueves", "Viernes", "Sábado"];
+const weekdays = ["Domingo", "Lunes", "Martes", "Miércoles", "Jueves", "Viernes", "Sábado"];
 
 interface Day { open: boolean; from: string; to: string }
-export interface ProfileDraft {
+interface ProfileDraft {
   name: string;
   description: string;
   theme: string;
@@ -29,7 +28,7 @@ export interface ProfileDraft {
 }
 type ProfileErrors = Partial<Record<"name" | "description" | "instagram" | "tiktok" | "whatsapp" | "hours", string>> & { days?: Record<number, string> };
 
-export function toDraft(profile?: Partial<Profile>): ProfileDraft {
+function toDraft(profile?: Profile): ProfileDraft {
   const hours = profile?.hours ?? [];
   return {
     name: profile?.name ?? "",
@@ -37,8 +36,8 @@ export function toDraft(profile?: Partial<Profile>): ProfileDraft {
     theme: profile?.theme || "costa",
     instagram: profile?.instagram ?? "",
     tiktok: profile?.tiktok ?? "",
-    whatsapp: profile?.whatsapp ? "+" + profile.whatsapp.replace(/^\+/, "") : "",
-    booking: hours.some((day) => day.open),
+    whatsapp: profile?.whatsapp ? "+" + profile.whatsapp : "",
+    booking: acceptsBookings({ hours }),
     days: weekdays.map((_, index) => {
       const day = hours[index];
       return {
@@ -51,32 +50,31 @@ export function toDraft(profile?: Partial<Profile>): ProfileDraft {
 }
 
 /** Pulls the handle out of "@user", "instagram.com/user" or a full profile URL. */
-export function cleanHandle(value: string) {
+function cleanHandle(value: string) {
   const trimmed = value.trim();
   const fromUrl = trimmed.match(/(?:instagram\.com|tiktok\.com)\/@?([^/?#\s]+)/i);
   return (fromUrl ? fromUrl[1] : trimmed).replace(/^@+/, "");
 }
 
-/** Digits of the WhatsApp number; 8-digit numbers are assumed to be from El Salvador. */
-export function cleanPhone(value: string) {
+/** Digits of the WhatsApp number; 8-digit numbers are from El Salvador, as in normalizePhone (api/agenda.go). */
+function cleanPhone(value: string) {
   const digits = value.replace(/\D/g, "");
   return digits.length === 8 ? "503" + digits : digits;
 }
 
-export function fromDraft(draft: ProfileDraft): Profile {
-  const phone = cleanPhone(draft.whatsapp);
+function fromDraft(draft: ProfileDraft): Profile {
   return {
     name: draft.name.trim(),
     description: draft.description.trim(),
     theme: draft.theme,
     instagram: cleanHandle(draft.instagram),
     tiktok: cleanHandle(draft.tiktok),
-    whatsapp: phone ? "+" + phone : "",
+    whatsapp: cleanPhone(draft.whatsapp),
     hours: draft.booking ? draft.days.map((day) => day.open ? { open: day.from, close: day.to } : { open: "", close: "" }) : [],
   };
 }
 
-export function validateProfile(draft: ProfileDraft): ProfileErrors {
+function validateProfile(draft: ProfileDraft): ProfileErrors {
   const errors: ProfileErrors = {};
   if (!draft.name.trim()) errors.name = "Escribí el nombre de tu tienda.";
   else if (draft.name.trim().length > 100) errors.name = "Usá hasta 100 caracteres.";
@@ -102,7 +100,7 @@ const hasErrors = (errors: ProfileErrors) => Object.keys(errors).length > 0;
 
 type SetDraft = (patch: Partial<ProfileDraft>) => void;
 
-export function IdentityFields({ draft, set, errors }: { draft: ProfileDraft; set: SetDraft; errors: ProfileErrors }) {
+function IdentityFields({ draft, set, errors }: { draft: ProfileDraft; set: SetDraft; errors: ProfileErrors }) {
   return (
     <div className="grid gap-5">
       <Field label="Nombre de la tienda" error={errors.name} counter={{ value: draft.name.length, max: 100 }}>
@@ -118,7 +116,7 @@ export function IdentityFields({ draft, set, errors }: { draft: ProfileDraft; se
   );
 }
 
-export function ThemePicker({ value, onChange }: { value: string; onChange: (value: string) => void }) {
+function ThemePicker({ value, onChange }: { value: string; onChange: (value: string) => void }) {
   return (
     <div className="grid grid-cols-2 gap-3 sm:grid-cols-3" role="radiogroup" aria-label="Tema">
       {themes.map((theme) => {
@@ -156,7 +154,7 @@ export function ThemePicker({ value, onChange }: { value: string; onChange: (val
   );
 }
 
-export function ContactFields({ draft, set, errors }: { draft: ProfileDraft; set: SetDraft; errors: ProfileErrors }) {
+function ContactFields({ draft, set, errors }: { draft: ProfileDraft; set: SetDraft; errors: ProfileErrors }) {
   return (
     <div className="grid gap-5">
       <Field
@@ -177,7 +175,7 @@ export function ContactFields({ draft, set, errors }: { draft: ProfileDraft; set
   );
 }
 
-export function HoursEditor({ draft, set, errors }: { draft: ProfileDraft; set: SetDraft; errors: ProfileErrors }) {
+function HoursEditor({ draft, set, errors }: { draft: ProfileDraft; set: SetDraft; errors: ProfileErrors }) {
   const setDay = (index: number, patch: Partial<Day>) => set({ days: draft.days.map((day, i) => i === index ? { ...day, ...patch } : day) });
   const firstOpen = draft.days.findIndex((day) => day.open);
   return (
@@ -228,10 +226,9 @@ export function HoursEditor({ draft, set, errors }: { draft: ProfileDraft; set: 
 }
 
 function previewShop(draft: ProfileDraft, products: Product[]) {
-  return { ...fromDraft(draft), whatsapp: cleanPhone(draft.whatsapp), products };
+  return { ...fromDraft(draft), products };
 }
 
-/** Public profile form with a live preview of the store in its theme. */
 export function ProfileEditor({ shop }: { shop: PanelShop }) {
   const initial = useMemo(() => toDraft(shop), [shop]);
   const [draft, setDraft] = useState(initial);
@@ -274,7 +271,7 @@ export function ProfileEditor({ shop }: { shop: PanelShop }) {
         <SaveBar dirty={dirty || pending} pending={pending} onDiscard={() => { setDraft(initial); setShowErrors(false); }} />
       </fieldset>
       <aside className="hidden lg:sticky lg:top-8 lg:block">
-        <StorefrontPreview shop={previewShop(draft, shop.products ?? [])} slug={shop.slug} />
+        <StorefrontPreview shop={previewShop(draft, shop.products)} slug={shop.slug} />
       </aside>
     </form>
   );
@@ -282,22 +279,18 @@ export function ProfileEditor({ shop }: { shop: PanelShop }) {
 
 const wizardSteps = ["Tu tienda", "Apariencia", "Contacto"];
 
-/** Step-by-step store creation for sellers without a store and for operators. */
-export function CreateShopWizard({ operator, onCreated }: { operator: boolean; onCreated?: () => void }) {
+export function CreateShopWizard({ operator }: { operator: boolean }) {
   const [step, setStep] = useState(0);
   const [draft, setDraft] = useState(() => ({ ...toDraft(), booking: false }));
-  const [slug, setSlug] = useState("");
-  const [slugEdited, setSlugEdited] = useState(false);
+  const link = useShopSlugField();
   const [email, setEmail] = useState("");
   const [showErrors, setShowErrors] = useState(false);
   const { run, pending } = usePanelAction();
-  const slugStatus = useShopSlugStatus(slug, !slugError(slug));
   const set: SetDraft = (patch) => setDraft((current) => ({ ...current, ...patch }));
   const errors = validateProfile(draft);
-  const linkError = slugError(slug) ?? (slugStatus === "taken" ? "Ese enlace ya lo usa otra tienda." : null);
   const mailError = operator ? emailError(email) : null;
   const stepValid = [
-    !errors.name && !errors.description && !linkError && !mailError,
+    !errors.name && !errors.description && !link.error && !mailError,
     true,
     !errors.whatsapp && !errors.instagram && !errors.tiktok && !errors.hours && !errors.days,
   ];
@@ -315,15 +308,13 @@ export function CreateShopWizard({ operator, onCreated }: { operator: boolean; o
       return;
     }
     const ok = await run({
-      action: "crear-tienda", shopSlug: slug, profile: fromDraft(draft), ...(operator ? { email: email.trim() } : {}),
+      action: "crear-tienda", shopSlug: link.slug, profile: fromDraft(draft), ...(operator ? { email: email.trim() } : {}),
     }, operator ? "Tienda creada y vendedor habilitado" : "¡Tu tienda está lista!");
     if (ok && operator) {
       setDraft({ ...toDraft(), booking: false });
-      setSlug("");
-      setSlugEdited(false);
+      link.reset();
       setEmail("");
       setStep(0);
-      onCreated?.();
     }
   }
 
@@ -341,21 +332,21 @@ export function CreateShopWizard({ operator, onCreated }: { operator: boolean; o
                 value={draft.name} maxLength={100} placeholder="Luna Uñas" className="h-10" autoFocus
                 onChange={(e) => {
                   set({ name: e.target.value });
-                  if (!slugEdited) setSlug(slugify(e.target.value));
+                  link.followName(e.target.value);
                 }}
               />
             </Field>
             <Field
-              label="Enlace público" error={(showErrors || slugStatus === "taken") && linkError}
-              hint={<SlugStatus status={slugStatus} />}
+              label="Enlace público" error={(showErrors || link.status === "taken") && link.error}
+              hint={<SlugStatus status={link.status} />}
             >
               <AffixInput
-                prefix="/tienda/" value={slug} maxLength={64} placeholder="luna-unas" autoCapitalize="none" spellCheck={false}
+                prefix="/tienda/" value={link.slug} maxLength={64} placeholder="luna-unas" autoCapitalize="none" spellCheck={false}
                 inputClassName="font-mono"
-                onChange={(e) => { setSlug(cleanSlugInput(e.target.value)); setSlugEdited(true); }}
-                onBlur={() => setSlug((current) => current.replace(/-+$/, ""))}
-                suffix={slugEdited && draft.name && slugify(draft.name) !== slug ? (
-                  <Button type="button" variant="secondary" size="xs" className="rounded-full" onClick={() => { setSlug(slugify(draft.name)); setSlugEdited(false); }}>
+                onChange={(e) => link.type(e.target.value)}
+                onBlur={link.trim}
+                suffix={link.canSuggest(draft.name) ? (
+                  <Button type="button" variant="secondary" size="xs" className="rounded-full" onClick={() => link.suggest(draft.name)}>
                     <Sparkles /> Sugerir
                   </Button>
                 ) : undefined}
@@ -399,13 +390,13 @@ export function CreateShopWizard({ operator, onCreated }: { operator: boolean; o
         </div>
       </fieldset>
       <aside className="lg:sticky lg:top-8">
-        <StorefrontPreview shop={previewShop(draft, [])} slug={slug} />
+        <StorefrontPreview shop={previewShop(draft, [])} slug={link.slug} />
       </aside>
     </form>
   );
 }
 
-export function SlugStatus({ status }: { status: ReturnType<typeof useShopSlugStatus> }) {
+function SlugStatus({ status }: { status: ShopSlugStatus }) {
   if (status === "checking") return <span className="inline-flex items-center gap-1.5"><Loader2 className="size-3 animate-spin" /> Comprobando…</span>;
   if (status === "free") return <span className="inline-flex items-center gap-1.5 font-medium text-success"><Check className="size-3" /> Disponible</span>;
   if (status === "taken") return <span className="inline-flex items-center gap-1.5 text-destructive"><X className="size-3" /> Ocupado</span>;

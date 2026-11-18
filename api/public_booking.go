@@ -2,15 +2,13 @@ package main
 
 import (
 	"context"
-	"encoding/json"
-	"errors"
+	"fmt"
 	"log"
 	"net/http"
 	"regexp"
 	"strconv"
 	"strings"
 	"time"
-	"unicode/utf8"
 
 	"gorm.io/gorm"
 	"gorm.io/gorm/clause"
@@ -22,15 +20,14 @@ const (
 	bookingHorizonDays  = 60
 	maxActivePerPhone   = 2
 	maxWebBookingsHour  = 30
-	publicDateLayout    = "2006-01-02"
-	publicStartLayout   = "2006-01-02T15:04"
+	localDate           = "2006-01-02"
 	publicBookingSource = "web"
 )
 
 var (
-	clockPattern        = regexp.MustCompile(`^([01][0-9]|2[0-3]):[0-5][0-9]$`)
-	customerPhoneDigits = regexp.MustCompile(`^[0-9]{8,15}$`)
-	errSlotTaken        = panelValidation("Ese horario ya no está disponible. Elegí otro.")
+	clockPattern      = regexp.MustCompile(`^([01][0-9]|2[0-3]):[0-5][0-9]$`)
+	errSlotTaken      = validationError("Ese horario ya no está disponible. Elegí otro.")
+	errOutsideHorizon = validationError(fmt.Sprintf("Elegí una fecha dentro de los próximos %d días", bookingHorizonDays))
 )
 
 // validatedHours normalizes a weekly schedule: either empty (online booking off) or seven days.
@@ -39,7 +36,7 @@ func validatedHours(hours []dayHours) ([]dayHours, error) {
 		return []dayHours{}, nil
 	}
 	if len(hours) != 7 {
-		return nil, panelValidation("Indicá el horario de los siete días")
+		return nil, validationError("Indicá el horario de los siete días")
 	}
 	open := false
 	result := make([]dayHours, 7)
@@ -49,7 +46,7 @@ func validatedHours(hours []dayHours) ([]dayHours, error) {
 			continue
 		}
 		if !clockPattern.MatchString(day.Open) || !clockPattern.MatchString(day.Close) || day.Open >= day.Close {
-			return nil, panelValidation("Cada día abierto necesita una hora de apertura anterior a la de cierre")
+			return nil, validationError("Cada día abierto necesita una hora de apertura anterior a la de cierre")
 		}
 		result[i], open = day, true
 	}
@@ -57,21 +54,6 @@ func validatedHours(hours []dayHours) ([]dayHours, error) {
 		return []dayHours{}, nil
 	}
 	return result, nil
-}
-
-func normalizePhone(input string) (string, bool) {
-	var b strings.Builder
-	for _, r := range input {
-		switch {
-		case r >= '0' && r <= '9':
-			b.WriteRune(r)
-		case r == ' ' || r == '-' || r == '(' || r == ')' || r == '+' || r == '.':
-		default:
-			return "", false
-		}
-	}
-	phone := b.String()
-	return phone, customerPhoneDigits.MatchString(phone)
 }
 
 // openSlots lists the free start times for a service on a date, in the shop's time zone.
@@ -84,7 +66,7 @@ func openSlots(db *gorm.DB, s shop, service product, date time.Time, now time.Ti
 		return nil, nil
 	}
 	at := func(clock string) time.Time {
-		t, _ := time.ParseInLocation(publicStartLayout, date.Format(publicDateLayout)+"T"+clock, date.Location())
+		t, _ := time.ParseInLocation(localMinute, date.Format(localDate)+"T"+clock, shopZone)
 		return t
 	}
 	opens, closes := at(day.Open), at(day.Close)
@@ -118,26 +100,28 @@ func openSlots(db *gorm.DB, s shop, service product, date time.Time, now time.Ti
 	return slots, nil
 }
 
-// bookableDate parses a date in the shop zone and checks it is inside the booking horizon.
-func bookableDate(input string, zone *time.Location, now time.Time) (time.Time, bool) {
-	date, err := time.ParseInLocation(publicDateLayout, input, zone)
+// bookableDate parses a shop-local date inside the booking horizon.
+func bookableDate(input string, now time.Time) (time.Time, error) {
+	date, err := time.ParseInLocation(localDate, input, shopZone)
 	if err != nil {
-		return date, false
+		return date, errOutsideHorizon
 	}
-	today, _ := time.ParseInLocation(publicDateLayout, now.In(zone).Format(publicDateLayout), zone)
-	return date, !date.Before(today) && !date.After(today.AddDate(0, 0, bookingHorizonDays))
+	today, _ := time.ParseInLocation(localDate, now.In(shopZone).Format(localDate), shopZone)
+	if date.Before(today) || date.After(today.AddDate(0, 0, bookingHorizonDays)) {
+		return date, errOutsideHorizon
+	}
+	return date, nil
 }
 
 func publicService(db *gorm.DB, shopSlug, serviceSlug string) (shop, product, error) {
 	var s shop
-	var p product
 	if !validSlug(shopSlug) || !validSlug(serviceSlug) {
-		return s, p, gorm.ErrRecordNotFound
+		return s, product{}, gorm.ErrRecordNotFound
 	}
 	if err := db.Take(&s, "slug = ?", shopSlug).Error; err != nil {
-		return s, p, err
+		return s, product{}, err
 	}
-	err := db.Where(map[string]any{"shop_slug": shopSlug, "slug": serviceSlug, "kind": "service", "available": true, "hidden": false}).Take(&p).Error
+	p, err := bookableService(db, shopSlug, serviceSlug)
 	return s, p, err
 }
 
@@ -157,24 +141,20 @@ type publicBookingResult struct {
 func bookPublic(db *gorm.DB, shopSlug string, input publicBookingInput, now time.Time) (reservation, product, error) {
 	var r reservation
 	var service product
-	zone, err := time.LoadLocation(shopTimeZone)
+	customer, err := cleanCustomer(input.Customer)
 	if err != nil {
 		return r, service, err
 	}
-	customer := strings.TrimSpace(input.Customer)
-	if customer == "" || utf8.RuneCountInString(customer) > 160 {
-		return r, service, panelValidation("Indicá tu nombre (hasta 160 caracteres)")
-	}
 	phone, ok := normalizePhone(input.Phone)
 	if !ok {
-		return r, service, panelValidation("Indicá un teléfono válido, con código de país")
+		return r, service, validationError("Indicá un teléfono válido, con código de país")
 	}
-	start, err := time.ParseInLocation(publicStartLayout, input.StartsAt, zone)
+	start, err := time.ParseInLocation(localMinute, input.StartsAt, shopZone)
 	if err != nil {
-		return r, service, panelValidation("Elegí un horario válido")
+		return r, service, validationError("Elegí un horario válido")
 	}
-	if _, ok := bookableDate(start.Format(publicDateLayout), zone, now); !ok {
-		return r, service, panelValidation("Elegí una fecha dentro de los próximos 60 días")
+	if _, err := bookableDate(start.Format(localDate), now); err != nil {
+		return r, service, err
 	}
 	err = withShopAgenda(db, shopSlug, func(tx *gorm.DB) error {
 		var s shop
@@ -187,13 +167,18 @@ func bookPublic(db *gorm.DB, shopSlug string, input publicBookingInput, now time
 			return err
 		}
 		if recent >= maxWebBookingsHour {
-			return panelValidation("La agenda recibió muchas reservas. Intentá de nuevo más tarde o escribí al negocio.")
+			return validationError("La agenda recibió muchas reservas. Intentá de nuevo más tarde o escribí al negocio.")
 		}
-		if err := tx.Model(&reservation{}).Where("shop_slug = ? AND phone = ? AND cancelled_at IS NULL AND starts_at > ?", shopSlug, phone, now).Count(&active).Error; err != nil {
+		// Older bookings stored local numbers without El Salvador's country code.
+		phones := []string{phone}
+		if len(phone) == 11 && strings.HasPrefix(phone, "503") {
+			phones = append(phones, phone[3:])
+		}
+		if err := tx.Model(&reservation{}).Where("shop_slug = ? AND phone IN ? AND cancelled_at IS NULL AND starts_at > ?", shopSlug, phones, now).Count(&active).Error; err != nil {
 			return err
 		}
 		if active >= maxActivePerPhone {
-			return panelValidation("Ya tenés citas pendientes en este negocio. Escribiles para cambiarlas.")
+			return validationError("Ya tenés citas pendientes en este negocio. Escribiles para cambiarlas.")
 		}
 		slots, err := openSlots(tx, s, service, start, now)
 		if err != nil {
@@ -213,54 +198,41 @@ func bookPublic(db *gorm.DB, shopSlug string, input publicBookingInput, now time
 
 func publicBookingRoutes(mux *http.ServeMux, db *gorm.DB, delivery *resendDelivery) {
 	mux.HandleFunc("GET /api/shops/{slug}/slots", func(w http.ResponseWriter, r *http.Request) {
-		w.Header().Set("Cache-Control", "no-store")
 		q := db.WithContext(r.Context())
 		s, service, err := publicService(q, r.PathValue("slug"), r.URL.Query().Get("service"))
 		if err != nil {
-			panelError(w, err)
-			return
-		}
-		zone, err := time.LoadLocation(shopTimeZone)
-		if err != nil {
-			panelError(w, err)
+			writeError(w, err)
 			return
 		}
 		now := time.Now()
-		date, ok := bookableDate(r.URL.Query().Get("date"), zone, now)
-		if !ok {
-			http.Error(w, "Elegí una fecha dentro de los próximos 60 días", http.StatusBadRequest)
+		date, err := bookableDate(r.URL.Query().Get("date"), now)
+		if err != nil {
+			writeError(w, err)
 			return
 		}
 		slots, err := openSlots(q, s, service, date, now)
 		if err != nil {
-			panelError(w, err)
+			writeError(w, err)
 			return
 		}
 		list := make([]string, 0, len(slots))
 		for _, slot := range slots {
 			list = append(list, slot.Format("15:04"))
 		}
-		w.Header().Set("Content-Type", "application/json")
-		json.NewEncoder(w).Encode(map[string]any{"slots": list})
+		writeJSON(w, http.StatusOK, map[string]any{"slots": list})
 	})
 
 	notify := make(chan struct{}, 4)
 	mux.HandleFunc("POST /api/shops/{slug}/bookings", func(w http.ResponseWriter, r *http.Request) {
-		w.Header().Set("Cache-Control", "no-store")
 		var input publicBookingInput
 		if !readJSON(w, r, &input, 4096) {
 			return
 		}
-		slug := r.PathValue("slug")
-		booking, service, err := bookPublic(db.WithContext(r.Context()), slug, input, time.Now())
-		if errors.Is(err, errOccupied) {
-			err = errSlotTaken
-		}
+		booking, service, err := bookPublic(db.WithContext(r.Context()), r.PathValue("slug"), input, time.Now())
 		if err != nil {
-			panelError(w, err)
+			writeError(w, err)
 			return
 		}
-		zone, _ := time.LoadLocation(shopTimeZone)
 		if delivery != nil {
 			select {
 			case notify <- struct{}{}:
@@ -268,7 +240,7 @@ func publicBookingRoutes(mux *http.ServeMux, db *gorm.DB, delivery *resendDelive
 					defer func() { <-notify }()
 					ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 					defer cancel()
-					if err := notifyNewBooking(ctx, db, delivery, booking, service, zone); err != nil {
+					if err := notifyNewBooking(ctx, db, delivery, booking, service); err != nil {
 						log.Printf("No se pudo avisar la reserva %d: %v", booking.ID, err)
 					}
 				}()
@@ -276,17 +248,15 @@ func publicBookingRoutes(mux *http.ServeMux, db *gorm.DB, delivery *resendDelive
 				log.Printf("Aviso de la reserva %d omitido: demasiados envíos en curso", booking.ID)
 			}
 		}
-		w.Header().Set("Content-Type", "application/json")
-		w.WriteHeader(http.StatusCreated)
-		json.NewEncoder(w).Encode(publicBookingResult{
+		writeJSON(w, http.StatusCreated, publicBookingResult{
 			Service:  service.Name,
-			StartsAt: booking.StartsAt.In(zone).Format(publicStartLayout),
-			EndsAt:   booking.EndsAt.In(zone).Format(publicStartLayout),
+			StartsAt: booking.StartsAt.In(shopZone).Format(localMinute),
+			EndsAt:   booking.EndsAt.In(shopZone).Format(localMinute),
 		})
 	})
 }
 
-func notifyNewBooking(ctx context.Context, db *gorm.DB, delivery *resendDelivery, booking reservation, service product, zone *time.Location) error {
+func notifyNewBooking(ctx context.Context, db *gorm.DB, delivery *resendDelivery, booking reservation, service product) error {
 	var emails []string
 	if err := db.WithContext(ctx).Model(&shopMembership{}).Where("shop_slug = ?", booking.ShopSlug).Pluck("seller_email", &emails).Error; err != nil {
 		return err
@@ -294,7 +264,7 @@ func notifyNewBooking(ctx context.Context, db *gorm.DB, delivery *resendDelivery
 	if len(emails) == 0 {
 		return nil
 	}
-	when := booking.StartsAt.In(zone).Format("02/01/2006 15:04")
+	when := booking.StartsAt.In(shopZone).Format("02/01/2006 15:04")
 	panel := delivery.origin
 	panel.Path = "/panel"
 	text := "Nueva cita reservada desde la tienda en línea.\n\n" +

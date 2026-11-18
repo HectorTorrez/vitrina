@@ -6,8 +6,7 @@ import {
   AuthAlert, AuthEyebrow, AuthField, AuthLayout, AuthLede, AuthNote, AuthSwitch, AuthTitle,
   authButton, authGhostButton, authInput, EmailField, emailError, MailIcon,
 } from "../AuthLayout";
-import { cleanSlugInput, slugError, slugify } from "../slug";
-import { useShopSlugStatus } from "../shopSlug";
+import { useShopSlugField, type ShopSlugStatus } from "../shopSlug";
 import { cn } from "@/lib/utils";
 
 type Status = "enviado" | "ocupado" | "datos" | "servicio";
@@ -40,12 +39,10 @@ function Signup() {
   const { estado, nombre, enlace } = Route.useSearch();
   const [step, setStep] = useState(0);
   const [name, setName] = useState(nombre ?? "");
-  const [slug, setSlug] = useState(enlace ?? "");
-  const [slugEdited, setSlugEdited] = useState(Boolean(enlace));
+  const link = useShopSlugField(enlace);
   const [email, setEmail] = useState("");
   const [showErrors, setShowErrors] = useState(false);
   const [sending, setSending] = useState(false);
-  const slugStatus = useShopSlugStatus(slug, !slugError(slug));
   const nameRef = useRef<HTMLInputElement>(null);
 
   if (estado === "enviado") {
@@ -64,9 +61,8 @@ function Signup() {
   }
 
   const nameError = !name.trim() ? "Contanos cómo se llama tu negocio." : null;
-  const linkError = slugError(slug) ?? (slugStatus === "taken" ? "Ese enlace ya lo usa otra tienda." : null);
-  const stepOneValid = !nameError && !linkError;
-  const showLinkError = Boolean(linkError) && (showErrors || slugStatus === "taken");
+  const stepOneValid = !nameError && !link.error;
+  const showLinkError = Boolean(link.error) && (showErrors || link.status === "taken");
 
   function next() {
     if (!stepOneValid) {
@@ -114,14 +110,14 @@ function Signup() {
               aria-invalid={showErrors && nameError ? true : undefined}
               onChange={(e) => {
                 setName(e.target.value);
-                if (!slugEdited) setSlug(slugify(e.target.value));
+                link.followName(e.target.value);
               }}
             />
           </AuthField>
           <AuthField
             label="Enlace de tu tienda" htmlFor="shopSlug"
-            error={showLinkError ? linkError : null}
-            hint={<SlugHint status={slugStatus} />}
+            error={showLinkError ? link.error : null}
+            hint={<SlugHint status={link.status} />}
           >
             <div className={cn(
               "flex h-13 items-center rounded-[10px] border border-border bg-white transition",
@@ -133,40 +129,34 @@ function Signup() {
                 id="shopSlug" name="shopSlug" required maxLength={64} placeholder="luna-unas"
                 autoCapitalize="none" spellCheck={false}
                 className="h-full min-w-0 flex-1 bg-transparent pr-3 pl-0.5 font-mono text-[15px] outline-none"
-                value={slug}
+                value={link.slug}
                 aria-invalid={showLinkError || undefined}
-                onChange={(e) => {
-                  setSlug(cleanSlugInput(e.target.value));
-                  setSlugEdited(true);
-                }}
-                onBlur={() => setSlug((current) => current.replace(/-+$/, ""))}
+                onChange={(e) => link.type(e.target.value)}
+                onBlur={link.trim}
               />
-              {slugEdited && name && slugify(name) !== slug && (
+              {link.canSuggest(name) && (
                 <button
                   type="button" title="Usar el nombre del negocio"
                   className="mr-2 flex h-8 items-center gap-1 rounded-full bg-neutral-100 px-3 text-xs font-medium hover:bg-neutral-200"
-                  onClick={() => {
-                    setSlug(slugify(name));
-                    setSlugEdited(false);
-                  }}
+                  onClick={() => link.suggest(name)}
                 >
                   <Sparkles className="size-3.5" /> Sugerir
                 </button>
               )}
             </div>
           </AuthField>
-          {slugStatus === "taken" && (
+          {link.status === "taken" && (
             <div className="-mt-3 flex flex-wrap items-center gap-2 text-[13px] text-muted-foreground">
               Probá con:
-              {[slug + "-sv", slug + "-" + new Date().getFullYear(), slug + "-oficial"].filter((option) => option.length <= 64).map((option) => (
-                <button key={option} type="button" onClick={() => { setSlug(option); setSlugEdited(true); }}
+              {[link.slug + "-sv", link.slug + "-" + new Date().getFullYear(), link.slug + "-oficial"].filter((option) => option.length <= 64).map((option) => (
+                <button key={option} type="button" onClick={() => link.choose(option)}
                   className="rounded-full bg-neutral-100 px-2.5 py-1 font-mono text-xs text-[#111] hover:bg-neutral-200">
                   {option}
                 </button>
               ))}
             </div>
           )}
-          <button type="submit" className={authButton} disabled={slugStatus === "checking" && !linkError}>
+          <button type="submit" className={authButton} disabled={link.status === "checking" && !link.error}>
             Continuar <ArrowRight className="size-4" />
           </button>
         </div>
@@ -177,7 +167,7 @@ function Signup() {
               <span className="grid size-10 shrink-0 place-items-center rounded-lg bg-[#111] text-white"><Store className="size-5" /></span>
               <div className="min-w-0 flex-1">
                 <p className="truncate font-semibold">{name}</p>
-                <p className="truncate font-mono text-sm text-muted-foreground">/tienda/{slug}</p>
+                <p className="truncate font-mono text-sm text-muted-foreground">/tienda/{link.slug}</p>
               </div>
               <button type="button" onClick={() => setStep(0)} className="text-sm font-medium underline underline-offset-4">Editar</button>
             </div>
@@ -199,7 +189,7 @@ function Signup() {
   );
 }
 
-function SlugHint({ status }: { status: ReturnType<typeof useShopSlugStatus> }) {
+function SlugHint({ status }: { status: ShopSlugStatus }) {
   if (status === "checking") return <span className="flex items-center gap-1.5"><Loader2 className="size-3.5 animate-spin" /> Comprobando disponibilidad…</span>;
   if (status === "free") return <span className="flex items-center gap-1.5 text-green-700"><Check className="size-3.5" /> ¡Disponible!</span>;
   if (status === "taken") return <span className="flex items-center gap-1.5 text-red-700"><X className="size-3.5" /> Ocupado</span>;

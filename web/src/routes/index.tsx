@@ -2,11 +2,13 @@ import { useState } from "react";
 import { createFileRoute, Link, redirect } from "@tanstack/react-router";
 import { createServerFn } from "@tanstack/react-start";
 import { cn } from "@/lib/utils";
-import { fetchDirectory, shareMeta, siteOrigin } from "../catalog";
+import { siteOrigin } from "../api";
+import { fetchDirectory, shareMeta } from "../catalog";
+import { isSlug } from "../slug";
 
 const getHome = createServerFn({ method: "GET" }).handler(async () => {
   const home = process.env.VITRINA_HOME_SHOP?.trim();
-  if (home && /^[a-z0-9-]+$/.test(home)) return { home, shops: [], origin: siteOrigin() };
+  if (home && isSlug(home)) return { home, shops: [], origin: siteOrigin() };
   return { home: "", shops: await fetchDirectory(), origin: siteOrigin() };
 });
 
@@ -17,15 +19,15 @@ export const Route = createFileRoute("/")({
     return data;
   },
   head: ({ loaderData }) => {
-    const fonts = [{ rel: "preload", as: "image", href: "/landing/escenario.jpg" }];
-    if (!loaderData) return { links: fonts };
+    const preload = [{ rel: "preload", as: "image", href: "/landing/escenario.jpg" }];
+    if (!loaderData) return { links: preload };
     const meta = shareMeta({
       title: "Vitrina · Tu negocio nunca cierra",
       description: "Catálogo, citas en línea y WhatsApp en un solo enlace para negocios de El Salvador.",
       url: loaderData.origin + "/",
       image: loaderData.origin + "/landing/local.jpg",
     });
-    return { ...meta, links: [...meta.links, ...fonts] };
+    return { ...meta, links: [...meta.links, ...preload] };
   },
   component: Landing,
 });

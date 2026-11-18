@@ -115,7 +115,6 @@ export function productPrice(product: Product) {
   return (hasSurcharges(product) ? "Desde " : "") + price(product.priceCents);
 }
 
-/** Display-only product card; the catalog wraps it in a link. */
 export function ProductCard({ product }: { product: Product }) {
   const service = product.kind === "service";
   return (

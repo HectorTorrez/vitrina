@@ -8,29 +8,18 @@ import (
 	"image/png"
 	"net/http"
 	"net/http/httptest"
-	"os"
 	"strings"
 	"testing"
 	"time"
 
 	"crypto/rand"
-
-	"gorm.io/driver/postgres"
-	"gorm.io/gorm"
 )
 
 func TestImageUpload(t *testing.T) {
-	dsn := os.Getenv("TEST_DATABASE_URL")
-	if dsn == "" {
-		t.Skip("set TEST_DATABASE_URL to an initialized PostgreSQL test database")
-	}
-	db, err := gorm.Open(postgres.Open(dsn))
-	if err != nil {
-		t.Fatal(err)
-	}
+	db := testDB(t)
 	t.Setenv("VITRINA_UPLOAD_DIR", t.TempDir())
 	email := "media-" + strings.ToLower(rand.Text()) + "@example.com"
-	if err := createSeller(db, []string{email}); err != nil {
+	if err := ensureSeller(db, email); err != nil {
 		t.Fatal(err)
 	}
 	t.Cleanup(func() { db.Delete(&seller{Email: email}) })

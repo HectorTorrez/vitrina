@@ -1,29 +1,20 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { apiURL } from "../catalog";
-
-const maxBytes = 5 * 1024 * 1024;
+import { apiFetch, readLimited, sameOrigin } from "../api";
 
 export const Route = createFileRoute("/subir")({
   server: {
     handlers: {
       POST: async ({ request }) => {
         const headers = { "Cache-Control": "no-store", "Content-Type": "text/plain; charset=utf-8" };
-        const origin = URL.parse(process.env.VITRINA_WEB_ORIGIN || request.url);
-        if (!origin || request.headers.get("Origin") !== origin.origin) {
+        if (!sameOrigin(request)) {
           return new Response("Origen inválido", { status: 403, headers });
         }
-        if (Number(request.headers.get("Content-Length") || 0) > maxBytes) {
-          return new Response("La foto supera los 5 MB", { status: 413, headers });
-        }
-        const body = await request.arrayBuffer().catch(() => null);
-        if (!body || body.byteLength === 0) return new Response("Elegí una foto", { status: 400, headers });
-        if (body.byteLength > maxBytes) return new Response("La foto supera los 5 MB", { status: 413, headers });
-        const res = await fetch(apiURL("/api/panel/images"), {
-          method: "POST",
-          headers: { Cookie: request.headers.get("Cookie") || "", "Content-Type": "application/octet-stream" },
-          body,
-          signal: AbortSignal.timeout(20000),
-          redirect: "error",
+        const body = await readLimited(request, 5 * 1024 * 1024).catch(() => undefined);
+        if (body === undefined) return new Response("Elegí una foto", { status: 400, headers });
+        if (!body) return new Response("La foto supera los 5 MB", { status: 413, headers });
+        if (body.byteLength === 0) return new Response("Elegí una foto", { status: 400, headers });
+        const res = await apiFetch("/api/panel/images", {
+          request, method: "POST", headers: { "Content-Type": "application/octet-stream" }, body, timeout: 20000,
         }).catch(() => null);
         if (!res) return new Response("No se pudo conectar con el servidor", { status: 503, headers });
         return new Response(await res.text(), {

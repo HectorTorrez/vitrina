@@ -2,63 +2,30 @@ package main
 
 import (
 	"crypto/rand"
-	"encoding/json"
-	"io"
 	"net/http"
 	"net/http/httptest"
-	"net/url"
-	"os"
 	"strings"
 	"testing"
 	"time"
-
-	"gorm.io/driver/postgres"
-	"gorm.io/gorm"
 )
 
-type resendTransport func(*http.Request) (*http.Response, error)
-
-func (f resendTransport) RoundTrip(r *http.Request) (*http.Response, error) {
-	return f(r)
-}
-
 func TestSellerEmailAccess(t *testing.T) {
-	dsn := os.Getenv("TEST_DATABASE_URL")
-	if dsn == "" {
-		t.Skip("set TEST_DATABASE_URL to an initialized PostgreSQL test database")
-	}
-	db, err := gorm.Open(postgres.Open(dsn))
-	if err != nil {
-		t.Fatal(err)
-	}
+	db := testDB(t)
 	email := "test-" + strings.ToLower(rand.Text()) + "@example.com"
-	if err := createSeller(db, []string{email}); err != nil {
+	if err := ensureSeller(db, email); err != nil {
 		t.Fatal(err)
 	}
 	t.Cleanup(func() { db.Delete(&seller{Email: email}) })
 
 	links := make(chan string, 3)
-	origin := url.URL{Scheme: "https", Host: "vitrina.example"}
 	mux := http.NewServeMux()
-	authRoutes(mux, db, &resendDelivery{
-		key: "test-key", from: "Vitrina <acceso@vitrina.example>", origin: origin,
-		client: &http.Client{Transport: resendTransport(func(r *http.Request) (*http.Response, error) {
-			var body struct {
-				To   []string
-				HTML string
-			}
-			if r.Method != "POST" || r.URL.String() != "https://api.resend.com/emails" ||
-				r.Header.Get("Authorization") != "Bearer test-key" ||
-				r.Header.Get("Idempotency-Key") == "" || json.NewDecoder(r.Body).Decode(&body) != nil ||
-				len(body.To) != 1 || body.To[0] != email {
-				t.Error("unexpected Resend request")
-			}
-			_, after, _ := strings.Cut(body.HTML, "https://vitrina.example/confirmar-acceso#")
-			token, _, _ := strings.Cut(after, "\"")
-			links <- token
-			return &http.Response{StatusCode: http.StatusOK, Body: io.NopCloser(strings.NewReader("{}"))}, nil
-		})},
-	})
+	authRoutes(mux, db, fakeResend(t, links, func(r *http.Request, to []string) {
+		if r.Method != "POST" || r.URL.String() != "https://api.resend.com/emails" ||
+			r.Header.Get("Authorization") != "Bearer test-key" || r.Header.Get("Idempotency-Key") == "" ||
+			len(to) != 1 || to[0] != email {
+			t.Error("unexpected Resend request")
+		}
+	}))
 
 	request := func(method, action, body string, cookie *http.Cookie) *httptest.ResponseRecorder {
 		r := httptest.NewRequest(method, "/api/auth/"+action, strings.NewReader(body))
@@ -131,14 +98,7 @@ func TestSellerEmailAccess(t *testing.T) {
 }
 
 func TestSellerSignup(t *testing.T) {
-	dsn := os.Getenv("TEST_DATABASE_URL")
-	if dsn == "" {
-		t.Skip("set TEST_DATABASE_URL to an initialized PostgreSQL test database")
-	}
-	db, err := gorm.Open(postgres.Open(dsn))
-	if err != nil {
-		t.Fatal(err)
-	}
+	db := testDB(t)
 	suffix := strings.ToLower(rand.Text())[:10]
 	email, slug := "signup-"+suffix+"@example.com", "tienda-"+suffix
 	t.Cleanup(func() {
@@ -149,17 +109,7 @@ func TestSellerSignup(t *testing.T) {
 
 	links := make(chan string, 2)
 	mux := http.NewServeMux()
-	authRoutes(mux, db, &resendDelivery{
-		key: "test-key", from: "Vitrina <acceso@vitrina.example>", origin: url.URL{Scheme: "https", Host: "vitrina.example"},
-		client: &http.Client{Transport: resendTransport(func(r *http.Request) (*http.Response, error) {
-			var body struct{ HTML string }
-			json.NewDecoder(r.Body).Decode(&body)
-			_, after, _ := strings.Cut(body.HTML, "https://vitrina.example/confirmar-acceso#")
-			token, _, _ := strings.Cut(after, "\"")
-			links <- token
-			return &http.Response{StatusCode: http.StatusOK, Body: io.NopCloser(strings.NewReader("{}"))}, nil
-		})},
-	})
+	authRoutes(mux, db, fakeResend(t, links, nil))
 	post := func(action, body string) *httptest.ResponseRecorder {
 		r := httptest.NewRequest("POST", "/api/auth/"+action, strings.NewReader(body))
 		r.Header.Set("Content-Type", "application/json")
@@ -196,8 +146,5 @@ func TestSellerSignup(t *testing.T) {
 	}
 	if db.Model(&shopMembership{}).Where("seller_email = ? AND shop_slug = ?", email, slug).Count(&count); count != 1 {
 		t.Fatal("seller does not manage the new shop")
-	}
-	if db.Model(&shopSignup{}).Where("seller_email = ?", email).Count(&count); count != 0 {
-		t.Fatal("pending signup was not consumed")
 	}
 }

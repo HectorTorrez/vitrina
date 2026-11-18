@@ -8,8 +8,8 @@ import {
 import type { QueryClient } from "@tanstack/react-query";
 import css from "../style.css?url";
 
-/** Shared fonts: Inter (text), Bricolage Grotesque (Vitrina), Fraunces (serif store themes), Geist Mono. */
-export const fonts = [
+/** Inter (text), Bricolage Grotesque (Vitrina), Fraunces (serif store themes), Geist Mono. */
+const fonts = [
   { rel: "preconnect", href: "https://fonts.googleapis.com" },
   { rel: "preconnect", href: "https://fonts.gstatic.com", crossOrigin: "anonymous" as const },
   {

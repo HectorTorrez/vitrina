@@ -10,8 +10,10 @@ import { PanelCatalog } from "../PanelCatalog";
 import { SectionHead } from "../PanelForm";
 import { CreateShopWizard, ProfileEditor } from "../PanelProfile";
 import { formatLocal } from "../booking";
+import { acceptsBookings } from "../catalog";
+import { useCopied } from "@/lib/useCopied";
 import { Button } from "@/components/ui/button";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Select, SelectContent, SelectItem, SelectTrigger } from "@/components/ui/select";
 import { Sheet, SheetContent, SheetTitle, SheetTrigger } from "@/components/ui/sheet";
 import { Toaster } from "@/components/ui/sonner";
 import { cn } from "@/lib/utils";
@@ -60,7 +62,7 @@ function Panel() {
     void navigate({ search: { tienda, seccion: section === "alta" ? "inicio" : section } });
   };
   const items = [...(shop ? nav : []), ...(panel.operator ? [{ value: "alta" as const, label: "Alta de tiendas", icon: Plus }] : [])];
-  const upcoming = shop?.bookings?.filter((booking) => booking.editable).length ?? 0;
+  const upcoming = shop?.bookings.filter((booking) => booking.editable).length ?? 0;
   const current = items.find((item) => item.value === section);
 
   const sidebar = (
@@ -94,7 +96,7 @@ function Panel() {
             <Icon className={cn("size-4.5", section === value && "text-brand")} />
             <span className="min-w-0 flex-1 truncate text-left">{label}</span>
             {value === "agenda" && upcoming > 0 && <span className="rounded-full bg-brand px-1.5 text-xs leading-5 font-semibold text-ink-dark">{upcoming}</span>}
-            {value === "catalogo" && shop && <span className="text-xs text-neutral-500">{shop.products?.length ?? 0}</span>}
+            {value === "catalogo" && shop && <span className="text-xs text-neutral-500">{shop.products.length}</span>}
           </button>
         ))}
       </nav>
@@ -181,15 +183,15 @@ function ShopBadge({ name, slug }: { name: string; slug: string }) {
 }
 
 function Overview({ shop, go }: { shop: PanelShop; go: (section: Section) => void }) {
-  const products = shop.products ?? [];
+  const products = shop.products;
   const published = products.filter((item) => !item.hidden);
-  const upcoming = (shop.bookings ?? []).filter((booking) => booking.editable);
+  const upcoming = shop.bookings.filter((booking) => booking.editable);
   const hasServices = products.some((item) => item.kind === "service");
   const tasks: { done: boolean; title: string; text: string; section: Section; cta: string }[] = [
     { done: published.length > 0, title: "Publicá tu primera ficha", text: "Un producto o servicio con foto y precio.", section: "catalogo", cta: "Agregar ficha" },
     { done: Boolean(shop.description), title: "Contá de qué se trata", text: "Una descripción corta debajo del nombre.", section: "tienda", cta: "Escribir" },
     { done: Boolean(shop.whatsapp), title: "Conectá tu WhatsApp", text: "Así te escriben desde cada ficha.", section: "tienda", cta: "Agregar número" },
-    ...(hasServices ? [{ done: (shop.hours ?? []).some((day) => day.open), title: "Activá las reservas en línea", text: "Definí tu horario y recibí citas solas.", section: "tienda" as const, cta: "Configurar" }] : []),
+    ...(hasServices ? [{ done: acceptsBookings(shop), title: "Activá las reservas en línea", text: "Definí tu horario y recibí citas solas.", section: "tienda" as const, cta: "Configurar" }] : []),
   ];
   const done = tasks.filter((task) => task.done).length;
 
@@ -276,17 +278,12 @@ function QuickLink({ icon: Icon, title, text, onClick }: { icon: LucideIcon; tit
 }
 
 function ShareLink({ slug }: { slug: string }) {
-  const [copied, setCopied] = useState(false);
+  const [copied, copy] = useCopied();
   const path = "/tienda/" + slug;
   return (
     <div className="flex h-11 w-full items-center gap-1 rounded-full border bg-card pr-1 pl-4 sm:w-auto">
       <span className="min-w-0 flex-1 truncate font-mono text-sm">{path}</span>
-      <Button type="button" variant="ghost" size="sm" className="rounded-full" onClick={() => {
-        void navigator.clipboard.writeText(window.location.origin + path).then(() => {
-          setCopied(true);
-          setTimeout(() => setCopied(false), 1500);
-        });
-      }}>
+      <Button type="button" variant="ghost" size="sm" className="rounded-full" onClick={() => void copy(window.location.origin + path)}>
         {copied ? <Check className="text-success" /> : <Copy />} {copied ? "Copiado" : "Copiar"}
       </Button>
       <Button asChild size="sm" className="rounded-full">

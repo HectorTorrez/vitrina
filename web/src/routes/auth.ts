@@ -1,19 +1,29 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { authRequest } from "../auth.server";
+import { apiFetch, readLimited, sameOrigin } from "../api";
+
+function authRequest(action: "link" | "signup" | "verify" | "logout", request: Request, payload?: object) {
+  return apiFetch("/api/auth/" + action, {
+    request,
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: payload && JSON.stringify(payload),
+  }).catch(() => null);
+}
 
 export const Route = createFileRoute("/auth")({
   server: {
     handlers: {
       POST: async ({ request }) => {
-        const origin = URL.parse(process.env.VITRINA_WEB_ORIGIN || request.url);
         const headers = new Headers({ "Cache-Control": "no-store" });
-        if (!origin || request.headers.get("Origin") !== origin.origin) {
+        const origin = sameOrigin(request);
+        if (!origin) {
           return new Response("Origen inválido", { status: 403, headers });
         }
-        const form = await readForm(request);
-        if (!form) {
+        const body = request.headers.get("Content-Type") === "application/x-www-form-urlencoded" && await readLimited(request, 4096).catch(() => null);
+        if (!body) {
           return new Response("Formulario inválido", { status: 400, headers });
         }
+        const form = new URLSearchParams(new TextDecoder().decode(body));
         const action = form.get("action");
         if (action === "signup") {
           return signup(form, request, headers);
@@ -25,7 +35,7 @@ export const Route = createFileRoute("/auth")({
           action === "link" ? { email: form.get("email") ?? "" }
           : action === "verify" ? { token: form.get("token") ?? "" }
           : undefined;
-        const response = await authRequest(action, request, payload).catch(() => null);
+        const response = await authRequest(action, request, payload);
         let location = "/ingresar?estado=servicio";
         if (action === "link" && response?.status === 202) {
           location = "/ingresar?estado=enviado";
@@ -55,9 +65,7 @@ export const Route = createFileRoute("/auth")({
 async function signup(form: URLSearchParams, request: Request, headers: Headers) {
   const shopName = (form.get("shopName") ?? "").trim().slice(0, 100);
   const shopSlug = (form.get("shopSlug") ?? "").trim().slice(0, 64);
-  const response = await authRequest("signup", request, {
-    email: form.get("email") ?? "", shopName, shopSlug,
-  }).catch(() => null);
+  const response = await authRequest("signup", request, { email: form.get("email") ?? "", shopName, shopSlug });
   const status =
     response?.status === 202 ? "enviado"
     : response?.status === 409 ? "ocupado"
@@ -71,29 +79,4 @@ async function signup(form: URLSearchParams, request: Request, headers: Headers)
   }
   headers.set("Location", "/registrarse?" + query.toString());
   return new Response(null, { status: 303, headers });
-}
-
-async function readForm(request: Request) {
-  if (request.headers.get("Content-Type") !== "application/x-www-form-urlencoded" || !request.body) {
-    return null;
-  }
-  const reader = request.body.getReader();
-  const buffer = new Uint8Array(4096);
-  let length = 0;
-  try {
-    while (true) {
-      const { value, done } = await reader.read();
-      if (done) return new URLSearchParams(new TextDecoder().decode(buffer.subarray(0, length)));
-      if (length + value.length > buffer.length) {
-        await reader.cancel();
-        return null;
-      }
-      buffer.set(value, length);
-      length += value.length;
-    }
-  } catch {
-    return null;
-  } finally {
-    reader.releaseLock();
-  }
 }

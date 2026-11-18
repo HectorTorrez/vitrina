@@ -2,11 +2,12 @@ import { useState, type ReactNode } from "react";
 import { createFileRoute, Link, notFound } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
 import { ArrowLeft, Check, Clock, Share2 } from "lucide-react";
-import { shopQuery, price, productImage, shareMeta, totalPrice, type Product } from "../catalog";
+import { acceptsBookings, shopQuery, price, productImage, shareMeta, totalPrice, type Product } from "../catalog";
 import { PublicBooking } from "../PublicBooking";
 import { StoreLayout } from "../store/StoreLayout";
 import { ProductCard, ProductImage, WhatsAppIcon } from "../store/StoreParts";
 import { cn } from "@/lib/utils";
+import { useCopied } from "@/lib/useCopied";
 
 export const Route = createFileRoute("/tienda/$shop/$product")({
   loader: async ({ context, params }) => {
@@ -35,7 +36,7 @@ function Details() {
   const { data } = useQuery({ ...shopQuery(params.shop), initialData: Route.useLoaderData() });
   const p = data.products.find((item) => item.slug === params.product);
   if (!p) throw notFound();
-  const bookable = p.kind === "service" && p.available && (data.hours ?? []).some((day) => day.open);
+  const bookable = p.kind === "service" && p.available && acceptsBookings(data);
   const others = data.products.filter((item) => item.slug !== p.slug).slice(0, 4);
   const url = data.origin + "/tienda/" + params.shop + "/" + p.slug;
 
@@ -74,15 +75,10 @@ function Details() {
 }
 
 function ShareButton({ url, title }: { url: string; title: string }) {
-  const [copied, setCopied] = useState(false);
+  const [copied, copy] = useCopied(2000);
   async function share() {
-    if (navigator.share) {
-      await navigator.share({ title, url }).catch(() => undefined);
-      return;
-    }
-    await navigator.clipboard.writeText(url).catch(() => undefined);
-    setCopied(true);
-    setTimeout(() => setCopied(false), 2000);
+    if (navigator.share) await navigator.share({ title, url }).catch(() => undefined);
+    else await copy(url).catch(() => undefined);
   }
   return (
     <button type="button" onClick={() => void share()} className="inline-flex h-9 items-center gap-1.5 rounded-full border border-store-rule px-3.5 text-sm font-medium transition hover:border-store-ink">
@@ -97,7 +93,7 @@ function Order({ product, phone, booking }: { product: Product; phone: string; b
   const [showMessage, setShowMessage] = useState(false);
   const service = product.kind === "service";
   const total = totalPrice(product, choices);
-  const options = product.options ?? [];
+  const options = product.options;
   const message = [
     (service ? "Hola, quisiera consultar horarios para " : "Hola, quisiera pedir ") + product.name,
     ...options.map((o) => o.name + " · " + (choices[o.name] ?? o.values[0])),

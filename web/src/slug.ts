@@ -1,11 +1,18 @@
-export const slugPattern = "[a-z0-9]+(-[a-z0-9]+)*";
-const slugRegex = new RegExp("^" + slugPattern + "$");
+// Same rule as validSlug in api/panel.go.
+const slugRegex = /^[a-z0-9]+(-[a-z0-9]+)*$/;
+
+export function isSlug(value: unknown): value is string {
+  return typeof value === "string" && value.length <= 64 && slugRegex.test(value);
+}
+
+/** "Uñas" → "Unas" */
+export function foldAccents(text: string) {
+  return text.normalize("NFD").replace(/[̀-ͯ]/g, "");
+}
 
 /** "Luna Uñas & Spa" → "luna-unas-spa" */
 export function slugify(name: string, max = 64) {
-  return name
-    .normalize("NFD")
-    .replace(/[̀-ͯ]/g, "")
+  return foldAccents(name)
     .toLowerCase()
     .replace(/[^a-z0-9]+/g, "-")
     .replace(/^-+|-+$/g, "")
@@ -15,9 +22,7 @@ export function slugify(name: string, max = 64) {
 
 /** Normalizes what the person types into a link while keeping a trailing dash so they can keep typing. */
 export function cleanSlugInput(value: string) {
-  return value
-    .normalize("NFD")
-    .replace(/[̀-ͯ]/g, "")
+  return foldAccents(value)
     .toLowerCase()
     .replace(/[\s_]+/g, "-")
     .replace(/[^a-z0-9-]/g, "")
@@ -26,11 +31,10 @@ export function cleanSlugInput(value: string) {
     .slice(0, 64);
 }
 
-/** Why a link is not valid, or null. */
 export function slugError(slug: string): string | null {
   if (!slug) return "Elegí un enlace.";
   if (slug.length > 64) return "El enlace puede tener hasta 64 caracteres.";
-  if (!slugRegex.test(slug)) return "Usá solo minúsculas, números y guiones (sin guion al inicio ni al final).";
+  if (!isSlug(slug)) return "Usá solo minúsculas, números y guiones (sin guion al inicio ni al final).";
   return null;
 }
 

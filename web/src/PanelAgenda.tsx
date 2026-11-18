@@ -1,8 +1,7 @@
-import { useState } from "react";
-import { History, MessageCircle, Plus, X } from "lucide-react";
+import { useState, type ReactNode } from "react";
+import { ChevronDown, History, MessageCircle, Plus, X } from "lucide-react";
 import type { Product } from "./catalog";
-import { formatLocal } from "./booking";
-import { Row } from "./PanelCatalog";
+import { formatLocal, monthShort } from "./booking";
 import { Field, FormSelect, PanelForm, SectionHead, usePanelAction } from "./PanelForm";
 import { field, type Booking, type PanelShop } from "./panel";
 import {
@@ -14,14 +13,12 @@ import { Button } from "@/components/ui/button";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import { Input } from "@/components/ui/input";
 
-const months = ["ene", "feb", "mar", "abr", "may", "jun", "jul", "ago", "sep", "oct", "nov", "dic"];
-
 export function PanelAgenda({ shop }: { shop: PanelShop }) {
   const [adding, setAdding] = useState(false);
-  const services = (shop.products ?? []).filter((item) => item.kind === "service");
+  const services = shop.products.filter((item) => item.kind === "service");
   const bookable = services.filter((item) => item.available && !item.hidden);
-  const upcoming = (shop.bookings ?? []).filter((booking) => booking.editable);
-  const history = (shop.bookings ?? []).filter((booking) => !booking.editable).reverse();
+  const upcoming = shop.bookings.filter((booking) => booking.editable);
+  const history = shop.bookings.filter((booking) => !booking.editable).reverse();
   const serviceName = (slug: string) => services.find((item) => item.slug === slug)?.name;
 
   return (
@@ -63,7 +60,7 @@ export function PanelAgenda({ shop }: { shop: PanelShop }) {
                 <>
                   <span className="grid size-13 shrink-0 place-items-center content-center rounded-xl bg-ink-dark font-mono text-[11px] uppercase leading-none text-white">
                     <b className="font-display text-xl leading-none">{booking.startsAt.slice(8, 10)}</b>
-                    {months[Number(booking.startsAt.slice(5, 7)) - 1]}
+                    {monthShort[Number(booking.startsAt.slice(5, 7)) - 1]}
                   </span>
                   <span className="grid min-w-0 flex-1">
                     <span className="truncate font-semibold">{booking.customer}</span>
@@ -112,6 +109,20 @@ export function PanelAgenda({ shop }: { shop: PanelShop }) {
         )}
       </div>
     </div>
+  );
+}
+
+function Row({ summary, children }: { summary: ReactNode; children: ReactNode }) {
+  return (
+    <Collapsible className="group/row">
+      <CollapsibleTrigger asChild>
+        <button type="button" className="flex w-full items-center gap-3.5 px-4 py-3.5 text-left transition-colors hover:bg-muted/50">
+          {summary}
+          <ChevronDown className="size-4 shrink-0 text-muted-foreground transition-transform group-data-[state=open]/row:rotate-180" />
+        </button>
+      </CollapsibleTrigger>
+      <CollapsibleContent className="grid gap-6 border-t bg-muted/20 px-4 pt-5 pb-6">{children}</CollapsibleContent>
+    </Collapsible>
   );
 }
 

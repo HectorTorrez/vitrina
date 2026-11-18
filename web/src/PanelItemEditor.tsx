@@ -17,6 +17,7 @@ import { Input } from "@/components/ui/input";
 import { Sheet, SheetContent, SheetDescription, SheetTitle } from "@/components/ui/sheet";
 import { Switch } from "@/components/ui/switch";
 import { cn } from "@/lib/utils";
+import { useCopied } from "@/lib/useCopied";
 
 interface OptionDraft { id: string; value: string; surcharge: string }
 interface GroupDraft { id: string; name: string; values: OptionDraft[] }
@@ -62,14 +63,8 @@ function toDraft(item: Product | undefined, nextPosition: number): ItemDraft {
   };
 }
 
-/** Full item payload for the API, from a saved product plus overrides (used by quick actions too). */
-export function itemPayload(item: Product, patch: Partial<Product> = {}) {
-  const merged = { ...item, ...patch };
-  return {
-    slug: merged.slug, name: merged.name, kind: merged.kind, durationMinutes: merged.durationMinutes,
-    priceCents: merged.priceCents, imageUrl: merged.imageUrl ?? "", options: merged.options ?? [],
-    position: merged.position, available: merged.available, hidden: merged.hidden,
-  };
+export function nextPosition(products: Product[]) {
+  return products.reduce((max, product) => Math.max(max, product.position + 10), 0);
 }
 
 function fromDraft(draft: ItemDraft) {
@@ -148,9 +143,8 @@ export function ItemEditor({ shop, item, open, onOpenChange }: {
   open: boolean;
   onOpenChange: (open: boolean) => void;
 }) {
-  const products = shop.products ?? [];
-  const nextPosition = products.reduce((max, product) => Math.max(max, product.position + 10), 0);
-  const [draft, setDraft] = useState(() => toDraft(item, nextPosition));
+  const products = shop.products;
+  const [draft, setDraft] = useState(() => toDraft(item, nextPosition(products)));
   const [initial, setInitial] = useState(draft);
   const [step, setStep] = useState(0);
   const [showErrors, setShowErrors] = useState(false);
@@ -164,7 +158,7 @@ export function ItemEditor({ shop, item, open, onOpenChange }: {
   const set = (patch: Partial<ItemDraft>) => setDraft((current) => ({ ...current, ...patch }));
 
   function reset() {
-    const fresh = toDraft(item, nextPosition);
+    const fresh = toDraft(item, nextPosition(products));
     setDraft(fresh);
     setInitial(fresh);
     setStep(0);
@@ -376,18 +370,12 @@ function BasicsStep({ draft, set, errors, creating, shop, taken }: StepProps & {
 }
 
 function CopyLink({ path }: { path: string }) {
-  const [copied, setCopied] = useState(false);
-  const url = typeof window === "undefined" ? path : window.location.origin + path;
+  const [copied, copy] = useCopied();
   return (
     <div className="flex h-10 items-center gap-2 rounded-lg border bg-muted/50 pr-1 pl-3">
       <Link2 className="size-4 shrink-0 text-muted-foreground" />
       <span className="min-w-0 flex-1 truncate font-mono text-sm">{path}</span>
-      <Button type="button" variant="ghost" size="icon-sm" aria-label="Copiar enlace" onClick={() => {
-        void navigator.clipboard.writeText(url).then(() => {
-          setCopied(true);
-          setTimeout(() => setCopied(false), 1500);
-        });
-      }}>
+      <Button type="button" variant="ghost" size="icon-sm" aria-label="Copiar enlace" onClick={() => void copy(window.location.origin + path)}>
         {copied ? <Check className="text-success" /> : <Copy />}
       </Button>
       <Button asChild variant="ghost" size="icon-sm" aria-label="Abrir ficha">
@@ -624,10 +612,7 @@ function VariantsStep({ draft, set, errors }: StepProps) {
 }
 
 function PublishStep({ draft, set, shop }: Omit<StepProps, "errors"> & { shop: PanelShop }) {
-  const preview: Product = {
-    ...fromDraft(draft), artwork: "", options: fromDraft(draft).options,
-    durationMinutes: draft.kind === "service" ? Number(draft.duration) || 0 : 0,
-  };
+  const preview: Product = { ...fromDraft(draft), artwork: "" };
   return (
     <div className="grid gap-6 sm:grid-cols-[minmax(0,1fr)_220px] sm:items-start">
       <div className="grid gap-3">

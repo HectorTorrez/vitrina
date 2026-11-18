@@ -2,7 +2,8 @@ import { useMemo, useState } from "react";
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
 import { Search, X } from "lucide-react";
-import { shopQuery, productImage, shareMeta, type Product } from "../catalog";
+import { acceptsBookings, shopQuery, productImage, shareMeta, type Product } from "../catalog";
+import { foldAccents } from "../slug";
 import { StoreLayout } from "../store/StoreLayout";
 import { ProductCard, ShopHero } from "../store/StoreParts";
 import { cn } from "@/lib/utils";
@@ -25,14 +26,14 @@ export const Route = createFileRoute("/tienda/$shop/")({
 
 type Filter = "all" | Product["kind"];
 
-const normalize = (text: string) => text.normalize("NFD").replace(/[̀-ͯ]/g, "").toLowerCase();
+const normalize = (text: string) => foldAccents(text).toLowerCase();
 
 function Catalog() {
   const { shop } = Route.useParams();
   const { data } = useQuery({ ...shopQuery(shop), initialData: Route.useLoaderData() });
   const [filter, setFilter] = useState<Filter>("all");
   const [query, setQuery] = useState("");
-  const bookable = (data.hours ?? []).some((day) => day.open) && data.products.some((p) => p.kind === "service");
+  const bookable = acceptsBookings(data) && data.products.some((p) => p.kind === "service");
 
   const counts = {
     all: data.products.length,

@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { Monitor, Smartphone } from "lucide-react";
-import type { Product, Shop } from "../catalog";
+import { acceptsBookings, type Product, type Shop } from "../catalog";
 import { ProductCard, ShopHero, StoreBrand, StoreFrame, StoreHeader, WhatsAppIcon } from "./StoreParts";
 import { cn } from "@/lib/utils";
 
@@ -9,16 +9,15 @@ const samples: Product[] = [
   { kind: "product", durationMinutes: 0, slug: "ejemplo-2", name: "Tu primer producto", priceCents: 2500, available: true, artwork: "", position: 1, hidden: false, options: [] },
 ];
 
-/** Live miniature of the public store, rendered with the same components and theme as /tienda. */
 export function StorefrontPreview({ shop, slug, className }: {
   shop: Pick<Shop, "name" | "description" | "theme" | "instagram" | "tiktok" | "whatsapp" | "hours" | "products">;
   slug: string;
   className?: string;
 }) {
   const [device, setDevice] = useState<"phone" | "desktop">("phone");
-  const visible = (shop.products ?? []).filter((product) => !product.hidden);
+  const visible = shop.products.filter((product) => !product.hidden);
   const products = (visible.length ? visible : samples).slice(0, device === "phone" ? 4 : 6);
-  const bookable = (shop.hours ?? []).some((day) => day.open) && products.some((product) => product.kind === "service");
+  const bookable = acceptsBookings(shop) && products.some((product) => product.kind === "service");
 
   return (
     <div className={cn("grid gap-3", className)}>

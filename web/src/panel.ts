@@ -1,8 +1,9 @@
 import { createServerFn } from "@tanstack/react-start";
 import { getRequest, setResponseHeader } from "@tanstack/react-start/server";
+import { apiFetch } from "./api";
 import type { Shop } from "./catalog";
 
-export type Profile = Omit<Shop, "products" | "origin">;
+export type Profile = Omit<Shop, "slug" | "products" | "origin">;
 export interface Booking {
   id: number;
   serviceSlug: string;
@@ -15,7 +16,7 @@ export interface Booking {
   editable: boolean;
 }
 
-export type PanelShop = Omit<Shop, "origin"> & { slug: string; bookings: Booking[] | null };
+export type PanelShop = Omit<Shop, "origin"> & { bookings: Booking[] };
 export interface PanelAccess {
   email: string;
   operator: boolean;
@@ -24,8 +25,7 @@ export interface PanelAccess {
 
 export const getPanel = createServerFn({ method: "GET" }).handler(async (): Promise<PanelAccess | null> => {
   setResponseHeader("Cache-Control", "private, no-store");
-  const { panelRequest } = await import("./panel.server");
-  const response = await panelRequest(getRequest(), "GET");
+  const response = await apiFetch("/api/panel", { request: getRequest(), timeout: 7000 });
   if (response.status === 401) return null;
   if (!response.ok) throw new Error("No se pudo cargar el panel");
   return response.json();

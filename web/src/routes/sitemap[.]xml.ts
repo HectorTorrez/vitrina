@@ -1,5 +1,6 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { fetchDirectory, siteOrigin } from "../catalog";
+import { siteOrigin } from "../api";
+import { fetchDirectory } from "../catalog";
 
 export const Route = createFileRoute("/sitemap.xml")({
   server: {

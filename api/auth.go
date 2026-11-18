@@ -5,9 +5,7 @@ import (
 	"crypto/rand"
 	"crypto/sha256"
 	"encoding/hex"
-	"encoding/json"
 	"errors"
-	"io"
 	"log"
 	"net/http"
 	"net/mail"
@@ -30,6 +28,10 @@ type seller struct {
 	Email      string `gorm:"primaryKey"`
 	LastLinkAt *time.Time
 	Operator   bool `gorm:"not null;default:false"`
+}
+
+func ensureSeller(db *gorm.DB, email string) error {
+	return db.Clauses(clause.OnConflict{DoNothing: true}).Create(&seller{Email: email}).Error
 }
 
 type sellerLoginLink struct {
@@ -78,39 +80,9 @@ func sellerEmail(input string) (string, bool) {
 	return email, len(email) <= 254 && err == nil && address.Address == email
 }
 
-func createSeller(db *gorm.DB, args []string) error {
-	if len(args) != 1 {
-		return errors.New("uso: crear-vendedor CORREO")
-	}
-	email, valid := sellerEmail(args[0])
-	if !valid {
-		return errors.New("correo inválido")
-	}
-	return db.Clauses(clause.OnConflict{DoNothing: true}).Create(&seller{Email: email}).Error
-}
-
 func tokenHash(token string) string {
 	sum := sha256.Sum256([]byte(token))
 	return hex.EncodeToString(sum[:])
-}
-
-func readAuthJSON(w http.ResponseWriter, r *http.Request, data any) bool {
-	w.Header().Set("Cache-Control", "no-store")
-	return readJSON(w, r, data, 8192)
-}
-
-func readJSON(w http.ResponseWriter, r *http.Request, data any, limit int64) bool {
-	if r.Header.Get("Content-Type") != "application/json" {
-		w.WriteHeader(http.StatusUnsupportedMediaType)
-		return false
-	}
-	r.Body = http.MaxBytesReader(w, r.Body, limit)
-	decoder := json.NewDecoder(r.Body)
-	if decoder.Decode(data) != nil || decoder.Decode(new(any)) != io.EOF {
-		http.Error(w, "Datos inválidos", http.StatusBadRequest)
-		return false
-	}
-	return true
 }
 
 func authRoutes(mux *http.ServeMux, db *gorm.DB, delivery *resendDelivery) {
@@ -155,12 +127,8 @@ func authRoutes(mux *http.ServeMux, db *gorm.DB, delivery *resendDelivery) {
 				DoUpdates: clause.AssignmentColumns([]string{"token_hash", "expires_at"}),
 			}).Create(&sellerLoginLink{SellerEmail: email, TokenHash: tokenHash(token), ExpiresAt: now.Add(linkLifetime)}).Error
 		})
-		if errors.Is(err, errPanelConflict) {
-			http.Error(w, err.Error(), http.StatusConflict)
-			return
-		}
 		if err != nil {
-			authFailure(w)
+			writeError(w, err)
 			return
 		}
 		if issued {
@@ -177,7 +145,7 @@ func authRoutes(mux *http.ServeMux, db *gorm.DB, delivery *resendDelivery) {
 
 	mux.HandleFunc("POST /api/auth/link", func(w http.ResponseWriter, r *http.Request) {
 		var input struct{ Email string }
-		if !readAuthJSON(w, r, &input) {
+		if !readJSON(w, r, &input, 8192) {
 			return
 		}
 		email, valid := sellerEmail(input.Email)
@@ -191,7 +159,7 @@ func authRoutes(mux *http.ServeMux, db *gorm.DB, delivery *resendDelivery) {
 	// Self-service sign-up: the shop is created only when the seller opens the emailed link.
 	mux.HandleFunc("POST /api/auth/signup", func(w http.ResponseWriter, r *http.Request) {
 		var input struct{ Email, ShopName, ShopSlug string }
-		if !readAuthJSON(w, r, &input) {
+		if !readJSON(w, r, &input, 8192) {
 			return
 		}
 		email, valid := sellerEmail(input.Email)
@@ -206,9 +174,9 @@ func authRoutes(mux *http.ServeMux, db *gorm.DB, delivery *resendDelivery) {
 				return err
 			}
 			if taken > 0 {
-				return errPanelConflict
+				return errConflict
 			}
-			if err := tx.Clauses(clause.OnConflict{DoNothing: true}).Create(&seller{Email: email}).Error; err != nil {
+			if err := ensureSeller(tx, email); err != nil {
 				return err
 			}
 			return tx.Clauses(clause.OnConflict{
@@ -220,7 +188,7 @@ func authRoutes(mux *http.ServeMux, db *gorm.DB, delivery *resendDelivery) {
 
 	mux.HandleFunc("POST /api/auth/verify", func(w http.ResponseWriter, r *http.Request) {
 		var input struct{ Token string }
-		if !readAuthJSON(w, r, &input) {
+		if !readJSON(w, r, &input, 8192) {
 			return
 		}
 		if len(input.Token) < 26 || len(input.Token) > 128 {
@@ -258,35 +226,32 @@ func authRoutes(mux *http.ServeMux, db *gorm.DB, delivery *resendDelivery) {
 			return
 		}
 		if err != nil {
-			authFailure(w)
+			writeError(w, err)
 			return
 		}
 		writeSessionCookie(w, token, int(sessionLifetime.Seconds()))
 		w.WriteHeader(http.StatusNoContent)
 	})
 	mux.HandleFunc("GET /api/auth/session", func(w http.ResponseWriter, r *http.Request) {
-		w.Header().Set("Cache-Control", "private, no-store")
 		session, err := lookupSession(db.WithContext(r.Context()), r)
 		if errors.Is(err, gorm.ErrRecordNotFound) {
 			w.WriteHeader(http.StatusUnauthorized)
 			return
 		}
 		if err != nil {
-			authFailure(w)
+			writeError(w, err)
 			return
 		}
-		w.Header().Set("Content-Type", "application/json")
-		json.NewEncoder(w).Encode(map[string]string{"email": session.SellerEmail})
+		writeJSON(w, http.StatusOK, map[string]string{"email": session.SellerEmail})
 	})
 	mux.HandleFunc("POST /api/auth/logout", func(w http.ResponseWriter, r *http.Request) {
-		w.Header().Set("Cache-Control", "no-store")
 		if r.Header.Get("Content-Type") != "application/json" {
 			w.WriteHeader(http.StatusUnsupportedMediaType)
 			return
 		}
 		if cookie, err := r.Cookie(sessionCookie); err == nil {
 			if err := db.WithContext(r.Context()).Delete(&sellerSession{}, "token_hash = ?", tokenHash(cookie.Value)).Error; err != nil {
-				authFailure(w)
+				writeError(w, err)
 				return
 			}
 		}
@@ -315,10 +280,16 @@ func openSignupShop(tx *gorm.DB, email string, now time.Time) error {
 	return tx.Create(&shopMembership{SellerEmail: email, ShopSlug: pending.Slug}).Error
 }
 
-func writeSessionCookie(w http.ResponseWriter, token string, maxAge int) {
-	http.SetCookie(w, &http.Cookie{Name: sessionCookie, Value: token, Path: "/", HttpOnly: true, SameSite: http.SameSiteLaxMode, MaxAge: maxAge})
+func lookupSession(db *gorm.DB, r *http.Request) (sellerSession, error) {
+	var session sellerSession
+	cookie, err := r.Cookie(sessionCookie)
+	if err != nil || !strings.HasPrefix(cookie.Value, sessionPrefix) {
+		return session, gorm.ErrRecordNotFound
+	}
+	err = db.First(&session, "token_hash = ? AND expires_at > ?", tokenHash(cookie.Value), time.Now()).Error
+	return session, err
 }
 
-func authFailure(w http.ResponseWriter) {
-	http.Error(w, "No se pudo procesar la sesión", http.StatusInternalServerError)
+func writeSessionCookie(w http.ResponseWriter, token string, maxAge int) {
+	http.SetCookie(w, &http.Cookie{Name: sessionCookie, Value: token, Path: "/", HttpOnly: true, SameSite: http.SameSiteLaxMode, MaxAge: maxAge})
 }

@@ -3,12 +3,9 @@ package main
 import (
 	"strings"
 	"time"
-	"unicode/utf8"
 
 	"gorm.io/gorm"
 )
-
-const shopTimeZone = "America/El_Salvador"
 
 type panelBooking struct {
 	ID          uint   `json:"id"`
@@ -29,10 +26,6 @@ func loadPanelBookings(db *gorm.DB, email string) (map[string][]panelBooking, er
 	if err != nil {
 		return nil, err
 	}
-	zone, err := time.LoadLocation(shopTimeZone)
-	if err != nil {
-		return nil, err
-	}
 	now := time.Now()
 	result := make(map[string][]panelBooking)
 	for _, r := range bookings {
@@ -42,8 +35,8 @@ func loadPanelBookings(db *gorm.DB, email string) (map[string][]panelBooking, er
 			Customer:    r.Customer,
 			Phone:       r.Phone,
 			Source:      r.Source,
-			StartsAt:    r.StartsAt.In(zone).Format("2006-01-02T15:04"),
-			EndsAt:      r.EndsAt.In(zone).Format("2006-01-02T15:04"),
+			StartsAt:    r.StartsAt.In(shopZone).Format(localMinute),
+			EndsAt:      r.EndsAt.In(shopZone).Format(localMinute),
 			Cancelled:   r.CancelledAt != nil,
 			Editable:    r.CancelledAt == nil && r.StartsAt.After(now),
 		})
@@ -54,7 +47,7 @@ func loadPanelBookings(db *gorm.DB, email string) (map[string][]panelBooking, er
 func changePanelBooking(db *gorm.DB, input panelInput) error {
 	booking := input.Booking
 	if (input.Action == "agendar") != (booking.ID == 0) {
-		return panelValidation("Indicá una cita válida")
+		return validationError("Indicá una cita válida")
 	}
 	if input.Action == "cancelar" {
 		return withShopAgenda(db, input.ShopSlug, func(tx *gorm.DB) error {
@@ -64,25 +57,24 @@ func changePanelBooking(db *gorm.DB, input panelInput) error {
 			}
 			now := time.Now()
 			if !r.StartsAt.After(now) {
-				return panelValidation("Solo podés cancelar citas futuras")
+				return validationError("Solo podés cancelar citas futuras")
 			}
 			return tx.Model(&r).Update("cancelled_at", now).Error
 		})
 	}
-	zone, err := time.LoadLocation(shopTimeZone)
+	start, err := time.ParseInLocation(localMinute, booking.StartsAt, shopZone)
+	if err != nil || !start.After(time.Now()) || !validSlug(booking.ServiceSlug) {
+		return validationError("Elegí un servicio y una fecha futura")
+	}
+	customer, err := cleanCustomer(booking.Customer)
 	if err != nil {
 		return err
-	}
-	start, err := time.ParseInLocation("2006-01-02T15:04", booking.StartsAt, zone)
-	customer := strings.TrimSpace(booking.Customer)
-	if err != nil || !start.After(time.Now()) || !validSlug(booking.ServiceSlug) || customer == "" || utf8.RuneCountInString(customer) > 160 {
-		return panelValidation("Elegí un servicio, una fecha futura y un nombre de cliente de hasta 160 caracteres")
 	}
 	phone := ""
 	if strings.TrimSpace(booking.Phone) != "" {
 		var ok bool
 		if phone, ok = normalizePhone(booking.Phone); !ok {
-			return panelValidation("Indicá un teléfono válido, con código de país")
+			return validationError("Indicá un teléfono válido, con código de país")
 		}
 	}
 	_, err = saveBooking(db, input.ShopSlug, booking.ServiceSlug, start, customer, phone, booking.ID)

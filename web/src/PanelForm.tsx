@@ -4,12 +4,10 @@ import { useQueryClient } from "@tanstack/react-query";
 import { AlertCircle, Check, Loader2 } from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
-import { Checkbox } from "@/components/ui/checkbox";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { cn } from "@/lib/utils";
-
-export { slugPattern } from "./slug";
+import { shopQuery } from "./catalog";
 
 async function post(input: Record<string, unknown>) {
   const response = await fetch("/gestion", {
@@ -24,7 +22,6 @@ async function post(input: Record<string, unknown>) {
   if (!response.ok) throw new Error((await response.text()).trim() || "No se pudo guardar");
 }
 
-/** Sends panel actions to /gestion, refreshes the panel data and reports the result in a toast. */
 export function usePanelAction() {
   const router = useRouter();
   const queryClient = useQueryClient();
@@ -41,7 +38,7 @@ export function usePanelAction() {
       return false;
     } finally {
       for (const slug of new Set(inputs.map((input) => input.shopSlug))) {
-        if (typeof slug === "string") void queryClient.invalidateQueries({ queryKey: ["shop", slug] });
+        if (typeof slug === "string") void queryClient.invalidateQueries({ queryKey: shopQuery(slug).queryKey });
       }
       await router.invalidate();
       setPending(false);
@@ -103,7 +100,6 @@ export function SectionHead({ label, title, text, action }: { label: string; tit
   );
 }
 
-/** A titled block inside a form card. */
 export function FormSection({ title, text, children, className, aside }: {
   title: string;
   text?: ReactNode;
@@ -125,7 +121,6 @@ export function FormSection({ title, text, children, className, aside }: {
   );
 }
 
-/** Label + control + hint/error; the control receives the generated id and aria attributes. */
 export function Field({ label, hint, error, counter, optional, className, children }: {
   label: ReactNode;
   hint?: ReactNode;
@@ -164,7 +159,6 @@ export function FieldError({ id, children }: { id?: string; children: ReactNode 
   );
 }
 
-/** Input with a fixed prefix or suffix inside the same box (e.g. "$", "@", "/tienda/"). */
 export function AffixInput({ prefix, suffix, className, inputClassName, ...props }: ComponentProps<"input"> & {
   prefix?: ReactNode;
   suffix?: ReactNode;
@@ -184,16 +178,6 @@ export function AffixInput({ prefix, suffix, className, inputClassName, ...props
         className={cn("h-full w-full min-w-0 bg-transparent px-3 text-base outline-none placeholder:text-muted-foreground md:text-sm", prefix && "pl-1", suffix && "pr-1", inputClassName)}
       />
       {suffix && <span className="pr-1.5 text-sm text-muted-foreground">{suffix}</span>}
-    </div>
-  );
-}
-
-export function CheckField({ label, className, ...props }: ComponentProps<typeof Checkbox> & { label: ReactNode }) {
-  const id = useId();
-  return (
-    <div className={cn("flex items-center gap-3", className)}>
-      <Checkbox id={id} {...props} />
-      <Label htmlFor={id} className="font-normal">{label}</Label>
     </div>
   );
 }
@@ -222,7 +206,6 @@ export interface Step {
   error?: boolean;
 }
 
-/** Horizontal progress for multi-step forms; steps can be clicked when `onSelect` allows it. */
 export function Stepper({ steps, current, onSelect, canSelect }: {
   steps: Step[];
   current: number;
@@ -261,7 +244,6 @@ export function Stepper({ steps, current, onSelect, canSelect }: {
   );
 }
 
-/** Sticky bar at the bottom of a long form, shown while there are unsaved changes. */
 export function SaveBar({ dirty, pending, onDiscard, submit = "Guardar cambios", message = "Tenés cambios sin guardar" }: {
   dirty: boolean;
   pending: boolean;
