@@ -7,6 +7,7 @@ import {
 } from "@tanstack/react-router";
 import type { QueryClient } from "@tanstack/react-query";
 import css from "../style.css?url";
+import { noIndex, siteLanguage, siteName } from "../seo";
 
 /** Inter (text), Bricolage Grotesque (Vitrina), Fraunces (serif store themes), Geist Mono. */
 const fonts = [
@@ -38,12 +39,18 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
       meta: [
         { charSet: "utf-8" },
         { name: "viewport", content: "width=device-width, initial-scale=1" },
-        { title: "Vitrina" },
+        { title: siteName },
+        noIndex,
       ],
-      links: [...fonts, { rel: "stylesheet", href: css }],
+      links: [
+        { rel: "icon", type: "image/png", sizes: "192x192", href: "/favicon.png" },
+        { rel: "apple-touch-icon", href: "/apple-touch-icon.png" },
+        ...fonts,
+        { rel: "stylesheet", href: css },
+      ],
     }),
     component: () => (
-      <html lang="es">
+      <html lang={siteLanguage}>
         <head>
           <HeadContent />
         </head>

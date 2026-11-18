@@ -2,13 +2,13 @@ import { useState } from "react";
 import { createFileRoute, Link, redirect } from "@tanstack/react-router";
 import { createServerFn } from "@tanstack/react-start";
 import { cn } from "@/lib/utils";
-import { siteOrigin } from "../api";
-import { fetchDirectory, shareMeta } from "../catalog";
-import { isSlug } from "../slug";
+import { configuredHomeShop, siteOrigin } from "../api";
+import { fetchDirectory } from "../catalog";
+import { pageHead, siteDescription, siteLanguage, siteName } from "../seo";
 
 const getHome = createServerFn({ method: "GET" }).handler(async () => {
-  const home = process.env.VITRINA_HOME_SHOP?.trim();
-  if (home && isSlug(home)) return { home, shops: [], origin: siteOrigin() };
+  const home = configuredHomeShop();
+  if (home) return { home, shops: [], origin: siteOrigin() };
   return { home: "", shops: await fetchDirectory(), origin: siteOrigin() };
 });
 
@@ -21,11 +21,22 @@ export const Route = createFileRoute("/")({
   head: ({ loaderData }) => {
     const preload = [{ rel: "preload", as: "image", href: "/landing/escenario.jpg" }];
     if (!loaderData) return { links: preload };
-    const meta = shareMeta({
-      title: "Vitrina · Tu negocio nunca cierra",
-      description: "Catálogo, citas en línea y WhatsApp en un solo enlace para negocios de El Salvador.",
-      url: loaderData.origin + "/",
+    const url = loaderData.origin + "/";
+    const meta = pageHead({
+      title: "Vitrina · Catálogos y citas en línea en El Salvador",
+      description: siteDescription,
+      url,
       image: loaderData.origin + "/landing/local.jpg",
+      structuredData: {
+        "@graph": [
+          { "@type": "WebSite", url, name: siteName, description: siteDescription, inLanguage: siteLanguage },
+          {
+            "@type": "Service", url, name: siteName, description: siteDescription,
+            serviceType: "Catálogos y citas en línea",
+            areaServed: { "@type": "Country", name: "El Salvador" },
+          },
+        ],
+      },
     });
     return { ...meta, links: [...meta.links, ...preload] };
   },
@@ -65,7 +76,6 @@ function Landing() {
           <div className="hidden gap-8 text-[15px] text-neutral-400 md:flex [&_a:hover]:text-white">
             <a href="#funciones">Funciones</a>
             <a href="#como">Cómo funciona</a>
-            <a href="#tiendas">Tiendas</a>
           </div>
           <div className="flex items-center justify-end gap-5 text-[15px]">
             <Link to="/ingresar" className="hover:text-neutral-300">Ingresar</Link>
@@ -73,11 +83,8 @@ function Landing() {
           </div>
         </nav>
 
-        <section className={cn(wrap, "pt-10 md:pt-18")}>
-          <p className="inline-flex items-center gap-2 rounded-full bg-brand/12 px-3.5 py-1.5 text-[13px] font-medium text-brand">
-            <span className="size-2 rounded-full bg-orange-500" /> Ahora con reservas en línea
-          </p>
-          <div className="my-7 flex flex-col items-start gap-12 lg:flex-row lg:items-end lg:justify-between">
+        <section className={cn(wrap, "pt-10 pb-16 md:pt-18 md:pb-24")}>
+          <div className="mb-7 flex flex-col items-start gap-12 lg:flex-row lg:items-end lg:justify-between">
             <h1 className="font-display text-[clamp(64px,9.2vw,132px)] leading-[0.9] font-bold tracking-[-0.045em]">Tu negocio<br />nunca cierra.</h1>
             <div className="grid max-w-[560px] gap-6 lg:max-w-none lg:shrink-0 lg:basis-[440px]">
               <p className="text-lg text-neutral-400">Catálogo, citas en línea y WhatsApp en un solo enlace. Tus clientes ven precios, reservan y te escriben mientras vos atendés.</p>
@@ -90,16 +97,6 @@ function Landing() {
             </div>
           </div>
           <Stage />
-        </section>
-
-        <section className={cn(wrap, "flex flex-wrap items-center justify-center gap-x-8 gap-y-3 pt-10 pb-16 md:gap-x-14 md:gap-y-4 md:pt-14 md:pb-24")} id="tiendas" aria-label="Tiendas en Vitrina">
-          <p className="w-full text-center text-sm text-neutral-400 md:w-auto">Ya atienden con Vitrina</p>
-          {shops.length === 0 && <span className="text-sm text-neutral-400">Pronto, las primeras tiendas.</span>}
-          {shops.map((s) => (
-            <Link key={s.slug} to="/tienda/$shop" params={{ shop: s.slug }} className="font-display text-[28px] font-bold tracking-[-0.03em] text-[#5c5c5c] transition hover:text-white">
-              {s.name}
-            </Link>
-          ))}
         </section>
       </div>
 

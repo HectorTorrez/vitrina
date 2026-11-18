@@ -2,7 +2,8 @@ import { useState, type ReactNode } from "react";
 import { createFileRoute, Link, notFound } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
 import { ArrowLeft, Check, Clock, Share2 } from "lucide-react";
-import { acceptsBookings, shopQuery, price, productImage, shareMeta, totalPrice, type Product } from "../catalog";
+import { acceptsBookings, shopQuery, price, productImage, totalPrice, type Product } from "../catalog";
+import { pageHead, siteLanguage } from "../seo";
 import { PublicBooking } from "../PublicBooking";
 import { StoreLayout } from "../store/StoreLayout";
 import { ProductCard, ProductImage, WhatsAppIcon } from "../store/StoreParts";
@@ -18,14 +19,54 @@ export const Route = createFileRoute("/tienda/$shop/$product")({
   head: ({ loaderData, params }) => {
     const p = loaderData?.products.find((item) => item.slug === params.product);
     if (!loaderData || !p) return {};
-    const image = productImage(p);
-    const detail = p.kind === "service" ? p.durationMinutes + " min · " : "";
-    return shareMeta({
-      title: p.name + " · " + loaderData.name,
-      description: detail + (p.available ? price(p.priceCents) : "No disponible") + " · " + loaderData.name +
-        (loaderData.description ? ". " + loaderData.description : ""),
-      url: loaderData.origin + "/tienda/" + params.shop + "/" + params.product,
-      image: image && new URL(image, loaderData.origin).href,
+    const { name, origin } = loaderData;
+    const shopUrl = origin + "/tienda/" + params.shop;
+    const url = shopUrl + "/" + p.slug;
+    const path = productImage(p);
+    const image = path && new URL(path, origin).href;
+    const service = p.kind === "service";
+    const displayedPrice = totalPrice(p);
+    const description = [
+      p.name + " · " + (service ? "Servicio" : "Producto") + " de " + name,
+      ...(service ? [p.durationMinutes + " min"] : []),
+      p.available ? price(displayedPrice) : "No disponible",
+    ].join(" · ");
+    const offer = p.available ? {
+      "@type": "Offer", url, price: (displayedPrice / 100).toFixed(2), priceCurrency: "USD",
+      ...(!service ? { availability: "https://schema.org/InStock" } : {}),
+    } : undefined;
+    return pageHead({
+      title: p.name + " · " + name,
+      description,
+      url,
+      image,
+      structuredData: {
+        "@graph": [
+          {
+            "@type": "WebPage", url, name: p.name, description, inLanguage: siteLanguage,
+            mainEntity: { "@id": url + "#ficha" },
+            breadcrumb: { "@id": url + "#ruta" },
+          },
+          {
+            "@type": service ? "Service" : "Product",
+            "@id": url + "#ficha",
+            name: p.name,
+            url,
+            description,
+            image,
+            offers: offer,
+            ...(service ? { provider: { "@type": "Organization", name, url: shopUrl } } : {}),
+          },
+          {
+            "@type": "BreadcrumbList",
+            "@id": url + "#ruta",
+            itemListElement: [
+              { "@type": "ListItem", position: 1, name, item: shopUrl },
+              { "@type": "ListItem", position: 2, name: p.name, item: url },
+            ],
+          },
+        ],
+      },
     });
   },
   component: Details,

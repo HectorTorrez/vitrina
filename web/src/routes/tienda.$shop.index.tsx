@@ -2,7 +2,8 @@ import { useMemo, useState } from "react";
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
 import { Search, X } from "lucide-react";
-import { acceptsBookings, shopQuery, productImage, shareMeta, type Product } from "../catalog";
+import { acceptsBookings, shopQuery, productImage, type Product } from "../catalog";
+import { pageHead, siteLanguage } from "../seo";
 import { foldAccents } from "../slug";
 import { StoreLayout } from "../store/StoreLayout";
 import { ProductCard, ShopHero } from "../store/StoreParts";
@@ -13,12 +14,29 @@ export const Route = createFileRoute("/tienda/$shop/")({
     context.queryClient.ensureQueryData(shopQuery(params.shop)),
   head: ({ loaderData, params }) => {
     if (!loaderData) return {};
-    const first = loaderData.products.map(productImage).find(Boolean);
-    return shareMeta({
-      title: loaderData.name + " · Vitrina",
-      description: loaderData.description || "Catálogo de " + loaderData.name,
-      url: loaderData.origin + "/tienda/" + params.shop,
-      image: first && new URL(first, loaderData.origin).href,
+    const { name, origin, products } = loaderData;
+    const first = products.map(productImage).find(Boolean);
+    const url = origin + "/tienda/" + params.shop;
+    const description = loaderData.description.trim() || "Explorá el catálogo y los precios de " + name + " en Vitrina.";
+    return pageHead({
+      title: name + " · Catálogo en Vitrina",
+      description,
+      url,
+      image: first && new URL(first, origin).href,
+      indexable: products.length > 0,
+      structuredData: {
+        "@type": "CollectionPage",
+        name,
+        url,
+        description,
+        inLanguage: siteLanguage,
+        mainEntity: products.length ? {
+          "@type": "ItemList",
+          itemListElement: products.map((product, index) => ({
+            "@type": "ListItem", position: index + 1, name: product.name, url: url + "/" + product.slug,
+          })),
+        } : undefined,
+      },
     });
   },
   component: Catalog,

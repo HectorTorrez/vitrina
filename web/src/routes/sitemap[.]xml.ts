@@ -1,5 +1,5 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { siteOrigin } from "../api";
+import { configuredHomeShop, siteOrigin } from "../api";
 import { fetchDirectory } from "../catalog";
 
 export const Route = createFileRoute("/sitemap.xml")({
@@ -10,7 +10,7 @@ export const Route = createFileRoute("/sitemap.xml")({
         const shops = await fetchDirectory().catch(() => null);
         if (!shops) return new Response("No disponible", { status: 503 });
         const escape = (value: string) => value.replace(/&/g, "&amp;").replace(/</g, "&lt;");
-        const urls = [origin + "/", ...shops.flatMap((shop) => [
+        const urls = [...(configuredHomeShop() ? [] : [origin + "/"]), ...shops.flatMap((shop) => [
           origin + "/tienda/" + shop.slug,
           ...shop.products.map((product) => origin + "/tienda/" + shop.slug + "/" + product),
         ])];

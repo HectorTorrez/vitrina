@@ -14,6 +14,7 @@ import { Route as AuthRouteImport } from './routes/auth'
 import { Route as ConfirmarAccesoRouteImport } from './routes/confirmar-acceso'
 import { Route as GestionRouteImport } from './routes/gestion'
 import { Route as IngresarRouteImport } from './routes/ingresar'
+import { Route as LlmsDottxtRouteImport } from './routes/llms[.]txt'
 import { Route as PanelRouteImport } from './routes/panel'
 import { Route as RegistrarseRouteImport } from './routes/registrarse'
 import { Route as RobotsDottxtRouteImport } from './routes/robots[.]txt'
@@ -46,6 +47,11 @@ const GestionRoute = GestionRouteImport.update({
 const IngresarRoute = IngresarRouteImport.update({
   id: '/ingresar',
   path: '/ingresar',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const LlmsDottxtRoute = LlmsDottxtRouteImport.update({
+  id: '/llms.txt',
+  path: '/llms.txt',
   getParentRoute: () => rootRouteImport,
 } as any)
 const PanelRoute = PanelRouteImport.update({
@@ -95,6 +101,7 @@ export interface FileRoutesByFullPath {
   '/confirmar-acceso': typeof ConfirmarAccesoRoute
   '/gestion': typeof GestionRoute
   '/ingresar': typeof IngresarRoute
+  '/llms.txt': typeof LlmsDottxtRoute
   '/panel': typeof PanelRoute
   '/registrarse': typeof RegistrarseRoute
   '/robots.txt': typeof RobotsDottxtRoute
@@ -110,6 +117,7 @@ export interface FileRoutesByTo {
   '/confirmar-acceso': typeof ConfirmarAccesoRoute
   '/gestion': typeof GestionRoute
   '/ingresar': typeof IngresarRoute
+  '/llms.txt': typeof LlmsDottxtRoute
   '/panel': typeof PanelRoute
   '/registrarse': typeof RegistrarseRoute
   '/robots.txt': typeof RobotsDottxtRoute
@@ -126,6 +134,7 @@ export interface FileRoutesById {
   '/confirmar-acceso': typeof ConfirmarAccesoRoute
   '/gestion': typeof GestionRoute
   '/ingresar': typeof IngresarRoute
+  '/llms.txt': typeof LlmsDottxtRoute
   '/panel': typeof PanelRoute
   '/registrarse': typeof RegistrarseRoute
   '/robots.txt': typeof RobotsDottxtRoute
@@ -143,6 +152,7 @@ export interface FileRouteTypes {
     | '/confirmar-acceso'
     | '/gestion'
     | '/ingresar'
+    | '/llms.txt'
     | '/panel'
     | '/registrarse'
     | '/robots.txt'
@@ -158,6 +168,7 @@ export interface FileRouteTypes {
     | '/confirmar-acceso'
     | '/gestion'
     | '/ingresar'
+    | '/llms.txt'
     | '/panel'
     | '/registrarse'
     | '/robots.txt'
@@ -173,6 +184,7 @@ export interface FileRouteTypes {
     | '/confirmar-acceso'
     | '/gestion'
     | '/ingresar'
+    | '/llms.txt'
     | '/panel'
     | '/registrarse'
     | '/robots.txt'
@@ -189,6 +201,7 @@ export interface RootRouteChildren {
   ConfirmarAccesoRoute: typeof ConfirmarAccesoRoute
   GestionRoute: typeof GestionRoute
   IngresarRoute: typeof IngresarRoute
+  LlmsDottxtRoute: typeof LlmsDottxtRoute
   PanelRoute: typeof PanelRoute
   RegistrarseRoute: typeof RegistrarseRoute
   RobotsDottxtRoute: typeof RobotsDottxtRoute
@@ -234,6 +247,13 @@ declare module '@tanstack/react-router' {
       path: '/ingresar'
       fullPath: '/ingresar'
       preLoaderRoute: typeof IngresarRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/llms.txt': {
+      id: '/llms.txt'
+      path: '/llms.txt'
+      fullPath: '/llms.txt'
+      preLoaderRoute: typeof LlmsDottxtRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/panel': {
@@ -301,6 +321,7 @@ const rootRouteChildren: RootRouteChildren = {
   ConfirmarAccesoRoute: ConfirmarAccesoRoute,
   GestionRoute: GestionRoute,
   IngresarRoute: IngresarRoute,
+  LlmsDottxtRoute: LlmsDottxtRoute,
   PanelRoute: PanelRoute,
   RegistrarseRoute: RegistrarseRoute,
   RobotsDottxtRoute: RobotsDottxtRoute,

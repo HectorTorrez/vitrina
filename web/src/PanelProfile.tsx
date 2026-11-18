@@ -1,5 +1,9 @@
 import { useMemo, useState, type FormEvent } from "react";
 import { ArrowLeft, ArrowRight, Check, Copy, Loader2, Sparkles, X } from "lucide-react";
+import PhoneInput, { isPossiblePhoneNumber } from "react-phone-number-input";
+import { PhoneCountrySelect } from "./PhoneCountrySelect";
+import phoneLabels from "react-phone-number-input/locale/es";
+import "react-phone-number-input/style.css";
 import { acceptsBookings, type Product } from "./catalog";
 import type { PanelShop, Profile } from "./panel";
 import { AffixInput, Field, FormSection, SaveBar, Stepper, usePanelAction } from "./PanelForm";
@@ -56,12 +60,6 @@ function cleanHandle(value: string) {
   return (fromUrl ? fromUrl[1] : trimmed).replace(/^@+/, "");
 }
 
-/** Digits of the WhatsApp number; 8-digit numbers are from El Salvador, as in normalizePhone (api/agenda.go). */
-function cleanPhone(value: string) {
-  const digits = value.replace(/\D/g, "");
-  return digits.length === 8 ? "503" + digits : digits;
-}
-
 function fromDraft(draft: ProfileDraft): Profile {
   return {
     name: draft.name.trim(),
@@ -69,7 +67,7 @@ function fromDraft(draft: ProfileDraft): Profile {
     theme: draft.theme,
     instagram: cleanHandle(draft.instagram),
     tiktok: cleanHandle(draft.tiktok),
-    whatsapp: cleanPhone(draft.whatsapp),
+    whatsapp: draft.whatsapp.replace(/^\+/, ""),
     hours: draft.booking ? draft.days.map((day) => day.open ? { open: day.from, close: day.to } : { open: "", close: "" }) : [],
   };
 }
@@ -83,8 +81,9 @@ function validateProfile(draft: ProfileDraft): ProfileErrors {
     const handle = cleanHandle(draft[key]);
     if (handle && !/^[A-Za-z0-9_.]{1,32}$/.test(handle)) errors[key] = "Solo letras, números, puntos y guiones bajos (hasta 32).";
   }
-  const phone = cleanPhone(draft.whatsapp);
-  if (draft.whatsapp.trim() && !/^[1-9][0-9]{6,14}$/.test(phone)) errors.whatsapp = "Escribí el número con código de país, por ejemplo +503 7000 0000.";
+  if (draft.whatsapp && !isPossiblePhoneNumber(draft.whatsapp)) {
+    errors.whatsapp = "Revisá el país y completá el número de WhatsApp.";
+  }
   if (draft.booking) {
     const days: Record<number, string> = {};
     draft.days.forEach((day, index) => {
@@ -159,9 +158,19 @@ function ContactFields({ draft, set, errors }: { draft: ProfileDraft; set: SetDr
     <div className="grid gap-5">
       <Field
         label="WhatsApp" optional error={errors.whatsapp}
-        hint="Tus clientes te escriben desde cada ficha. Si es de El Salvador podés escribir solo los 8 dígitos."
+        hint="Tus clientes pueden escribirte a este número desde cada ficha."
       >
-        <AffixInput type="tel" inputMode="tel" value={draft.whatsapp} onChange={(e) => set({ whatsapp: e.target.value })} placeholder="+503 7000 0000" maxLength={20} />
+        <PhoneInput
+          defaultCountry="SV"
+          international
+          labels={phoneLabels}
+          locales="es"
+          countrySelectComponent={PhoneCountrySelect}
+          value={draft.whatsapp || undefined}
+          onChange={(value) => set({ whatsapp: value ?? "" })}
+          className="h-10 gap-2 rounded-lg border border-input bg-background px-3 shadow-xs focus-within:border-ring focus-within:ring-[3px] focus-within:ring-ring/50 has-[[aria-invalid=true]]:border-destructive"
+          numberInputProps={{ className: "h-full bg-transparent text-base outline-none md:text-sm" }}
+        />
       </Field>
       <div className="grid gap-5 sm:grid-cols-2">
         <Field label="Instagram" optional error={errors.instagram}>

@@ -108,41 +108,49 @@ function Panel() {
             Ver mi tienda <ArrowUpRight className="size-4" />
           </a>
         )}
-        <div className="flex min-w-0 items-center gap-2 border-t border-white/10 px-1 pt-3">
-          <span className="grid size-8 shrink-0 place-items-center rounded-full bg-white/10 text-xs font-semibold uppercase">{panel.email[0]}</span>
-          <span className="min-w-0 flex-1 truncate text-sm text-neutral-400" title={panel.email}>{panel.email}</span>
-          <form action="/auth" method="post" className="shrink-0">
-            <Button type="submit" name="action" value="logout" variant="ghost" size="icon-sm" className="rounded-full text-neutral-400 hover:bg-white/10 hover:text-white" aria-label="Cerrar sesión" title="Cerrar sesión">
-              <LogOut />
-            </Button>
-          </form>
-        </div>
+        <PanelAccount email={panel.email} className="border-t border-white/10 px-1 pt-3" />
       </div>
     </div>
   );
 
   return (
-    <div className="min-h-svh bg-background lg:pl-64">
-      <aside className="fixed inset-y-0 left-0 z-40 hidden w-64 overflow-hidden bg-ink-dark text-white lg:block">{sidebar}</aside>
+    <div className={cn("min-h-svh bg-background", section !== "alta" && "lg:pl-64")}>
+      {section === "alta" ? (
+        <header className="bg-ink-dark text-white">
+          <div className="mx-auto flex h-14 w-[min(100%-32px,1120px)] items-center gap-4">
+            <Link to="/" className="shrink-0 font-display text-xl font-bold tracking-tighter">vitrina</Link>
+            {shop && (
+              <Button variant="ghost" size="sm" onClick={() => go("inicio")} className="shrink-0 text-white hover:bg-white/10 hover:text-white">
+                Volver al panel
+              </Button>
+            )}
+            <PanelAccount email={panel.email} className="ml-auto max-w-72" />
+          </div>
+        </header>
+      ) : (
+        <>
+          <aside className="fixed inset-y-0 left-0 z-40 hidden w-64 overflow-hidden bg-ink-dark text-white lg:block">{sidebar}</aside>
 
-      <header className="sticky top-0 z-40 flex h-14 items-center gap-3 bg-ink-dark px-4 text-white lg:hidden">
-        <Sheet open={menuOpen} onOpenChange={setMenuOpen}>
-          <SheetTrigger asChild>
-            <Button variant="ghost" size="icon" className="-ml-2 rounded-full text-white hover:bg-white/10 hover:text-white" aria-label="Abrir menú"><Menu /></Button>
-          </SheetTrigger>
-          <SheetContent side="left" className="w-72 border-0 bg-ink-dark p-0 text-white [&>button:last-child]:text-neutral-400">
-            <SheetTitle className="sr-only">Menú</SheetTitle>
-            {sidebar}
-          </SheetContent>
-        </Sheet>
-        <span className="font-display text-xl font-bold tracking-tighter">vitrina</span>
-        {current && <span className="truncate text-sm text-neutral-400">/ {current.label}</span>}
-        {shop && (
-          <Button asChild size="sm" className="ml-auto rounded-full bg-brand text-ink-dark hover:bg-[#ffb088]">
-            <a href={"/tienda/" + shop.slug} target="_blank" rel="noreferrer">Ver tienda <ArrowUpRight /></a>
-          </Button>
-        )}
-      </header>
+          <header className="sticky top-0 z-40 flex h-14 items-center gap-3 bg-ink-dark px-4 text-white lg:hidden">
+            <Sheet open={menuOpen} onOpenChange={setMenuOpen}>
+              <SheetTrigger asChild>
+                <Button variant="ghost" size="icon" className="-ml-2 rounded-full text-white hover:bg-white/10 hover:text-white" aria-label="Abrir menú"><Menu /></Button>
+              </SheetTrigger>
+              <SheetContent side="left" className="w-72 border-0 bg-ink-dark p-0 text-white [&>button:last-child]:text-neutral-400">
+                <SheetTitle className="sr-only">Menú</SheetTitle>
+                {sidebar}
+              </SheetContent>
+            </Sheet>
+            <span className="font-display text-xl font-bold tracking-tighter">vitrina</span>
+            {current && <span className="truncate text-sm text-neutral-400">/ {current.label}</span>}
+            {shop && (
+              <Button asChild size="sm" className="ml-auto rounded-full bg-brand text-ink-dark hover:bg-[#ffb088]">
+                <a href={"/tienda/" + shop.slug} target="_blank" rel="noreferrer">Ver tienda <ArrowUpRight /></a>
+              </Button>
+            )}
+          </header>
+        </>
+      )}
 
       <main className="mx-auto w-[min(100%-32px,1120px)] pt-8 pb-24 sm:pt-10">
         {section === "inicio" && shop && <Overview shop={shop} go={go} />}
@@ -166,6 +174,20 @@ function Panel() {
         )}
       </main>
       <Toaster position="bottom-center" richColors />
+    </div>
+  );
+}
+
+function PanelAccount({ email, className }: { email: string; className: string }) {
+  return (
+    <div className={cn("flex min-w-0 items-center gap-2", className)}>
+      <span className="grid size-8 shrink-0 place-items-center rounded-full bg-white/10 text-xs font-semibold uppercase">{email[0]}</span>
+      <span className="min-w-0 flex-1 truncate text-sm text-neutral-400" title={email}>{email}</span>
+      <form action="/auth" method="post" className="shrink-0">
+        <Button type="submit" name="action" value="logout" variant="ghost" size="icon-sm" className="rounded-full text-neutral-400 hover:bg-white/10 hover:text-white" aria-label="Cerrar sesión" title="Cerrar sesión">
+          <LogOut />
+        </Button>
+      </form>
     </div>
   );
 }

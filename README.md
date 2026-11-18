@@ -108,7 +108,7 @@ La carpeta `deploy` contiene todo lo necesario para producción en un servidor c
 
 Para actualizar, ejecutá `git pull` y repetí el paso 3. Para ver los registros, usá `docker compose --env-file .env logs -f api web`.
 
-Cada tienda y ficha publica título, descripción e imagen Open Graph con el dominio de `VITRINA_WEB_ORIGIN`, para que WhatsApp e Instagram muestren una vista previa. El sitio publica `/robots.txt` y `/sitemap.xml`.
+La portada, las tiendas con fichas publicadas y sus fichas generan URLs canónicas, vistas previas para compartir y datos estructurados a partir de `VITRINA_WEB_ORIGIN`. Configurá esa variable con el origen público en producción. El sitio publica `/robots.txt`, `/sitemap.xml` y una guía de páginas públicas en `/llms.txt`.
 
 ### Respaldos
 

@@ -1,8 +1,11 @@
-import { useState } from "react";
+import { useLayoutEffect, useRef, useState, type ReactNode } from "react";
 import { Monitor, Smartphone } from "lucide-react";
 import { acceptsBookings, type Product, type Shop } from "../catalog";
 import { ProductCard, ShopHero, StoreBrand, StoreFrame, StoreHeader, WhatsAppIcon } from "./StoreParts";
+import { themeStyle } from "../themes";
 import { cn } from "@/lib/utils";
+
+const desktopWidth = 960;
 
 const samples: Product[] = [
   { kind: "service", durationMinutes: 60, slug: "ejemplo-1", name: "Tu primer servicio", priceCents: 1800, available: true, artwork: "", position: 0, hidden: false, options: [] },
@@ -45,24 +48,72 @@ export function StorefrontPreview({ shop, slug, className }: {
             <span className="ml-2 truncate font-mono text-[10px] text-muted-foreground">/tienda/{slug || "tu-tienda"}</span>
           </div>
         )}
-        <div className={cn("overflow-y-auto [scrollbar-width:thin]", device === "phone" ? "h-[520px]" : "h-[420px]")} inert>
-          <div className={cn(device === "desktop" && "w-[200%] [zoom:0.5]")}>
-            <StoreFrame theme={shop.theme} className="min-h-full pb-8">
-              <StoreHeader brand={<div className="flex min-w-0 items-center gap-3"><StoreBrand name={shop.name || "Tu tienda"} /></div>}>
-                {shop.whatsapp && (
-                  <span className="inline-flex h-9 items-center gap-2 rounded-full bg-store-accent px-3.5 text-sm font-medium text-store-accent-ink">
-                    <WhatsAppIcon className="size-4" />
-                  </span>
-                )}
-              </StoreHeader>
-              <div className="mx-auto w-[min(100%-32px,1120px)]">
-                <ShopHero shop={shop} bookable={bookable} />
-                <div className="grid grid-cols-2 gap-x-4 gap-y-6 @3xl:grid-cols-3">
-                  {products.map((product) => <ProductCard key={product.slug} product={product} />)}
-                </div>
-              </div>
-            </StoreFrame>
+        {device === "phone" ? (
+          <div className="h-[520px] overflow-y-auto [scrollbar-width:thin]" inert>
+            <StorePage shop={shop} products={products} bookable={bookable} />
           </div>
+        ) : (
+          <DesktopPage theme={shop.theme}>
+            <StorePage shop={shop} products={products} bookable={bookable} />
+          </DesktopPage>
+        )}
+      </div>
+    </div>
+  );
+}
+
+function StorePage({ shop, products, bookable }: {
+  shop: Pick<Shop, "name" | "description" | "theme" | "instagram" | "tiktok" | "whatsapp">;
+  products: Product[];
+  bookable: boolean;
+}) {
+  return (
+    <StoreFrame theme={shop.theme} className="min-h-full pb-8">
+      <StoreHeader brand={<div className="flex min-w-0 items-center gap-3"><StoreBrand name={shop.name || "Tu tienda"} /></div>}>
+        {shop.whatsapp && (
+          <span className="inline-flex h-9 items-center gap-2 rounded-full bg-store-accent px-3.5 text-sm font-medium text-store-accent-ink">
+            <WhatsAppIcon className="size-4" />
+          </span>
+        )}
+      </StoreHeader>
+      <div className="mx-auto w-[min(100%-32px,1120px)]">
+        <ShopHero shop={shop} bookable={bookable} />
+        <div className="grid grid-cols-2 gap-x-4 gap-y-6 @3xl:grid-cols-3">
+          {products.map((product) => <ProductCard key={product.slug} product={product} />)}
+        </div>
+      </div>
+    </StoreFrame>
+  );
+}
+
+function DesktopPage({ theme, children }: { theme: string; children: ReactNode }) {
+  const frame = useRef<HTMLDivElement>(null);
+  const content = useRef<HTMLDivElement>(null);
+  const [layout, setLayout] = useState({ scale: 1, height: 0 });
+
+  useLayoutEffect(() => {
+    const frameEl = frame.current;
+    const contentEl = content.current;
+    if (!frameEl || !contentEl) return;
+    const measure = () => {
+      const width = frameEl.clientWidth;
+      if (!width) return;
+      const scale = Math.round((width / desktopWidth) * 1000) / 1000;
+      const height = Math.ceil(contentEl.offsetHeight * scale);
+      setLayout((current) => current.scale === scale && current.height === height ? current : { scale, height });
+    };
+    measure();
+    const observer = new ResizeObserver(measure);
+    observer.observe(frameEl);
+    observer.observe(contentEl);
+    return () => observer.disconnect();
+  }, []);
+
+  return (
+    <div ref={frame} style={themeStyle(theme)} className="h-[420px] overflow-x-hidden overflow-y-auto bg-store-bg [scrollbar-width:thin]" inert>
+      <div className="overflow-hidden" style={{ height: layout.height }}>
+        <div className="origin-top-left" style={{ width: desktopWidth, transform: `scale(${layout.scale})` }}>
+          <div ref={content}>{children}</div>
         </div>
       </div>
     </div>

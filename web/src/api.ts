@@ -1,4 +1,5 @@
 // How the web server reaches the Go API and guards what it proxies. Call these only on the server.
+import { isSlug } from "./slug";
 
 export function apiURL(path: string) {
   return (process.env.VITRINA_API_URL || "http://127.0.0.1:8080") + path;
@@ -13,6 +14,11 @@ export function apiFetch(path: string, { request, timeout = 5000, ...init }: Req
 
 export function siteOrigin() {
   return (process.env.VITRINA_WEB_ORIGIN || "http://127.0.0.1:5173").replace(/\/$/, "");
+}
+
+export function configuredHomeShop() {
+  const slug = process.env.VITRINA_HOME_SHOP?.trim();
+  return isSlug(slug) ? slug : undefined;
 }
 
 export function sameOrigin(request: Request) {

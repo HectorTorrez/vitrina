@@ -86,27 +86,3 @@ export function productImage(product: Product) {
   if (product.imageUrl) return product.imageUrl;
   if (product.artwork) return "/obras/" + encodeURIComponent(product.artwork) + ".svg";
 }
-
-export function shareMeta({ title, description, url, image }: {
-  title: string;
-  description: string;
-  url: string;
-  image?: string;
-}) {
-  const text = description.slice(0, 200);
-  return {
-    meta: [
-      { title },
-      { name: "description", content: text },
-      { property: "og:type", content: "website" },
-      { property: "og:site_name", content: "Vitrina" },
-      { property: "og:locale", content: "es_SV" },
-      { property: "og:title", content: title },
-      { property: "og:description", content: text },
-      { property: "og:url", content: url },
-      ...(image ? [{ property: "og:image", content: image }] : []),
-      { name: "twitter:card", content: image ? "summary_large_image" : "summary" },
-    ],
-    links: [{ rel: "canonical", href: url }],
-  };
-}
