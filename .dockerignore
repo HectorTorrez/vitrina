@@ -6,5 +6,6 @@
 .local
 *.db
 *.db-*
+.env
 deploy/.env
 deploy/backups

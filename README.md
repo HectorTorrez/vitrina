@@ -81,6 +81,8 @@ Verificá el dominio remitente en Resend y mantené desactivado el seguimiento d
 | `RESEND_FROM` | API Go | Remitente de un dominio verificado, como `Vitrina <acceso@vitrina.example>`. |
 | `VITRINA_WEB_ORIGIN` | API Go y servidor web | Origen al que apunta el correo, como `https://vitrina.example` o `http://127.0.0.1:5173` en desarrollo local. Abrí la web con ese mismo origen. |
 
+En desarrollo local, copiá `.env.example` como `.env` en la raíz y completá los valores; `pnpm dev` y `scripts/dev-api.sh` lo cargan. En producción van en `deploy/.env`. Para probar sin dominio, dejá `RESEND_API_KEY` vacía con `VITRINA_WEB_ORIGIN` local: la API imprime los correos (enlaces de acceso y avisos de citas) en su consola en lugar de enviarlos.
+
 Reiniciá la API y el servidor web después de configurar las variables. Sin la clave, el catálogo funciona y el formulario informa que el acceso no está disponible. El envío se solicita a Resend en segundo plano y los fallos se registran en la API.
 
 ## Despliegue en un VPS

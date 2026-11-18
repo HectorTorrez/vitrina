@@ -52,7 +52,7 @@ function Catalog() {
           {data.products.length === 1 ? "opción" : "opciones"}
         </span>
       </div>
-      <div className="grid">
+      <div className="store-grid">
         {data.products.map((p) => (
           <Link
             className="card"

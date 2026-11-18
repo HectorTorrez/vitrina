@@ -5,7 +5,8 @@ import { AuthLayout, authFonts } from "../AuthLayout";
 export const Route = createFileRoute("/confirmar-acceso")({
   headers: () => ({
     "Cache-Control": "private, no-store",
-    "Referrer-Policy": "no-referrer",
+    // "no-referrer" would make the browser send Origin: null and /auth would reject the form.
+    "Referrer-Policy": "same-origin",
   }),
   head: () => ({ meta: [{ title: "Confirmar acceso · Vitrina" }], links: authFonts }),
   component: ConfirmAccess,

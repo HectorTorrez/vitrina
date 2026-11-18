@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { createFileRoute, Link, redirect } from "@tanstack/react-router";
 import { getSeller } from "../auth";
-import { AuthLayout, authFonts, MailIcon } from "../AuthLayout";
+import { AuthLayout, authFonts, EmailField, MailIcon } from "../AuthLayout";
 
 type Status = "enviado" | "ocupado" | "datos" | "servicio";
 
@@ -95,10 +95,7 @@ function Signup() {
             />
           </span>
         </label>
-        <label className="auth-field">
-          <span>Tu correo</span>
-          <input type="email" name="email" autoComplete="email" maxLength={254} placeholder="vos@tunegocio.com" required />
-        </label>
+        <EmailField label="Tu correo" />
         <button type="submit" className="auth-btn" disabled={sending}>
           {sending ? "Creando…" : "Crear mi tienda"}
         </button>

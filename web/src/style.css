@@ -1,3 +1,5 @@
+/* Estilos del sitio en una capa: así las utilidades de Tailwind del panel tienen prioridad. */
+@layer legacy {
 * {
   box-sizing: border-box;
 }
@@ -85,7 +87,7 @@ h2 {
     serif;
   margin: 0;
 }
-.grid {
+.store-grid {
   display: grid;
   grid-template-columns: repeat(3, 1fr);
   gap: 22px;
@@ -165,7 +167,7 @@ pre {
   main {
     padding: 18px 20px;
   }
-  .grid {
+  .store-grid {
     grid-template-columns: repeat(2, minmax(0, 1fr));
     gap: 22px 14px;
   }
@@ -193,154 +195,6 @@ pre {
   max-width: 1120px;
   margin: auto;
   padding: 16px 32px 32px;
-}
-
-.seller-panel {
-  width: min(100% - 2rem, 52rem);
-  margin: 2rem auto 4rem;
-  display: grid;
-  gap: 1.25rem;
-}
-
-.panel-header {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: start;
-  justify-content: space-between;
-  gap: 1rem;
-}
-
-.panel-header h1, .panel-header p, .panel-section h2 {
-  margin: .25rem 0;
-}
-
-.panel-section {
-  display: grid;
-  gap: 1rem;
-  padding: clamp(1rem, 3vw, 1.75rem);
-  border: 1px solid #d6dcd7;
-  border-radius: .75rem;
-  background: #fff;
-}
-
-.panel-form fieldset {
-  min-inline-size: 0;
-  margin: 0;
-  padding: 0;
-  border: 0;
-  display: grid;
-  gap: .9rem;
-}
-
-.seller-panel label {
-  display: grid;
-  gap: .35rem;
-  font-weight: 600;
-}
-
-.seller-panel input, .seller-panel select, .seller-panel textarea {
-  width: 100%;
-  padding: .65rem;
-  border: 1px solid #abb8ae;
-  border-radius: .35rem;
-  font: inherit;
-  font-weight: 400;
-}
-
-.seller-panel button {
-  justify-self: start;
-  border: 1px solid #233f33;
-  border-radius: .4rem;
-  padding: .6rem .9rem;
-  background: #233f33;
-  color: #fff;
-  font: inherit;
-  cursor: pointer;
-}
-
-.seller-panel button:disabled {
-  opacity: .65;
-  cursor: wait;
-}
-
-.panel-fields {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(min(100%, 12rem), 1fr));
-  gap: .9rem;
-}
-
-.seller-panel [role="alert"] { color: #a32626; }
-
-.seller-panel {
-  padding: 0;
-  --rule: #d6dcd7;
-  --ink: #233f33;
-}
-
-.panel-header {
-  width: 100%;
-  padding: 0 0 1rem;
-}
-
-.panel-section details {
-  border-top: 1px solid var(--rule);
-  padding-top: .75rem;
-}
-
-.panel-section summary {
-  cursor: pointer;
-  font-weight: 600;
-  overflow-wrap: anywhere;
-}
-
-.panel-section details[open] summary {
-  margin-bottom: .85rem;
-}
-
-.seller-panel label {
-  margin: 0;
-  padding: 0;
-  border: 0;
-  min-width: 0;
-}
-
-.seller-panel .panel-check {
-  display: flex;
-}
-
-.seller-panel input[type="checkbox"] {
-  width: auto;
-}
-
-.panel-section h3, .panel-section p { margin: 0; }
-.panel-section .panel-cancel { margin-top: 1rem; }
-.panel-form [role] { margin-top: .75rem; }
-
-.panel-variants, .panel-variant {
-  display: grid;
-  gap: .6rem;
-}
-
-.panel-variant {
-  padding: .75rem;
-  border: 1px solid var(--rule);
-  border-radius: .4rem;
-}
-
-.panel-variant-row {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: end;
-  gap: .6rem;
-}
-
-.panel-variant-row label {
-  flex: 1 1 12rem;
-}
-
-.panel-variants button {
-  background: transparent;
-  color: var(--ink);
 }
 
 .booking {
@@ -392,31 +246,6 @@ pre {
 .booking [role="alert"] {
   font-weight: 600;
 }
-.panel-hours {
-  display: grid;
-  gap: 8px;
-}
-.panel-hours-row {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  gap: 12px;
-}
-.panel-hours-row .panel-check {
-  min-width: 120px;
-}
-.panel-image {
-  display: grid;
-  gap: 8px;
-  justify-items: start;
-}
-.panel-image img {
-  max-width: 160px;
-  max-height: 160px;
-  border-radius: 6px;
-  object-fit: cover;
-}
-
 /* ---------- Landing ---------- */
 body:has(.v) {
   background: #0f0f0f;
@@ -1427,6 +1256,21 @@ body:has(.auth) {
   border-color: var(--ink);
   box-shadow: 0 0 0 4px rgb(17 17 17 / 0.08);
 }
+.auth-field-group {
+  display: grid;
+  gap: 6px;
+}
+.auth-field input[aria-invalid="true"] {
+  border-color: #dc2626;
+}
+.auth-field input[aria-invalid="true"]:focus {
+  box-shadow: 0 0 0 4px rgb(220 38 38 / 0.12);
+}
+.auth-field-error {
+  margin: 0;
+  color: #b91c1c;
+  font-size: 13px;
+}
 .auth .auth-btn {
   display: flex;
   justify-content: center;
@@ -1530,4 +1374,5 @@ body:has(.auth) {
 .auth-prefix:focus-within {
   border-color: var(--ink);
   box-shadow: 0 0 0 4px rgb(17 17 17 / 0.08);
+}
 }

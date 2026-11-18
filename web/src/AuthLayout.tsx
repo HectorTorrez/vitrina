@@ -1,4 +1,4 @@
-import type { ReactNode } from "react";
+import { useId, useState, type ReactNode } from "react";
 import { Link } from "@tanstack/react-router";
 
 /** Fonts shared with the landing page. */
@@ -50,5 +50,61 @@ export function MailIcon() {
       <rect x="3" y="5" width="18" height="14" rx="2" />
       <path d="m3 7 9 6 9-6" />
     </svg>
+  );
+}
+
+const localPart = /^[A-Za-z0-9!#$%&'*+/=?^_`{|}~-]+(\.[A-Za-z0-9!#$%&'*+/=?^_`{|}~-]+)*$/;
+const domainLabel = /^[A-Za-z0-9]([A-Za-z0-9-]*[A-Za-z0-9])?$/;
+
+/** Returns why an email address is invalid, or null when it looks deliverable. */
+export function emailError(input: string): string | null {
+  const email = input.trim();
+  if (!email) return "Ingresá tu correo.";
+  if (/\s/.test(email)) return "El correo no puede tener espacios.";
+  if (email.length > 254) return "El correo es demasiado largo.";
+  const at = email.split("@");
+  if (at.length === 1) return "Falta la @, por ejemplo vos@gmail.com.";
+  if (at.length > 2) return "El correo tiene más de una @.";
+  const [local, domain] = at;
+  if (!local) return "Falta la parte antes de la @.";
+  if (!localPart.test(local)) return "Revisá lo que va antes de la @: tiene caracteres o puntos no válidos.";
+  if (!domain) return "Falta el dominio después de la @, por ejemplo gmail.com.";
+  const labels = domain.split(".");
+  if (labels.length < 2 || labels[labels.length - 1] === "") return "El dominio está incompleto, por ejemplo gmail.com.";
+  if (!labels.every((l) => domainLabel.test(l))) return "Revisá el dominio después de la @: tiene caracteres o puntos no válidos.";
+  if (!/^[A-Za-z]{2,}$/.test(labels[labels.length - 1])) return "El dominio debe terminar en algo como .com o .ar.";
+  return null;
+}
+
+/** Email input that validates on every change and shows the error below the field. */
+export function EmailField({ label, autoFocus }: { label: string; autoFocus?: boolean }) {
+  const id = useId();
+  const [error, setError] = useState<string | null>(null);
+
+  const check = (input: HTMLInputElement) => {
+    const message = emailError(input.value);
+    input.setCustomValidity(message ?? "");
+    setError(message);
+  };
+
+  return (
+    <div className="auth-field-group">
+      <label className="auth-field">
+        <span>{label}</span>
+        <input
+          type="email" name="email" autoComplete="email" maxLength={254} placeholder="vos@tunegocio.com" required
+          autoFocus={autoFocus} autoCapitalize="none" spellCheck={false}
+          aria-invalid={error ? true : undefined}
+          aria-describedby={error ? id : undefined}
+          onChange={(e) => check(e.currentTarget)}
+          onInvalid={(e) => {
+            e.preventDefault();
+            check(e.currentTarget);
+            e.currentTarget.focus();
+          }}
+        />
+      </label>
+      {error && <p id={id} className="auth-field-error" role="alert">{error}</p>}
+    </div>
   );
 }
