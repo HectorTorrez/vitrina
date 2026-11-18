@@ -1,292 +1,229 @@
 import { useState, type ReactNode } from "react";
-import { ChevronDown, ImageIcon, Plus, Trash2, Upload, X } from "lucide-react";
-import { price, type Product } from "./catalog";
-import { field, type PanelShop } from "./panel";
-import { CheckField, Field, FormSelect, PanelForm, SectionHead, slugPattern, usePanelAction } from "./PanelForm";
+import {
+  ArrowDown, ArrowUp, ChevronDown, Clock, CopyPlus, ExternalLink, Eye, EyeOff, ImageIcon, Layers, MoreHorizontal, Package,
+  Pencil, Plus, Search, Trash2,
+} from "lucide-react";
+import { hasSurcharges, price, type Product } from "./catalog";
+import type { PanelShop } from "./panel";
+import { SectionHead, usePanelAction } from "./PanelForm";
+import { ItemEditor, itemPayload } from "./PanelItemEditor";
+import { uniqueSlug } from "./slug";
 import {
   AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription,
-  AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger,
+  AlertDialogFooter, AlertDialogHeader, AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent } from "@/components/ui/card";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
+import {
+  DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
+import { cn } from "@/lib/utils";
+
+type Filter = "all" | "product" | "service" | "hidden";
 
 export function PanelCatalog({ shop }: { shop: PanelShop }) {
-  const [adding, setAdding] = useState(false);
-  return (
-    <Card className="rounded-2xl">
-      <SectionHead label="Catálogo" title="Productos y servicios" text="Tocá una ficha para editarla. La posición ordena el catálogo de menor a mayor." />
-      <CardContent className="grid gap-4">
-        <Collapsible open={adding} onOpenChange={setAdding} className="rounded-xl border">
-          <CollapsibleTrigger asChild>
-            <button type="button" className="flex w-full items-center gap-3 px-4 py-3.5 text-left font-semibold">
-              <span className="grid size-7 place-items-center rounded-full bg-accent text-accent-foreground">
-                <Plus className={"size-4 transition-transform " + (adding ? "rotate-45" : "")} />
-              </span>
-              Agregar producto o servicio
-            </button>
-          </CollapsibleTrigger>
-          <CollapsibleContent className="border-t px-4 py-5">
-            <ItemForm shopSlug={shop.slug} onSaved={() => setAdding(false)} />
-          </CollapsibleContent>
-        </Collapsible>
+  const products = shop.products ?? [];
+  const [creating, setCreating] = useState(false);
+  const [editing, setEditing] = useState<string | null>(null);
+  const [deleting, setDeleting] = useState<Product | null>(null);
+  const [query, setQuery] = useState("");
+  const [filter, setFilter] = useState<Filter>("all");
+  const { run, many, pending } = usePanelAction();
+  const editingItem = products.find((item) => item.slug === editing);
 
-        {!shop.products?.length && (
-          <p className="rounded-xl border border-dashed p-8 text-center text-muted-foreground">
-            Tu catálogo está vacío. Agregá tu primera ficha.
-          </p>
-        )}
-        <div className="divide-y">
-          {shop.products?.map((item) => (
-            <Row key={item.slug} summary={
-              <>
-                {item.imageUrl
-                  ? <img src={item.imageUrl} alt="" referrerPolicy="no-referrer" className="size-12 shrink-0 rounded-lg object-cover" />
-                  : <span className="grid size-12 shrink-0 place-items-center rounded-lg bg-muted text-muted-foreground"><ImageIcon className="size-5" /></span>}
-                <span className="grid min-w-0 flex-1">
-                  <span className="truncate font-semibold">{item.name}</span>
-                  <span className="text-sm text-muted-foreground">
-                    {item.kind === "service" ? "Servicio" + (item.durationMinutes ? " · " + item.durationMinutes + " min" : "") : "Producto"}
-                  </span>
-                </span>
-                {item.hidden && <Badge variant="secondary">Oculto</Badge>}
-                {!item.available && !item.hidden && <Badge variant="secondary">No disponible</Badge>}
-                <span className="font-mono text-sm">{price(item.priceCents)}</span>
-              </>
-            }>
-              <ItemForm shopSlug={shop.slug} item={item} />
-              <DeleteItem shopSlug={shop.slug} item={item} />
-            </Row>
-          ))}
-        </div>
-      </CardContent>
-    </Card>
-  );
-}
+  const words = query.trim().toLowerCase();
+  const visible = products.filter((item) =>
+    (filter === "all" || (filter === "hidden" ? item.hidden : item.kind === filter)) &&
+    (!words || item.name.toLowerCase().includes(words) || item.slug.includes(words)));
+  const counts: Record<Filter, number> = {
+    all: products.length,
+    product: products.filter((item) => item.kind === "product").length,
+    service: products.filter((item) => item.kind === "service").length,
+    hidden: products.filter((item) => item.hidden).length,
+  };
 
-/** Expandable list row shared by the catalog and the agenda. */
-export function Row({ summary, children }: { summary: ReactNode; children: ReactNode }) {
-  return (
-    <Collapsible className="group/row">
-      <CollapsibleTrigger asChild>
-        <button type="button" className="flex w-full items-center gap-3.5 rounded-xl px-2 py-3.5 text-left transition-colors hover:bg-muted/60">
-          {summary}
-          <ChevronDown className="size-4 shrink-0 text-muted-foreground transition-transform group-data-[state=open]/row:rotate-180" />
-        </button>
-      </CollapsibleTrigger>
-      <CollapsibleContent className="grid gap-6 px-2 pt-3 pb-6">{children}</CollapsibleContent>
-    </Collapsible>
-  );
-}
-
-function DeleteItem({ shopSlug, item }: { shopSlug: string; item: Product }) {
-  const { run, pending } = usePanelAction();
-  return (
-    <AlertDialog>
-      <AlertDialogTrigger asChild>
-        <Button variant="ghost" size="sm" className="justify-self-start text-destructive hover:bg-destructive/10 hover:text-destructive">
-          <Trash2 /> Eliminar ficha
-        </Button>
-      </AlertDialogTrigger>
-      <AlertDialogContent>
-        <AlertDialogHeader>
-          <AlertDialogTitle>¿Eliminar “{item.name}”?</AlertDialogTitle>
-          <AlertDialogDescription>
-            La ficha y su enlace dejarán de existir. Si solo querés retirarla un tiempo, marcala como oculta.
-          </AlertDialogDescription>
-        </AlertDialogHeader>
-        <AlertDialogFooter>
-          <AlertDialogCancel>Volver</AlertDialogCancel>
-          <AlertDialogAction
-            disabled={pending}
-            className="bg-destructive text-white hover:bg-destructive/90"
-            onClick={() => void run({ action: "eliminar-item", shopSlug, item: { slug: item.slug } }, "Ficha eliminada")}
-          >
-            Eliminar
-          </AlertDialogAction>
-        </AlertDialogFooter>
-      </AlertDialogContent>
-    </AlertDialog>
-  );
-}
-
-function surcharge(item: Product | undefined, group: string, value: string) {
-  const cents = item?.options?.[Number(group)]?.prices?.[Number(value)] ?? 0;
-  return cents > 0 ? (cents / 100).toFixed(2) : undefined;
-}
-
-function ImageField({ initial }: { initial?: string }) {
-  const [url, setUrl] = useState(initial ?? "");
-  const [status, setStatus] = useState<{ text: string; error?: boolean }>();
-  async function upload(file: File) {
-    if (file.size > 5 * 1024 * 1024) {
-      setStatus({ text: "La foto supera los 5 MB", error: true });
-      return;
-    }
-    setStatus({ text: "Subiendo foto…" });
-    try {
-      const response = await fetch("/subir", { method: "POST", body: file });
-      if (response.status === 401) {
-        window.location.assign("/ingresar");
-        return;
-      }
-      if (!response.ok) throw new Error((await response.text()).trim() || "No se pudo subir la foto");
-      const result = await response.json();
-      setUrl(result.url);
-      setStatus({ text: "Foto lista. Guardá la ficha para publicarla." });
-    } catch (error) {
-      setStatus({ text: error instanceof Error ? error.message : "No se pudo subir la foto", error: true });
-    }
+  /** Moves an item and renumbers positions (0, 10, 20…) so the order is stable. */
+  function move(index: number, delta: number) {
+    const order = [...products];
+    const [item] = order.splice(index, 1);
+    order.splice(index + delta, 0, item);
+    const updates = order
+      .map((product, position) => ({ product, position: position * 10 }))
+      .filter(({ product, position }) => product.position !== position)
+      .map(({ product, position }) => ({ action: "editar-item", shopSlug: shop.slug, item: itemPayload(product, { position }) }));
+    void many(updates, "Orden actualizado");
   }
+
+  function duplicate(item: Product) {
+    const slug = uniqueSlug(item.slug.slice(0, 58) + "-copia", products.map((product) => product.slug));
+    const position = products.reduce((max, product) => Math.max(max, product.position + 10), 0);
+    void run({
+      action: "crear-item", shopSlug: shop.slug,
+      item: itemPayload(item, { slug, name: (item.name + " (copia)").slice(0, 120), hidden: true, position }),
+    }, "Ficha duplicada como oculta");
+  }
+
   return (
-    <div className="grid gap-3">
-      <Label>Foto</Label>
-      <div className="flex flex-wrap items-center gap-4">
-        {url
-          ? <img src={url} alt="" referrerPolicy="no-referrer" className="size-28 rounded-xl object-cover" />
-          : <span className="grid size-28 place-items-center rounded-xl border border-dashed bg-muted/40 text-muted-foreground"><ImageIcon /></span>}
-        <div className="flex flex-wrap gap-2">
-          <Button type="button" variant="outline" size="sm" className="rounded-full" asChild>
-            <label className="cursor-pointer">
-              <Upload /> Subir foto
-              <input type="file" className="sr-only" accept="image/jpeg,image/png,image/webp,image/gif" onChange={(event) => {
-                const file = event.target.files?.[0];
-                event.target.value = "";
-                if (file) void upload(file);
-              }} />
-            </label>
-          </Button>
-          {url && (
-            <Button type="button" variant="ghost" size="sm" className="rounded-full" onClick={() => { setUrl(""); setStatus(undefined); }}>
-              <X /> Quitar foto
-            </Button>
+    <div className="grid gap-6">
+      <SectionHead
+        label="Catálogo" title="Productos y servicios"
+        text="El orden de esta lista es el de tu tienda. Cambialo con las flechas o desde el menú ···."
+        action={<Button size="lg" className="rounded-full px-5" onClick={() => setCreating(true)}><Plus /> Nueva ficha</Button>}
+      />
+
+      {products.length > 0 && (
+        <div className="flex flex-wrap items-center gap-3">
+          <div className="flex gap-1 overflow-x-auto rounded-full border bg-card p-1 [scrollbar-width:none]">
+            {([["all", "Todas"], ["service", "Servicios"], ["product", "Productos"], ["hidden", "Ocultas"]] as const)
+              .filter(([value]) => value === "all" || counts[value] > 0)
+              .map(([value, label]) => (
+                <button
+                  key={value} type="button" onClick={() => setFilter(value)}
+                  className={cn("h-8 shrink-0 rounded-full px-3.5 text-sm font-medium transition", filter === value ? "bg-primary text-primary-foreground" : "text-muted-foreground hover:text-foreground")}
+                >
+                  {label} <span className="opacity-60">{counts[value]}</span>
+                </button>
+              ))}
+          </div>
+          {products.length > 5 && (
+            <div className="relative ml-auto w-full sm:w-64">
+              <Search className="pointer-events-none absolute top-1/2 left-3 size-4 -translate-y-1/2 text-muted-foreground" />
+              <Input value={query} onChange={(e) => setQuery(e.target.value)} placeholder="Buscar ficha" className="h-10 rounded-full bg-card pl-9" />
+            </div>
           )}
         </div>
-      </div>
-      <Field label="O URL de la foto">
-        <Input name="imageUrl" placeholder="https://…" maxLength={2048} value={url} onChange={(event) => setUrl(event.target.value)} />
-      </Field>
-      {status && (
-        <p role={status.error ? "alert" : "status"} className={"text-sm " + (status.error ? "text-destructive" : "text-muted-foreground")}>
-          {status.text}
-        </p>
       )}
+
+      {products.length === 0 ? (
+        <div className="grid justify-items-center gap-4 rounded-2xl border border-dashed bg-card px-6 py-14 text-center">
+          <span className="grid size-14 place-items-center rounded-2xl bg-accent text-brand-ink"><Package className="size-6" /></span>
+          <div className="grid gap-1">
+            <p className="font-display text-xl font-semibold">Tu catálogo está vacío</p>
+            <p className="max-w-sm text-muted-foreground">Agregá tu primer producto o servicio. Toma menos de un minuto.</p>
+          </div>
+          <Button size="lg" className="rounded-full px-6" onClick={() => setCreating(true)}><Plus /> Crear mi primera ficha</Button>
+        </div>
+      ) : visible.length === 0 ? (
+        <p className="rounded-2xl border border-dashed bg-card p-10 text-center text-muted-foreground">Ninguna ficha coincide con la búsqueda.</p>
+      ) : (
+        <ul className="divide-y overflow-hidden rounded-2xl border bg-card">
+          {visible.map((item) => {
+            const index = products.indexOf(item);
+            const reorder = filter === "all" && !words;
+            return (
+              <li key={item.slug} className={cn("flex items-center gap-3 px-3 py-3 transition-colors hover:bg-muted/40 sm:gap-4 sm:px-4", item.hidden && "bg-muted/30")}>
+                {reorder && (
+                  <div className="hidden flex-col sm:flex">
+                    <button type="button" aria-label="Subir" disabled={pending || index === 0} onClick={() => move(index, -1)} className="grid size-6 place-items-center rounded text-muted-foreground hover:bg-muted hover:text-foreground disabled:opacity-30"><ArrowUp className="size-3.5" /></button>
+                    <button type="button" aria-label="Bajar" disabled={pending || index === products.length - 1} onClick={() => move(index, 1)} className="grid size-6 place-items-center rounded text-muted-foreground hover:bg-muted hover:text-foreground disabled:opacity-30"><ArrowDown className="size-3.5" /></button>
+                  </div>
+                )}
+                <button type="button" onClick={() => setEditing(item.slug)} className="flex min-w-0 flex-1 items-center gap-3 text-left sm:gap-4">
+                  {item.imageUrl
+                    ? <img src={item.imageUrl} alt="" referrerPolicy="no-referrer" className={cn("size-14 shrink-0 rounded-xl object-cover", item.hidden && "opacity-50")} />
+                    : <span className="grid size-14 shrink-0 place-items-center rounded-xl bg-muted text-muted-foreground"><ImageIcon className="size-5" /></span>}
+                  <span className="grid min-w-0 flex-1 gap-1">
+                    <span className="truncate font-semibold">{item.name}</span>
+                    <span className="flex flex-wrap items-center gap-x-3 gap-y-1 text-sm text-muted-foreground">
+                      <span className="inline-flex items-center gap-1">
+                        {item.kind === "service" ? <><Clock className="size-3.5" /> {item.durationMinutes} min</> : <><Package className="size-3.5" /> Producto</>}
+                      </span>
+                      {(item.options?.length ?? 0) > 0 && (
+                        <span className="inline-flex items-center gap-1"><Layers className="size-3.5" /> {item.options.length} {item.options.length === 1 ? "variante" : "variantes"}</span>
+                      )}
+                      {item.hidden && <Badge variant="secondary" className="gap-1"><EyeOff /> Oculta</Badge>}
+                      {!item.available && <Badge variant="outline" className="border-amber-300 bg-amber-50 text-amber-800">No disponible</Badge>}
+                    </span>
+                  </span>
+                  <span className="hidden text-right font-mono text-sm sm:block">
+                    {hasSurcharges(item) && <span className="block text-xs text-muted-foreground">desde</span>}
+                    {price(item.priceCents)}
+                  </span>
+                </button>
+                <DropdownMenu>
+                  <DropdownMenuTrigger asChild>
+                    <Button variant="ghost" size="icon" className="shrink-0 rounded-full" aria-label={"Acciones de " + item.name}><MoreHorizontal /></Button>
+                  </DropdownMenuTrigger>
+                  <DropdownMenuContent align="end">
+                    <DropdownMenuItem onSelect={() => setEditing(item.slug)}><Pencil /> Editar</DropdownMenuItem>
+                    {!item.hidden && (
+                      <DropdownMenuItem asChild>
+                        <a href={"/tienda/" + shop.slug + "/" + item.slug} target="_blank" rel="noreferrer"><ExternalLink /> Ver en la tienda</a>
+                      </DropdownMenuItem>
+                    )}
+                    <DropdownMenuItem onSelect={() => void run(
+                      { action: "editar-item", shopSlug: shop.slug, item: itemPayload(item, { hidden: !item.hidden }) },
+                      item.hidden ? "Ficha visible en la tienda" : "Ficha oculta",
+                    )}>
+                      {item.hidden ? <><Eye /> Mostrar en la tienda</> : <><EyeOff /> Ocultar de la tienda</>}
+                    </DropdownMenuItem>
+                    <DropdownMenuItem onSelect={() => duplicate(item)}><CopyPlus /> Duplicar</DropdownMenuItem>
+                    {reorder && (
+                      <>
+                        <DropdownMenuItem disabled={index === 0} onSelect={() => move(index, -1)} className="sm:hidden"><ArrowUp /> Subir</DropdownMenuItem>
+                        <DropdownMenuItem disabled={index === products.length - 1} onSelect={() => move(index, 1)} className="sm:hidden"><ArrowDown /> Bajar</DropdownMenuItem>
+                      </>
+                    )}
+                    <DropdownMenuSeparator />
+                    <DropdownMenuItem variant="destructive" onSelect={() => setDeleting(item)}><Trash2 /> Eliminar</DropdownMenuItem>
+                  </DropdownMenuContent>
+                </DropdownMenu>
+              </li>
+            );
+          })}
+        </ul>
+      )}
+
+      <ItemEditor shop={shop} open={creating} onOpenChange={setCreating} />
+      {editingItem && (
+        <ItemEditor key={editingItem.slug} shop={shop} item={editingItem} open onOpenChange={(open) => !open && setEditing(null)} />
+      )}
+
+      <AlertDialog open={Boolean(deleting)} onOpenChange={(open) => !open && setDeleting(null)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>¿Eliminar “{deleting?.name}”?</AlertDialogTitle>
+            <AlertDialogDescription>
+              La ficha y su enlace dejarán de existir. Si solo querés retirarla un tiempo, ocultala.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Volver</AlertDialogCancel>
+            {deleting && !deleting.hidden && (
+              <Button variant="outline" onClick={() => {
+                void run({ action: "editar-item", shopSlug: shop.slug, item: itemPayload(deleting, { hidden: true }) }, "Ficha oculta");
+                setDeleting(null);
+              }}>
+                <EyeOff /> Ocultar
+              </Button>
+            )}
+            <AlertDialogAction
+              disabled={pending}
+              className="bg-destructive text-white hover:bg-destructive/90"
+              onClick={() => deleting && void run({ action: "eliminar-item", shopSlug: shop.slug, item: { slug: deleting.slug } }, "Ficha eliminada")}
+            >
+              Eliminar
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }
 
-function ItemForm({ shopSlug, item, onSaved }: { shopSlug: string; item?: Product; onSaved?: () => void }) {
-  const [kind, setKind] = useState<Product["kind"]>(item?.kind ?? "product");
-  const [groups, setGroups] = useState(() => (item?.options ?? []).map((option, index) => ({
-    id: String(index),
-    values: option.values.map((_, valueIndex) => String(valueIndex)),
-  })));
+/** Expandable list row used by the agenda. */
+export function Row({ summary, children }: { summary: ReactNode; children: ReactNode }) {
   return (
-    <PanelForm
-      submit={item ? "Guardar ficha" : "Agregar al catálogo"}
-      success={item ? "Ficha guardada" : "Ficha agregada"}
-      clear={!item}
-      onSaved={item ? undefined : () => {
-        setKind("product");
-        setGroups([]);
-        onSaved?.();
-      }}
-      payload={(form) => ({
-        action: item ? "editar-item" : "crear-item",
-        shopSlug,
-        item: {
-          slug: item?.slug ?? field(form, "slug"),
-          name: field(form, "name"),
-          kind,
-          durationMinutes: Number(field(form, "durationMinutes")),
-          priceCents: Math.round(Number(field(form, "price")) * 100),
-          imageUrl: field(form, "imageUrl"),
-          options: groups.map((group) => ({
-            name: field(form, "group-" + group.id),
-            values: group.values.map((id) => field(form, "value-" + group.id + "-" + id)),
-            prices: group.values.map((id) => Math.round(Number(field(form, "price-" + group.id + "-" + id) || 0) * 100)),
-          })),
-          position: Number(field(form, "position")),
-          available: form.has("available"),
-          hidden: form.has("hidden"),
-        },
-      })}
-    >
-      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-        <Field label="Nombre"><Input name="name" defaultValue={item?.name} required maxLength={120} /></Field>
-        {!item && (
-          <Field label="Enlace de la ficha">
-            <Input name="slug" required maxLength={64} placeholder="mi-producto" pattern={slugPattern} className="font-mono" />
-          </Field>
-        )}
-        {!item && (
-          <Field label="Tipo">
-            <FormSelect
-              value={kind} onValueChange={(value) => setKind(value === "service" ? "service" : "product")}
-              options={[{ value: "product", label: "Producto" }, { value: "service", label: "Servicio" }]}
-            />
-          </Field>
-        )}
-        <Field label="Precio en USD">
-          <Input name="price" type="number" min={0} max={999999.99} step={0.01} defaultValue={item ? (item.priceCents / 100).toFixed(2) : undefined} required />
-        </Field>
-        {kind === "service" && (
-          <Field label="Duración en minutos">
-            <Input name="durationMinutes" type="number" min={1} max={1440} defaultValue={item?.durationMinutes} required />
-          </Field>
-        )}
-        <Field label="Posición en el catálogo">
-          <Input name="position" type="number" min={0} max={999999} defaultValue={item?.position ?? 0} required />
-        </Field>
-      </div>
-
-      <ImageField initial={item?.imageUrl} />
-
-      <div className="grid gap-3">
-        <h3 className="font-display text-lg font-semibold tracking-tight">Variantes</h3>
-        {groups.map((group, index) => (
-          <div key={group.id} className="grid gap-3 rounded-xl border bg-muted/40 p-4">
-            <Field label="Nombre de la variante">
-              <Input name={"group-" + group.id} defaultValue={item?.options?.[Number(group.id)]?.name} placeholder="Tamaño" maxLength={60} required />
-            </Field>
-            {group.values.map((id) => (
-              <div key={id} className="flex flex-wrap items-end gap-2.5">
-                <Field label="Opción" className="flex-[1_1_10rem]">
-                  <Input name={"value-" + group.id + "-" + id} defaultValue={item?.options?.[Number(group.id)]?.values[Number(id)]} placeholder="A4" maxLength={60} required />
-                </Field>
-                <Field label="Recargo USD" className="flex-[1_1_10rem]">
-                  <Input name={"price-" + group.id + "-" + id} type="number" min={0} max={999999.99} step={0.01} placeholder="0.00" defaultValue={surcharge(item, group.id, id)} />
-                </Field>
-                <Button type="button" variant="ghost" size="icon" aria-label="Quitar opción" disabled={group.values.length === 1} onClick={() => {
-                  setGroups(groups.map((current) => current.id === group.id ? {
-                    ...current, values: current.values.filter((value) => value !== id),
-                  } : current));
-                }}><X /></Button>
-              </div>
-            ))}
-            <div className="flex flex-wrap gap-2">
-              <Button type="button" variant="outline" size="sm" className="rounded-full" disabled={group.values.length >= 12} onClick={() => {
-                const id = crypto.randomUUID();
-                setGroups(groups.map((current) => current.id === group.id ? { ...current, values: [...current.values, id] } : current));
-              }}><Plus /> Agregar opción</Button>
-              <Button type="button" variant="ghost" size="sm" className="rounded-full text-muted-foreground" onClick={() => setGroups(groups.filter((current) => current.id !== group.id))}>
-                Quitar variante {index + 1}
-              </Button>
-            </div>
-          </div>
-        ))}
-        <Button type="button" variant="outline" size="sm" className="justify-self-start rounded-full" disabled={groups.length >= 8} onClick={() => {
-          setGroups([...groups, { id: crypto.randomUUID(), values: ["0"] }]);
-        }}><Plus /> Agregar variante</Button>
-      </div>
-
-      <div className="flex flex-wrap gap-x-8 gap-y-3">
-        <CheckField name="available" label="Disponible" defaultChecked={item?.available ?? true} />
-        <CheckField name="hidden" label="Ocultar del catálogo público" defaultChecked={item?.hidden ?? false} />
-      </div>
-    </PanelForm>
+    <Collapsible className="group/row">
+      <CollapsibleTrigger asChild>
+        <button type="button" className="flex w-full items-center gap-3.5 px-4 py-3.5 text-left transition-colors hover:bg-muted/50">
+          {summary}
+          <ChevronDown className="size-4 shrink-0 text-muted-foreground transition-transform group-data-[state=open]/row:rotate-180" />
+        </button>
+      </CollapsibleTrigger>
+      <CollapsibleContent className="grid gap-6 border-t bg-muted/20 px-4 pt-5 pb-6">{children}</CollapsibleContent>
+    </Collapsible>
   );
 }

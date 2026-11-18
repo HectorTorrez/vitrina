@@ -1,6 +1,7 @@
 import { useState, type SubmitEvent } from "react";
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { AuthLayout, authFonts } from "../AuthLayout";
+import { Loader2 } from "lucide-react";
+import { AuthEyebrow, AuthLayout, AuthLede, AuthNote, AuthTitle, authButton } from "../AuthLayout";
 
 export const Route = createFileRoute("/confirmar-acceso")({
   headers: () => ({
@@ -8,7 +9,7 @@ export const Route = createFileRoute("/confirmar-acceso")({
     // "no-referrer" would make the browser send Origin: null and /auth would reject the form.
     "Referrer-Policy": "same-origin",
   }),
-  head: () => ({ meta: [{ title: "Confirmar acceso · Vitrina" }], links: authFonts }),
+  head: () => ({ meta: [{ title: "Confirmar acceso · Vitrina" }] }),
   component: ConfirmAccess,
 });
 
@@ -24,17 +25,18 @@ function ConfirmAccess() {
 
   return (
     <AuthLayout>
-      <p className="auth-label">Último paso</p>
-      <h1>Ya casi estás adentro</h1>
-      <p className="auth-lede">Confirmá para entrar al panel de tu tienda desde este dispositivo.</p>
-      <form action="/auth" method="post" className="auth-form" onSubmit={submitAccess}>
+      <AuthEyebrow>Último paso</AuthEyebrow>
+      <AuthTitle>Ya casi estás adentro</AuthTitle>
+      <AuthLede>Confirmá para entrar al panel de tu tienda desde este dispositivo.</AuthLede>
+      <form action="/auth" method="post" className="mt-2 grid gap-4" onSubmit={submitAccess}>
         <input type="hidden" name="action" value="verify" />
         <input type="hidden" name="token" />
-        <button type="submit" className="auth-btn" disabled={sending}>
+        <button type="submit" className={authButton} disabled={sending}>
+          {sending && <Loader2 className="size-4 animate-spin" />}
           {sending ? "Entrando…" : "Entrar al panel"}
         </button>
       </form>
-      <p className="auth-note">¿El enlace no funciona? <Link to="/ingresar">Pedí otro</Link>.</p>
+      <AuthNote>¿El enlace no funciona? <Link to="/ingresar">Pedí otro</Link>.</AuthNote>
     </AuthLayout>
   );
 }

@@ -1,7 +1,10 @@
 import { useState } from "react";
 import { createFileRoute, Link, redirect } from "@tanstack/react-router";
+import { Loader2 } from "lucide-react";
 import { getSeller } from "../auth";
-import { AuthLayout, authFonts, EmailField, MailIcon } from "../AuthLayout";
+import {
+  AuthAlert, AuthEyebrow, AuthLayout, AuthLede, AuthNote, AuthSwitch, AuthTitle, authButton, authGhostButton, EmailField, MailIcon,
+} from "../AuthLayout";
 
 type Status = "enviado" | "correo" | "enlace" | "servicio";
 
@@ -21,7 +24,7 @@ export const Route = createFileRoute("/ingresar")({
     if (await getSeller()) throw redirect({ to: "/panel" });
   },
   headers: () => ({ "Cache-Control": "private, no-store" }),
-  head: () => ({ meta: [{ title: "Ingresar · Vitrina" }], links: authFonts }),
+  head: () => ({ meta: [{ title: "Ingresar · Vitrina" }] }),
   component: Login,
 });
 
@@ -32,32 +35,33 @@ function Login() {
   if (estado === "enviado") {
     return (
       <AuthLayout>
-        <span className="auth-icon"><MailIcon /></span>
-        <p className="auth-label">Enlace enviado</p>
-        <h1>Revisá tu correo</h1>
-        <p className="auth-lede" role="status">
+        <MailIcon />
+        <AuthEyebrow>Enlace enviado</AuthEyebrow>
+        <AuthTitle>Revisá tu correo</AuthTitle>
+        <AuthLede role="status">
           Si tu correo está habilitado, te llegó un enlace para entrar. Revisá también la carpeta de spam.
-        </p>
-        <p className="auth-note">El enlace vence en 15 minutos y sirve una sola vez.</p>
-        <Link to="/ingresar" className="auth-btn auth-btn-ghost">Usar otro correo</Link>
+        </AuthLede>
+        <AuthNote>El enlace vence en 15 minutos y sirve una sola vez.</AuthNote>
+        <Link to="/ingresar" className={authGhostButton}>Usar otro correo</Link>
       </AuthLayout>
     );
   }
 
   return (
     <AuthLayout>
-      <p className="auth-label">Acceso para vendedores</p>
-      <h1>Entrá a tu vitrina</h1>
-      <p className="auth-lede">Te enviamos un enlace a tu correo para entrar. Sin contraseñas.</p>
-      {estado && <p className="auth-alert" role="alert">{errors[estado]}</p>}
-      <form action="/auth" method="post" className="auth-form" onSubmit={() => setSending(true)}>
+      <AuthEyebrow>Acceso para vendedores</AuthEyebrow>
+      <AuthTitle>Entrá a tu vitrina</AuthTitle>
+      <AuthLede>Te enviamos un enlace a tu correo para entrar. Sin contraseñas.</AuthLede>
+      {estado && <AuthAlert>{errors[estado]}</AuthAlert>}
+      <form action="/auth" method="post" className="mt-2 grid gap-4" onSubmit={() => setSending(true)}>
         <input type="hidden" name="action" value="link" />
         <EmailField label="Correo electrónico" autoFocus />
-        <button type="submit" className="auth-btn" disabled={sending}>
+        <button type="submit" className={authButton} disabled={sending}>
+          {sending && <Loader2 className="size-4 animate-spin" />}
           {sending ? "Enviando…" : "Enviarme un enlace"}
         </button>
       </form>
-      <p className="auth-switch">¿Todavía no tenés tienda? <Link to="/registrarse">Abrí tu vitrina</Link></p>
+      <AuthSwitch>¿Todavía no tenés tienda? <Link to="/registrarse">Abrí tu vitrina</Link></AuthSwitch>
     </AuthLayout>
   );
 }

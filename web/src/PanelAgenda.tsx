@@ -11,7 +11,6 @@ import {
 } from "@/components/ui/alert-dialog";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent } from "@/components/ui/card";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import { Input } from "@/components/ui/input";
 
@@ -26,11 +25,14 @@ export function PanelAgenda({ shop }: { shop: PanelShop }) {
   const serviceName = (slug: string) => services.find((item) => item.slug === slug)?.name;
 
   return (
-    <Card className="rounded-2xl">
-      <SectionHead label="Agenda" title="Citas" text="Horarios de El Salvador." />
-      <CardContent className="grid gap-4">
+    <div className="grid gap-6">
+      <SectionHead
+        label="Agenda" title="Citas"
+        text={upcoming.length ? upcoming.length + (upcoming.length === 1 ? " cita próxima" : " citas próximas") + " · hora de El Salvador" : "Hora de El Salvador."}
+      />
+      <div className="grid gap-4">
         {bookable.length > 0 ? (
-          <Collapsible open={adding} onOpenChange={setAdding} className="rounded-xl border">
+          <Collapsible open={adding} onOpenChange={setAdding} className="rounded-2xl border bg-card">
             <CollapsibleTrigger asChild>
               <button type="button" className="flex w-full items-center gap-3 px-4 py-3.5 text-left font-semibold">
                 <span className="grid size-7 place-items-center rounded-full bg-accent text-accent-foreground">
@@ -44,16 +46,16 @@ export function PanelAgenda({ shop }: { shop: PanelShop }) {
             </CollapsibleContent>
           </Collapsible>
         ) : (
-          <p className="rounded-xl border border-dashed p-6 text-center text-muted-foreground">
+          <p className="rounded-2xl border border-dashed bg-card p-6 text-center text-muted-foreground">
             Publicá un servicio disponible para agendar nuevas citas.
           </p>
         )}
 
         <h3 className="mt-3 font-mono text-xs font-semibold uppercase tracking-[0.08em] text-muted-foreground">Próximas citas</h3>
         {upcoming.length === 0 && (
-          <p className="rounded-xl border border-dashed p-8 text-center text-muted-foreground">No hay citas próximas.</p>
+          <p className="rounded-2xl border border-dashed bg-card p-8 text-center text-muted-foreground">No hay citas próximas.</p>
         )}
-        <div className="divide-y">
+        {upcoming.length > 0 && <div className="divide-y overflow-hidden rounded-2xl border bg-card">
           {upcoming.map((booking) => {
             const name = serviceName(booking.serviceSlug);
             return (
@@ -87,7 +89,7 @@ export function PanelAgenda({ shop }: { shop: PanelShop }) {
               </Row>
             );
           })}
-        </div>
+        </div>}
 
         {history.length > 0 && (
           <Collapsible className="group/history">
@@ -108,8 +110,8 @@ export function PanelAgenda({ shop }: { shop: PanelShop }) {
             </CollapsibleContent>
           </Collapsible>
         )}
-      </CardContent>
-    </Card>
+      </div>
+    </div>
   );
 }
 

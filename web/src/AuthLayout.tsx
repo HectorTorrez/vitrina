@@ -1,15 +1,7 @@
-import { useId, useState, type ReactNode } from "react";
+import { useId, useState, type ComponentProps, type ReactNode } from "react";
 import { Link } from "@tanstack/react-router";
-
-/** Fonts shared with the landing page. */
-export const authFonts = [
-  { rel: "preconnect", href: "https://fonts.googleapis.com" },
-  { rel: "preconnect", href: "https://fonts.gstatic.com", crossOrigin: "anonymous" as const },
-  {
-    rel: "stylesheet",
-    href: "https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,600;12..96,700&family=Geist+Mono:wght@400;500&family=Inter:wght@400;500;600&display=swap",
-  },
-];
+import { Check, Mail } from "lucide-react";
+import { cn } from "@/lib/utils";
 
 const perks = [
   "Tu catálogo, tu agenda y tus citas en un solo lugar.",
@@ -19,37 +11,95 @@ const perks = [
 
 export function AuthLayout({ children }: { children: ReactNode }) {
   return (
-    <div className="auth">
-      <aside className="auth-side">
-        <img src="/landing/local.jpg" alt="" />
-        <Link to="/" className="auth-logo">vitrina</Link>
-        <div className="auth-side-copy">
-          <p className="auth-side-title">Tu negocio<br />nunca cierra.</p>
-          <ul>
-            {perks.map((p) => (
-              <li key={p}>
-                <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="m5 12 5 5 9-10" /></svg>
-                {p}
+    <div className="grid min-h-svh bg-white text-[#111] md:grid-cols-2">
+      <aside className="relative hidden flex-col justify-between overflow-hidden bg-ink-dark px-12 pt-8 pb-12 text-white md:flex">
+        <img src="/landing/local.jpg" alt="" className="absolute inset-0 size-full object-cover opacity-55" />
+        <div className="absolute inset-0 bg-linear-to-b from-ink-dark/60 via-ink-dark/0 via-30% to-ink-dark/92 to-75%" />
+        <Link to="/" className="relative font-display text-[26px] leading-none font-bold tracking-[-0.035em]">vitrina</Link>
+        <div className="relative">
+          <p className="mb-7 font-display text-[clamp(48px,5.6vw,84px)] leading-[0.92] font-bold tracking-[-0.045em]">
+            Tu negocio<br />nunca cierra.
+          </p>
+          <ul className="grid gap-3 text-neutral-300">
+            {perks.map((perk) => (
+              <li key={perk} className="flex items-center gap-3">
+                <span className="grid size-6 shrink-0 place-items-center rounded-full bg-brand/20 text-brand">
+                  <Check className="size-3.5" strokeWidth={3} />
+                </span>
+                {perk}
               </li>
             ))}
           </ul>
         </div>
       </aside>
-      <main className="auth-main">
-        <Link to="/" className="auth-logo auth-logo-mobile">vitrina</Link>
-        <div className="auth-card">{children}</div>
-        <Link to="/" className="auth-back">← Volver al inicio</Link>
+      <main className="flex flex-col items-start gap-10 px-5 pt-7 pb-10 md:items-center md:justify-center md:px-8 md:py-12">
+        <Link to="/" className="font-display text-[26px] leading-none font-bold tracking-[-0.035em] md:hidden">vitrina</Link>
+        <div className="mt-6 grid w-full gap-4 md:mt-0 md:w-[min(100%,420px)]">{children}</div>
+        <Link to="/" className="text-sm text-muted-foreground transition hover:text-[#111]">← Volver al inicio</Link>
       </main>
     </div>
   );
 }
 
+export function AuthEyebrow({ children }: { children: ReactNode }) {
+  return <p className="font-mono text-xs leading-none font-medium tracking-[0.1em] text-brand-ink uppercase">{children}</p>;
+}
+
+export function AuthTitle({ children }: { children: ReactNode }) {
+  return <h1 className="font-display text-[38px] leading-none font-bold tracking-[-0.04em] md:text-[44px]">{children}</h1>;
+}
+
+export function AuthLede({ children, ...props }: ComponentProps<"p">) {
+  return <p className="text-[17px] text-muted-foreground" {...props}>{children}</p>;
+}
+
+export function AuthNote({ children }: { children: ReactNode }) {
+  return <p className="text-sm text-muted-foreground [&_a]:text-[#111] [&_a]:underline [&_a]:underline-offset-4">{children}</p>;
+}
+
+export function AuthAlert({ children }: { children: ReactNode }) {
+  return <p role="alert" className="rounded-lg border border-red-200 bg-red-50 px-3.5 py-3 text-sm text-red-800">{children}</p>;
+}
+
+export function AuthSwitch({ children }: { children: ReactNode }) {
+  return <p className="border-t pt-4 text-[15px] text-muted-foreground [&_a]:font-semibold [&_a]:text-[#111] [&_a]:underline [&_a]:underline-offset-4">{children}</p>;
+}
+
 export function MailIcon() {
   return (
-    <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
-      <rect x="3" y="5" width="18" height="14" rx="2" />
-      <path d="m3 7 9 6 9-6" />
-    </svg>
+    <span className="mb-2 grid size-13 place-items-center rounded-2xl bg-accent text-brand-ink">
+      <Mail className="size-6" strokeWidth={1.8} />
+    </span>
+  );
+}
+
+export const authButton = cn(
+  "flex h-13 w-full items-center justify-center gap-2 rounded-full border border-[#111] bg-[#111] px-6 text-base font-semibold text-white",
+  "transition hover:bg-[#2a2a2a] active:scale-[0.99] disabled:cursor-wait disabled:opacity-60",
+);
+export const authGhostButton = cn(authButton, "mt-2 border-border bg-white text-[#111] hover:bg-neutral-50");
+
+export const authInput = cn(
+  "h-13 w-full rounded-[10px] border border-border bg-white px-4 text-base text-[#111] transition outline-none placeholder:text-neutral-400",
+  "focus:border-[#111] focus:ring-4 focus:ring-[#111]/8 aria-invalid:border-red-600 aria-invalid:focus:ring-red-600/12",
+);
+
+/** Label, control slot, hint and error for the auth forms. */
+export function AuthField({ label, error, hint, htmlFor, children }: {
+  label: string;
+  error?: string | null;
+  hint?: ReactNode;
+  htmlFor: string;
+  children: ReactNode;
+}) {
+  return (
+    <div className="grid gap-2">
+      <label htmlFor={htmlFor} className="text-sm font-medium">{label}</label>
+      {children}
+      {error
+        ? <p id={htmlFor + "-error"} className="text-[13px] text-red-700" role="alert">{error}</p>
+        : hint && <div id={htmlFor + "-hint"} className="text-[13px] text-muted-foreground">{hint}</div>}
+    </div>
   );
 }
 
@@ -76,35 +126,47 @@ export function emailError(input: string): string | null {
   return null;
 }
 
-/** Email input that validates on every change and shows the error below the field. */
-export function EmailField({ label, autoFocus }: { label: string; autoFocus?: boolean }) {
+/** Email input that validates once the person leaves the field (and live after that). */
+export function EmailField({ label, autoFocus, value, onChange }: {
+  label: string;
+  autoFocus?: boolean;
+  value?: string;
+  onChange?: (value: string) => void;
+}) {
   const id = useId();
   const [error, setError] = useState<string | null>(null);
+  const [touched, setTouched] = useState(false);
 
-  const check = (input: HTMLInputElement) => {
+  const check = (input: HTMLInputElement, show: boolean) => {
     const message = emailError(input.value);
     input.setCustomValidity(message ?? "");
-    setError(message);
+    if (show) setError(message);
   };
 
   return (
-    <div className="auth-field-group">
-      <label className="auth-field">
-        <span>{label}</span>
-        <input
-          type="email" name="email" autoComplete="email" maxLength={254} placeholder="vos@tunegocio.com" required
-          autoFocus={autoFocus} autoCapitalize="none" spellCheck={false}
-          aria-invalid={error ? true : undefined}
-          aria-describedby={error ? id : undefined}
-          onChange={(e) => check(e.currentTarget)}
-          onInvalid={(e) => {
-            e.preventDefault();
-            check(e.currentTarget);
-            e.currentTarget.focus();
-          }}
-        />
-      </label>
-      {error && <p id={id} className="auth-field-error" role="alert">{error}</p>}
-    </div>
+    <AuthField label={label} error={error} htmlFor={id}>
+      <input
+        id={id} type="email" name="email" autoComplete="email" maxLength={254} placeholder="vos@tunegocio.com" required
+        autoFocus={autoFocus} autoCapitalize="none" spellCheck={false} className={authInput}
+        value={value}
+        aria-invalid={error ? true : undefined}
+        aria-describedby={error ? id + "-error" : undefined}
+        onChange={(e) => {
+          onChange?.(e.currentTarget.value);
+          check(e.currentTarget, touched);
+        }}
+        onBlur={(e) => {
+          if (!e.currentTarget.value) return;
+          setTouched(true);
+          check(e.currentTarget, true);
+        }}
+        onInvalid={(e) => {
+          e.preventDefault();
+          setTouched(true);
+          check(e.currentTarget, true);
+          e.currentTarget.focus();
+        }}
+      />
+    </AuthField>
   );
 }

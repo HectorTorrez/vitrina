@@ -235,7 +235,7 @@ func validatedProfile(input shop) (shop, error) {
 		return shop{}, panelValidation("Indicá un nombre de hasta 100 caracteres y una descripción de hasta 500")
 	}
 	switch profile.Theme {
-	case "costa", "arena", "noche":
+	case "costa", "arena", "noche", "lienzo", "rosa", "sol":
 	default:
 		return shop{}, panelValidation("Elegí un tema válido")
 	}

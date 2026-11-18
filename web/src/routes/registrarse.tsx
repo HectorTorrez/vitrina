@@ -1,7 +1,14 @@
-import { useState } from "react";
+import { useRef, useState } from "react";
 import { createFileRoute, Link, redirect } from "@tanstack/react-router";
+import { ArrowLeft, ArrowRight, Check, Loader2, Sparkles, Store, X } from "lucide-react";
 import { getSeller } from "../auth";
-import { AuthLayout, authFonts, EmailField, MailIcon } from "../AuthLayout";
+import {
+  AuthAlert, AuthEyebrow, AuthField, AuthLayout, AuthLede, AuthNote, AuthSwitch, AuthTitle,
+  authButton, authGhostButton, authInput, EmailField, emailError, MailIcon,
+} from "../AuthLayout";
+import { cleanSlugInput, slugError, slugify } from "../slug";
+import { useShopSlugStatus } from "../shopSlug";
+import { cn } from "@/lib/utils";
 
 type Status = "enviado" | "ocupado" | "datos" | "servicio";
 
@@ -23,85 +30,197 @@ export const Route = createFileRoute("/registrarse")({
     if (await getSeller()) throw redirect({ to: "/panel" });
   },
   headers: () => ({ "Cache-Control": "private, no-store" }),
-  head: () => ({ meta: [{ title: "Abrí tu tienda · Vitrina" }], links: authFonts }),
+  head: () => ({ meta: [{ title: "Abrí tu tienda · Vitrina" }] }),
   component: Signup,
 });
 
-/** "Luna Uñas & Spa" → "luna-unas-spa" */
-function slugify(name: string) {
-  return name
-    .normalize("NFD")
-    .replace(/[̀-ͯ]/g, "")
-    .toLowerCase()
-    .replace(/[^a-z0-9]+/g, "-")
-    .replace(/^-+|-+$/g, "")
-    .slice(0, 64)
-    .replace(/-+$/, "");
-}
+const steps = ["Tu negocio", "Tu correo"];
 
 function Signup() {
   const { estado, nombre, enlace } = Route.useSearch();
+  const [step, setStep] = useState(0);
   const [name, setName] = useState(nombre ?? "");
   const [slug, setSlug] = useState(enlace ?? "");
   const [slugEdited, setSlugEdited] = useState(Boolean(enlace));
+  const [email, setEmail] = useState("");
+  const [showErrors, setShowErrors] = useState(false);
   const [sending, setSending] = useState(false);
+  const slugStatus = useShopSlugStatus(slug, !slugError(slug));
+  const nameRef = useRef<HTMLInputElement>(null);
 
   if (estado === "enviado") {
     return (
       <AuthLayout>
-        <span className="auth-icon"><MailIcon /></span>
-        <p className="auth-label">Último paso</p>
-        <h1>Confirmá tu correo</h1>
-        <p className="auth-lede" role="status">
+        <MailIcon />
+        <AuthEyebrow>Último paso</AuthEyebrow>
+        <AuthTitle>Confirmá tu correo</AuthTitle>
+        <AuthLede role="status">
           Te enviamos un enlace. Al abrirlo se crea tu tienda y entrás directo a tu panel. Revisá también la carpeta de spam.
-        </p>
-        <p className="auth-note">El enlace vence en 15 minutos y sirve una sola vez.</p>
-        <Link to="/registrarse" className="auth-btn auth-btn-ghost">Empezar de nuevo</Link>
+        </AuthLede>
+        <AuthNote>El enlace vence en 15 minutos y sirve una sola vez.</AuthNote>
+        <Link to="/registrarse" className={authGhostButton}>Empezar de nuevo</Link>
       </AuthLayout>
     );
   }
 
+  const nameError = !name.trim() ? "Contanos cómo se llama tu negocio." : null;
+  const linkError = slugError(slug) ?? (slugStatus === "taken" ? "Ese enlace ya lo usa otra tienda." : null);
+  const stepOneValid = !nameError && !linkError;
+  const showLinkError = Boolean(linkError) && (showErrors || slugStatus === "taken");
+
+  function next() {
+    if (!stepOneValid) {
+      setShowErrors(true);
+      if (nameError) nameRef.current?.focus();
+      return;
+    }
+    setShowErrors(false);
+    setStep(1);
+  }
+
   return (
     <AuthLayout>
-      <p className="auth-label">Abrí tu tienda</p>
-      <h1>Tu vitrina, lista hoy</h1>
-      <p className="auth-lede">Contanos cómo se llama tu negocio. Después cargás tu catálogo y tu horario desde el panel.</p>
-      {estado && <p className="auth-alert" role="alert">{errors[estado]}</p>}
-      <form action="/auth" method="post" className="auth-form" onSubmit={() => setSending(true)}>
+      <Stepper current={step} />
+      <AuthEyebrow>Paso {step + 1} de 2 · {steps[step]}</AuthEyebrow>
+      <AuthTitle>{step === 0 ? "Tu vitrina, lista hoy" : "¿A dónde te escribimos?"}</AuthTitle>
+      <AuthLede>
+        {step === 0
+          ? "Contanos cómo se llama tu negocio. Después cargás tu catálogo y tu horario desde el panel."
+          : "Te mandamos un enlace para confirmar. Sin contraseñas."}
+      </AuthLede>
+      {estado && <AuthAlert>{errors[estado]}</AuthAlert>}
+      <form
+        action="/auth" method="post" className="mt-2 grid gap-5" noValidate={step === 0}
+        onSubmit={(event) => {
+          if (step === 0) {
+            event.preventDefault();
+            next();
+            return;
+          }
+          if (!stepOneValid || emailError(email)) {
+            event.preventDefault();
+            if (!stepOneValid) setStep(0);
+            return;
+          }
+          setSending(true);
+        }}
+      >
         <input type="hidden" name="action" value="signup" />
-        <label className="auth-field">
-          <span>Nombre del negocio</span>
-          <input
-            name="shopName" required maxLength={100} placeholder="Luna Uñas" autoComplete="organization" autoFocus
-            value={name}
-            onChange={(e) => {
-              setName(e.target.value);
-              if (!slugEdited) setSlug(slugify(e.target.value));
-            }}
-          />
-        </label>
-        <label className="auth-field">
-          <span>Enlace de tu tienda</span>
-          <span className="auth-prefix">
-            <span aria-hidden="true">/tienda/</span>
+        <div className={cn("grid gap-5", step !== 0 && "hidden")}>
+          <AuthField label="Nombre del negocio" htmlFor="shopName" error={showErrors ? nameError : null}>
             <input
-              name="shopSlug" required maxLength={64} placeholder="luna-unas" pattern="[a-z0-9]+(-[a-z0-9]+)*"
-              title="Solo minúsculas, números y guiones" autoCapitalize="none" spellCheck={false}
-              value={slug}
+              ref={nameRef} id="shopName" name="shopName" required maxLength={100} placeholder="Luna Uñas"
+              autoComplete="organization" autoFocus className={authInput} value={name}
+              aria-invalid={showErrors && nameError ? true : undefined}
               onChange={(e) => {
-                setSlug(e.target.value.toLowerCase());
-                setSlugEdited(true);
+                setName(e.target.value);
+                if (!slugEdited) setSlug(slugify(e.target.value));
               }}
             />
-          </span>
-        </label>
-        <EmailField label="Tu correo" />
-        <button type="submit" className="auth-btn" disabled={sending}>
-          {sending ? "Creando…" : "Crear mi tienda"}
-        </button>
+          </AuthField>
+          <AuthField
+            label="Enlace de tu tienda" htmlFor="shopSlug"
+            error={showLinkError ? linkError : null}
+            hint={<SlugHint status={slugStatus} />}
+          >
+            <div className={cn(
+              "flex h-13 items-center rounded-[10px] border border-border bg-white transition",
+              "focus-within:border-[#111] focus-within:ring-4 focus-within:ring-[#111]/8",
+              showLinkError && "border-red-600 focus-within:border-red-600 focus-within:ring-red-600/12",
+            )}>
+              <span className="pl-4 font-mono text-[15px] text-neutral-500" aria-hidden="true">/tienda/</span>
+              <input
+                id="shopSlug" name="shopSlug" required maxLength={64} placeholder="luna-unas"
+                autoCapitalize="none" spellCheck={false}
+                className="h-full min-w-0 flex-1 bg-transparent pr-3 pl-0.5 font-mono text-[15px] outline-none"
+                value={slug}
+                aria-invalid={showLinkError || undefined}
+                onChange={(e) => {
+                  setSlug(cleanSlugInput(e.target.value));
+                  setSlugEdited(true);
+                }}
+                onBlur={() => setSlug((current) => current.replace(/-+$/, ""))}
+              />
+              {slugEdited && name && slugify(name) !== slug && (
+                <button
+                  type="button" title="Usar el nombre del negocio"
+                  className="mr-2 flex h-8 items-center gap-1 rounded-full bg-neutral-100 px-3 text-xs font-medium hover:bg-neutral-200"
+                  onClick={() => {
+                    setSlug(slugify(name));
+                    setSlugEdited(false);
+                  }}
+                >
+                  <Sparkles className="size-3.5" /> Sugerir
+                </button>
+              )}
+            </div>
+          </AuthField>
+          {slugStatus === "taken" && (
+            <div className="-mt-3 flex flex-wrap items-center gap-2 text-[13px] text-muted-foreground">
+              Probá con:
+              {[slug + "-sv", slug + "-" + new Date().getFullYear(), slug + "-oficial"].filter((option) => option.length <= 64).map((option) => (
+                <button key={option} type="button" onClick={() => { setSlug(option); setSlugEdited(true); }}
+                  className="rounded-full bg-neutral-100 px-2.5 py-1 font-mono text-xs text-[#111] hover:bg-neutral-200">
+                  {option}
+                </button>
+              ))}
+            </div>
+          )}
+          <button type="submit" className={authButton} disabled={slugStatus === "checking" && !linkError}>
+            Continuar <ArrowRight className="size-4" />
+          </button>
+        </div>
+
+        {step === 1 && (
+          <div className="grid gap-5">
+            <div className="flex items-center gap-3 rounded-xl border bg-neutral-50 p-3.5">
+              <span className="grid size-10 shrink-0 place-items-center rounded-lg bg-[#111] text-white"><Store className="size-5" /></span>
+              <div className="min-w-0 flex-1">
+                <p className="truncate font-semibold">{name}</p>
+                <p className="truncate font-mono text-sm text-muted-foreground">/tienda/{slug}</p>
+              </div>
+              <button type="button" onClick={() => setStep(0)} className="text-sm font-medium underline underline-offset-4">Editar</button>
+            </div>
+            <EmailField label="Tu correo" autoFocus value={email} onChange={setEmail} />
+            <div className="grid gap-2">
+              <button type="submit" className={authButton} disabled={sending}>
+                {sending && <Loader2 className="size-4 animate-spin" />}
+                {sending ? "Creando…" : "Crear mi tienda"}
+              </button>
+              <button type="button" className={authGhostButton} onClick={() => setStep(0)} disabled={sending}>
+                <ArrowLeft className="size-4" /> Atrás
+              </button>
+            </div>
+          </div>
+        )}
       </form>
-      <p className="auth-note">Te mandamos un enlace al correo para confirmar. Sin contraseñas.</p>
-      <p className="auth-switch">¿Ya tenés tienda? <Link to="/ingresar">Ingresá</Link></p>
+      <AuthSwitch>¿Ya tenés tienda? <Link to="/ingresar">Ingresá</Link></AuthSwitch>
     </AuthLayout>
+  );
+}
+
+function SlugHint({ status }: { status: ReturnType<typeof useShopSlugStatus> }) {
+  if (status === "checking") return <span className="flex items-center gap-1.5"><Loader2 className="size-3.5 animate-spin" /> Comprobando disponibilidad…</span>;
+  if (status === "free") return <span className="flex items-center gap-1.5 text-green-700"><Check className="size-3.5" /> ¡Disponible!</span>;
+  if (status === "taken") return <span className="flex items-center gap-1.5 text-red-700"><X className="size-3.5" /> Ocupado</span>;
+  return <span>Solo minúsculas, números y guiones. Es la dirección que compartís con tus clientes.</span>;
+}
+
+function Stepper({ current }: { current: number }) {
+  return (
+    <ol className="mb-2 flex items-center gap-2" aria-label="Progreso">
+      {steps.map((label, index) => (
+        <li key={label} className="flex flex-1 items-center gap-2">
+          <span className={cn(
+            "grid size-7 shrink-0 place-items-center rounded-full text-xs font-semibold transition",
+            index < current ? "bg-[#111] text-white" : index === current ? "bg-brand text-ink-dark" : "bg-neutral-100 text-neutral-500",
+          )} aria-current={index === current ? "step" : undefined}>
+            {index < current ? <Check className="size-3.5" strokeWidth={3} /> : index + 1}
+          </span>
+          <span className={cn("text-sm", index === current ? "font-semibold" : "text-muted-foreground")}>{label}</span>
+          {index < steps.length - 1 && <span className="h-px flex-1 bg-border" />}
+        </li>
+      ))}
+    </ol>
   );
 }
