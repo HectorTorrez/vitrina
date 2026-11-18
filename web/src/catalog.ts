@@ -9,10 +9,13 @@ export interface Product {
   durationMinutes: number;
   slug: string;
   name: string;
+  description?: string;
   priceCents: number;
   available: boolean;
   artwork: string;
   imageUrl?: string;
+  /** Extra photos shown after imageUrl on the product page. */
+  gallery?: string[];
   position: number;
   hidden: boolean;
   options: { name: string; values: string[]; prices?: number[] }[];
@@ -22,6 +25,9 @@ export interface Shop {
   name: string;
   description: string;
   theme: string;
+  accentColor?: string;
+  logoUrl?: string;
+  backgroundUrl?: string;
   instagram: string;
   tiktok: string;
   whatsapp: string;
@@ -80,6 +86,12 @@ export function totalPrice(product: Product, choices: Record<string, string> = {
 
 export function hasSurcharges(product: Product) {
   return product.options.some((option) => option.prices?.some((cents) => cents > 0));
+}
+
+/** Every photo of a product, main photo first. */
+export function productImages(product: Product) {
+  const main = productImage(product);
+  return [...(main ? [main] : []), ...(product.gallery ?? [])];
 }
 
 export function productImage(product: Product) {

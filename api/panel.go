@@ -127,7 +127,7 @@ func changePanel(db *gorm.DB, account seller, input panelInput) error {
 			return err
 		}
 		return db.Model(&shop{}).Where("slug = ?", input.ShopSlug).
-			Select("name", "description", "theme", "instagram", "tiktok", "whatsapp", "hours").Updates(&profile).Error
+			Select("name", "description", "theme", "accent_color", "logo_url", "background_url", "instagram", "tiktok", "whatsapp", "hours").Updates(&profile).Error
 	case "crear-item", "editar-item":
 		return savePanelItem(db, input.ShopSlug, input.Item, input.Action == "crear-item")
 	case "eliminar-item":
@@ -165,15 +165,20 @@ func createPanelShop(db *gorm.DB, input panelInput) error {
 }
 
 // Keep in sync with the themes in web/src/themes.ts.
-var themes = []string{"costa", "arena", "noche", "lienzo", "rosa", "sol"}
+var themes = []string{"costa", "arena", "noche", "lienzo", "rosa", "sol", "cielo", "lavanda", "bosque"}
+
+var accentPattern = regexp.MustCompile(`^#[0-9a-f]{6}$`)
 
 func validatedProfile(input shop) (shop, error) {
 	profile := shop{
-		Name:        strings.TrimSpace(input.Name),
-		Description: strings.TrimSpace(input.Description),
-		Theme:       input.Theme,
-		Instagram:   strings.TrimPrefix(strings.TrimSpace(input.Instagram), "@"),
-		TikTok:      strings.TrimPrefix(strings.TrimSpace(input.TikTok), "@"),
+		Name:          strings.TrimSpace(input.Name),
+		Description:   strings.TrimSpace(input.Description),
+		Theme:         input.Theme,
+		AccentColor:   strings.ToLower(input.AccentColor),
+		LogoURL:       input.LogoURL,
+		BackgroundURL: input.BackgroundURL,
+		Instagram:     strings.TrimPrefix(strings.TrimSpace(input.Instagram), "@"),
+		TikTok:        strings.TrimPrefix(strings.TrimSpace(input.TikTok), "@"),
 	}
 	hours, err := validatedHours(input.Hours)
 	if err != nil {
@@ -182,6 +187,14 @@ func validatedProfile(input shop) (shop, error) {
 	profile.Hours = hours
 	if profile.Name == "" || utf8.RuneCountInString(profile.Name) > 100 || utf8.RuneCountInString(profile.Description) > 500 {
 		return shop{}, validationError("Indicá un nombre de hasta 100 caracteres y una descripción de hasta 500")
+	}
+	for _, path := range []string{profile.LogoURL, profile.BackgroundURL} {
+		if path != "" && !validMediaPath(path) {
+			return shop{}, validationError("Subí una imagen válida para tu tienda")
+		}
+	}
+	if profile.AccentColor != "" && !accentPattern.MatchString(profile.AccentColor) {
+		return shop{}, validationError("Elegí un color principal válido")
 	}
 	if !slices.Contains(themes, profile.Theme) {
 		return shop{}, validationError("Elegí un tema válido")

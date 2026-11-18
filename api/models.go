@@ -27,16 +27,19 @@ type option struct {
 	Prices []int `json:"prices,omitempty"`
 }
 type product struct {
-	ShopSlug        string   `json:"-" gorm:"primaryKey"`
-	Slug            string   `json:"slug" gorm:"primaryKey"`
-	Name            string   `json:"name"`
-	PriceCents      int      `json:"priceCents" gorm:"check:price_cents >= 0"`
-	Available       bool     `json:"available"`
-	Artwork         string   `json:"artwork"`
-	Options         []option `json:"options" gorm:"serializer:json;type:jsonb"`
-	Position        int      `json:"position"`
-	Hidden          bool     `json:"hidden" gorm:"not null;default:false"`
-	ImageURL        string   `json:"imageUrl"`
+	ShopSlug    string   `json:"-" gorm:"primaryKey"`
+	Slug        string   `json:"slug" gorm:"primaryKey"`
+	Name        string   `json:"name"`
+	Description string   `json:"description" gorm:"not null;default:''"`
+	PriceCents  int      `json:"priceCents" gorm:"check:price_cents >= 0"`
+	Available   bool     `json:"available"`
+	Artwork     string   `json:"artwork"`
+	Options     []option `json:"options" gorm:"serializer:json;type:jsonb"`
+	Position    int      `json:"position"`
+	Hidden      bool     `json:"hidden" gorm:"not null;default:false"`
+	ImageURL    string   `json:"imageUrl"`
+	// Gallery holds extra photos shown after ImageURL on the product page.
+	Gallery         []string `json:"gallery" gorm:"serializer:json;type:jsonb;not null;default:'[]'"`
 	Kind            string   `json:"kind" gorm:"not null;check:(kind = 'product' AND duration_minutes = 0) OR (kind = 'service' AND duration_minutes BETWEEN 1 AND 1440)"`
 	DurationMinutes int      `json:"durationMinutes" gorm:"not null"`
 }
@@ -44,6 +47,9 @@ type product struct {
 func (p *product) AfterFind(*gorm.DB) error {
 	if p.Options == nil {
 		p.Options = []option{}
+	}
+	if p.Gallery == nil {
+		p.Gallery = []string{}
 	}
 	return nil
 }
@@ -54,13 +60,16 @@ type dayHours struct {
 	Close string `json:"close"`
 }
 type shop struct {
-	Slug        string `json:"slug" gorm:"primaryKey"`
-	Name        string `json:"name"`
-	Description string `json:"description"`
-	Theme       string `json:"theme"`
-	Instagram   string `json:"instagram"`
-	TikTok      string `json:"tiktok" gorm:"column:tiktok"`
-	Whatsapp    string `json:"whatsapp"`
+	Slug          string `json:"slug" gorm:"primaryKey"`
+	Name          string `json:"name"`
+	Description   string `json:"description"`
+	Theme         string `json:"theme"`
+	AccentColor   string `json:"accentColor"`
+	LogoURL       string `json:"logoUrl"`
+	BackgroundURL string `json:"backgroundUrl"`
+	Instagram     string `json:"instagram"`
+	TikTok        string `json:"tiktok" gorm:"column:tiktok"`
+	Whatsapp      string `json:"whatsapp"`
 	// Hours holds seven entries indexed by time.Weekday (Sunday first). Empty disables online booking.
 	Hours    []dayHours `json:"hours" gorm:"serializer:json;type:jsonb;not null;default:'[]'"`
 	Products []product  `json:"products" gorm:"foreignKey:ShopSlug;references:Slug"`

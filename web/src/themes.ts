@@ -50,14 +50,38 @@ export const themes: StoreTheme[] = [
     colors: { bg: "#fff8e6", surface: "#ffffff", ink: "#33270a", muted: "#7a6634", rule: "#f1dfa8", accent: "#f2a90c", accentInk: "#241a00", soft: "#fdecc0" },
     display: "sans",
   },
+  {
+    value: "cielo", label: "Cielo", description: "Celeste y azul profundo",
+    colors: { bg: "#eff6ff", surface: "#ffffff", ink: "#183758", muted: "#4d6680", rule: "#c8daed", accent: "#245fa3", accentInk: "#ffffff", soft: "#dceafa" },
+    display: "sans",
+  },
+  {
+    value: "lavanda", label: "Lavanda", description: "Lila suave y violeta",
+    colors: { bg: "#f6f1fb", surface: "#fffcff", ink: "#402c52", muted: "#6c5779", rule: "#ddcfe8", accent: "#714497", accentInk: "#ffffff", soft: "#eadff3" },
+    display: "serif",
+  },
+  {
+    value: "bosque", label: "Bosque", description: "Verde oscuro y menta",
+    colors: { bg: "#10251f", surface: "#1a322a", ink: "#e8f7eb", muted: "#adc8b7", rule: "#395447", accent: "#a2deb2", accentInk: "#153220", soft: "#254335" },
+    display: "sans", dark: true,
+  },
 ];
 
 export function getTheme(value: string | undefined) {
   return themes.find((theme) => theme.value === value) ?? themes[0];
 }
 
+function contrastingText(hex: string) {
+  const linear = (start: number) => {
+    const channel = parseInt(hex.slice(start, start + 2), 16) / 255;
+    return channel <= 0.04045 ? channel / 12.92 : ((channel + 0.055) / 1.055) ** 2.4;
+  };
+  const luminance = 0.2126 * linear(1) + 0.7152 * linear(3) + 0.0722 * linear(5);
+  return (luminance + 0.05) / 0.05 >= 1.05 / (luminance + 0.05) ? "#000000" : "#ffffff";
+}
+
 /** CSS variables consumed by the `store-*` Tailwind colors and `font-store`. */
-export function themeStyle(value: string | undefined): CSSProperties {
+export function themeStyle(value: string | undefined, accentColor?: string): CSSProperties {
   const { colors, display } = getTheme(value);
   return {
     "--s-bg": colors.bg,
@@ -65,8 +89,8 @@ export function themeStyle(value: string | undefined): CSSProperties {
     "--s-ink": colors.ink,
     "--s-muted": colors.muted,
     "--s-rule": colors.rule,
-    "--s-accent": colors.accent,
-    "--s-accent-ink": colors.accentInk,
+    "--s-accent": accentColor || colors.accent,
+    "--s-accent-ink": accentColor ? contrastingText(accentColor) : colors.accentInk,
     "--s-soft": colors.soft,
     "--s-display": display === "serif" ? '"Fraunces", Georgia, serif' : '"Bricolage Grotesque", Inter, system-ui, sans-serif',
   } as CSSProperties;

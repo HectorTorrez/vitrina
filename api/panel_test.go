@@ -84,11 +84,36 @@ func TestPanelShopPermissionsAndManagement(t *testing.T) {
 	request(operatorToken, &create, 204)
 
 	edit := panelInput{Action: "editar-tienda", ShopSlug: first, Profile: shop{Name: "Tienda Nueva", Theme: "noche", Whatsapp: "+50370000000"}}
+	edit.Profile.Theme = "lavanda"
+	edit.Profile.AccentColor = "#144D63"
+	edit.Profile.LogoURL = "/media/" + suffix + ".png"
+	edit.Profile.BackgroundURL = "/media/" + suffix + ".jpg"
 	request(login(other), &edit, 403)
 	request(ownerToken, &edit, 204)
 	p := load(ownerToken)
 	if p.Operator || len(p.Shops) != 1 || p.Shops[0].Slug != first || p.Shops[0].Name != "Tienda Nueva" || p.Shops[0].Whatsapp != "50370000000" {
 		t.Fatalf("unexpected panel: %+v", p)
+	}
+
+	if p.Shops[0].Theme != "lavanda" || p.Shops[0].AccentColor != "#144d63" {
+		t.Fatal("shop colors were not saved")
+	}
+	edit.Profile.AccentColor = "invalid"
+	request(ownerToken, &edit, 400)
+	edit.Profile.AccentColor = ""
+	if p.Shops[0].LogoURL != edit.Profile.LogoURL || p.Shops[0].BackgroundURL != edit.Profile.BackgroundURL {
+		t.Fatal("shop images were not saved")
+	}
+	edit.Profile.BackgroundURL = "invalid"
+	request(ownerToken, &edit, 400)
+	edit.Profile.LogoURL, edit.Profile.BackgroundURL = "", ""
+	request(ownerToken, &edit, 204)
+	cleared := load(ownerToken).Shops[0]
+	if cleared.AccentColor != "" {
+		t.Fatal("shop color was not reset")
+	}
+	if cleared.LogoURL != "" || cleared.BackgroundURL != "" {
+		t.Fatal("shop images were not removed")
 	}
 
 	item := product{Slug: "gel", Name: "Uñas en gel", Kind: "service", DurationMinutes: 45, Available: true,
@@ -98,8 +123,21 @@ func TestPanelShopPermissionsAndManagement(t *testing.T) {
 	request(ownerToken, &itemInput, 204)
 	itemInput.Action = "editar-item"
 	itemInput.Item.PriceCents, itemInput.Item.Hidden = 0, true
+	itemInput.Item.Description = "  Esmalte en gel con limado.  "
+	itemInput.Item.Gallery = []string{"/media/" + suffix + ".png", "https://example.com/otra.jpg"}
 	request(ownerToken, &itemInput, 204)
 	items := load(ownerToken).Shops[0].Products
+	if items[0].Description != "Esmalte en gel con limado." || len(items[0].Gallery) != 2 || items[0].Gallery[1] != "https://example.com/otra.jpg" {
+		t.Fatalf("description or gallery not saved: %+v", items[0])
+	}
+	bad := itemInput
+	bad.Item.Gallery = []string{"http://example.com/x.jpg"}
+	request(ownerToken, &bad, 400)
+	bad.Item.Gallery = make([]string, 9)
+	for i := range bad.Item.Gallery {
+		bad.Item.Gallery[i] = "https://example.com/x.jpg"
+	}
+	request(ownerToken, &bad, 400)
 	if len(items) != 1 || !items[0].Hidden || items[0].PriceCents != 0 || len(items[0].Options) != 1 || items[0].Options[0].Values[1] != "Verde" || items[0].Options[0].Prices[1] != 300 {
 		t.Fatalf("unexpected catalog: %+v", items)
 	}

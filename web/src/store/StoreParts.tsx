@@ -5,19 +5,27 @@ import { getTheme, themeStyle } from "../themes";
 import { cn } from "@/lib/utils";
 
 /** Themed, container-query driven wrapper; the panel preview renders the same tree in a small box. */
-export function StoreFrame({ theme, className, children }: { theme: string; className?: string; children: ReactNode }) {
+export function StoreFrame({ theme, accentColor, backgroundUrl, className, children }: { theme: string; accentColor?: string; backgroundUrl?: string; className?: string; children: ReactNode }) {
   return (
     <div
       data-store-theme={theme}
-      style={themeStyle(theme)}
-      className={cn("@container bg-store-bg text-store-ink antialiased", getTheme(theme).dark && "[color-scheme:dark]", className)}
+      style={{
+        ...themeStyle(theme, accentColor),
+        ...(backgroundUrl && {
+          backgroundImage: `linear-gradient(var(--store-veil), var(--store-veil)), url("${backgroundUrl}")`,
+          backgroundPosition: "center top",
+          backgroundSize: "cover",
+        }),
+      }}
+      className={cn("@container [--store-veil:color-mix(in_srgb,var(--s-bg)_82%,transparent)] bg-store-bg text-store-ink antialiased", getTheme(theme).dark && "[color-scheme:dark]", className)}
     >
       {children}
     </div>
   );
 }
 
-export function ShopAvatar({ name, className }: { name: string; className?: string }) {
+export function ShopAvatar({ name, logoUrl, className }: { name: string; logoUrl?: string; className?: string }) {
+  if (logoUrl) return <img src={logoUrl} alt="" className={cn("shrink-0 rounded-full bg-store-surface object-cover", className)} />;
   const initials = name.trim().split(/\s+/).slice(0, 2).map((word) => word[0]?.toUpperCase()).join("") || "V";
   return (
     <span className={cn("grid shrink-0 place-items-center rounded-full bg-store-accent font-store font-semibold text-store-accent-ink", className)} aria-hidden="true">
@@ -74,10 +82,10 @@ export function SocialLinks({ shop, className }: { shop: Pick<Shop, "instagram" 
   );
 }
 
-export function ShopHero({ shop, bookable }: { shop: Pick<Shop, "name" | "description" | "instagram" | "tiktok" | "whatsapp">; bookable: boolean }) {
+export function ShopHero({ shop, bookable }: { shop: Pick<Shop, "name" | "description" | "logoUrl" | "instagram" | "tiktok" | "whatsapp">; bookable: boolean }) {
   return (
     <section className="grid gap-5 pt-8 pb-8 @3xl:pt-14 @3xl:pb-12">
-      <ShopAvatar name={shop.name || "Tu tienda"} className="size-16 text-2xl @3xl:size-20 @3xl:text-3xl" />
+      <ShopAvatar logoUrl={shop.logoUrl} name={shop.name || "Tu tienda"} className="size-16 text-2xl @3xl:size-20 @3xl:text-3xl" />
       <div className="grid gap-3">
         <h1 className="font-store text-[clamp(2.4rem,9cqw,5.25rem)] leading-[1.02] font-medium tracking-[-0.035em] break-words">
           {shop.name || "Tu tienda"}
@@ -140,10 +148,10 @@ export function ProductCard({ product }: { product: Product }) {
   );
 }
 
-export function StoreBrand({ name }: { name: string }) {
+export function StoreBrand({ name, logoUrl }: { logoUrl?: string; name: string }) {
   return (
     <>
-      <ShopAvatar name={name} className="size-8 text-sm" />
+      <ShopAvatar logoUrl={logoUrl} name={name} className="size-8 text-sm" />
       <span className="min-w-0 truncate font-semibold">{name}</span>
     </>
   );

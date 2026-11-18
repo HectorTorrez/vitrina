@@ -13,7 +13,7 @@ const samples: Product[] = [
 ];
 
 export function StorefrontPreview({ shop, slug, className }: {
-  shop: Pick<Shop, "name" | "description" | "theme" | "instagram" | "tiktok" | "whatsapp" | "hours" | "products">;
+  shop: Pick<Shop, "logoUrl" | "backgroundUrl" | "name" | "description" | "theme" | "accentColor" | "instagram" | "tiktok" | "whatsapp" | "hours" | "products">;
   slug: string;
   className?: string;
 }) {
@@ -63,13 +63,13 @@ export function StorefrontPreview({ shop, slug, className }: {
 }
 
 function StorePage({ shop, products, bookable }: {
-  shop: Pick<Shop, "name" | "description" | "theme" | "instagram" | "tiktok" | "whatsapp">;
+  shop: Pick<Shop, "logoUrl" | "backgroundUrl" | "name" | "description" | "theme" | "accentColor" | "instagram" | "tiktok" | "whatsapp">;
   products: Product[];
   bookable: boolean;
 }) {
   return (
-    <StoreFrame theme={shop.theme} className="min-h-full pb-8">
-      <StoreHeader brand={<div className="flex min-w-0 items-center gap-3"><StoreBrand name={shop.name || "Tu tienda"} /></div>}>
+    <StoreFrame theme={shop.theme} accentColor={shop.accentColor} backgroundUrl={shop.backgroundUrl} className="min-h-full pb-8">
+      <StoreHeader brand={<div className="flex min-w-0 items-center gap-3"><StoreBrand logoUrl={shop.logoUrl} name={shop.name || "Tu tienda"} /></div>}>
         {shop.whatsapp && (
           <span className="inline-flex h-9 items-center gap-2 rounded-full bg-store-accent px-3.5 text-sm font-medium text-store-accent-ink">
             <WhatsAppIcon className="size-4" />

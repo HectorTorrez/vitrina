@@ -1,5 +1,5 @@
-import { useMemo, useState, type FormEvent } from "react";
-import { ArrowLeft, ArrowRight, Check, Copy, Loader2, Sparkles, X } from "lucide-react";
+import { useMemo, useState, type FormEvent, type ReactNode } from "react";
+import { ArrowLeft, ArrowRight, Check, Copy, Loader2, Plus, Sparkles, X } from "lucide-react";
 import PhoneInput, { isPossiblePhoneNumber } from "react-phone-number-input";
 import { PhoneCountrySelect } from "./PhoneCountrySelect";
 import phoneLabels from "react-phone-number-input/locale/es";
@@ -10,7 +10,8 @@ import { AffixInput, Field, FormSection, SaveBar, Stepper, usePanelAction } from
 import { useShopSlugField, type ShopSlugStatus } from "./shopSlug";
 import { StorefrontPreview } from "./store/StorefrontPreview";
 import { emailError } from "./AuthLayout";
-import { themes } from "./themes";
+import { PanelImageUpload } from "./PanelImageUpload";
+import { getTheme, themes } from "./themes";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Switch } from "@/components/ui/switch";
@@ -24,6 +25,9 @@ interface ProfileDraft {
   name: string;
   description: string;
   theme: string;
+  accentColor: string;
+  logoUrl: string;
+  backgroundUrl: string;
   instagram: string;
   tiktok: string;
   whatsapp: string;
@@ -37,6 +41,9 @@ function toDraft(profile?: Profile): ProfileDraft {
   return {
     name: profile?.name ?? "",
     description: profile?.description ?? "",
+    logoUrl: profile?.logoUrl ?? "",
+    backgroundUrl: profile?.backgroundUrl ?? "",
+    accentColor: profile?.accentColor ?? "",
     theme: profile?.theme || "costa",
     instagram: profile?.instagram ?? "",
     tiktok: profile?.tiktok ?? "",
@@ -65,6 +72,9 @@ function fromDraft(draft: ProfileDraft): Profile {
     name: draft.name.trim(),
     description: draft.description.trim(),
     theme: draft.theme,
+    accentColor: draft.accentColor,
+    logoUrl: draft.logoUrl,
+    backgroundUrl: draft.backgroundUrl,
     instagram: cleanHandle(draft.instagram),
     tiktok: cleanHandle(draft.tiktok),
     whatsapp: draft.whatsapp.replace(/^\+/, ""),
@@ -149,6 +159,97 @@ function ThemePicker({ value, onChange }: { value: string; onChange: (value: str
           </button>
         );
       })}
+    </div>
+  );
+}
+
+const shopImages = [
+  { key: "logoUrl", variant: "logo", label: "Logo", hint: "Cuadrado, se muestra en círculo." },
+  { key: "backgroundUrl", variant: "background", label: "Imagen de fondo", hint: "Horizontal, va detrás de tu tienda." },
+] as const;
+
+const accentPresets = ["#194e47", "#b4532a", "#db2763", "#714497", "#245fa3", "#0f766e", "#f2a90c", "#111111"];
+
+function AppearanceGroup({ title, text, children }: { title: string; text?: string; children: ReactNode }) {
+  return (
+    <div className="grid gap-3">
+      <div className="grid gap-0.5">
+        <h4 className="text-sm font-semibold">{title}</h4>
+        {text && <p className="text-xs text-muted-foreground">{text}</p>}
+      </div>
+      {children}
+    </div>
+  );
+}
+
+function AccentPicker({ theme, value, onChange }: { theme: string; value: string; onChange: (value: string) => void }) {
+  const themeAccent = getTheme(theme).colors.accent;
+  const current = (value || themeAccent).toLowerCase();
+  const custom = Boolean(value) && !accentPresets.includes(current) && current !== themeAccent.toLowerCase();
+  const swatch = (active: boolean) => cn(
+    "relative grid size-9 shrink-0 place-items-center rounded-full ring-1 ring-black/10 ring-inset transition outline-none",
+    "focus-visible:ring-[3px] focus-visible:ring-ring/50",
+    active ? "outline-2 outline-offset-2 outline-foreground" : "hover:scale-105",
+  );
+  return (
+    <div className="flex flex-wrap items-center gap-2.5" role="radiogroup" aria-label="Color principal">
+      <button type="button" role="radio" aria-checked={!value} onClick={() => onChange("")} title="Color del tema"
+        className={cn(swatch(!value), "inline-flex h-9 w-auto items-center gap-1 px-3.5 text-xs font-semibold whitespace-nowrap hover:scale-100")}
+        style={{ background: themeAccent, color: getTheme(theme).colors.accentInk }}
+      >
+        {!value && <Check className="size-3.5" strokeWidth={3} />} Del tema
+      </button>
+      <span className="h-6 w-px bg-border" aria-hidden="true" />
+      {accentPresets.filter((color) => color !== themeAccent.toLowerCase()).map((color) => {
+        const active = Boolean(value) && current === color;
+        return (
+          <button key={color} type="button" role="radio" aria-checked={active} aria-label={color} title={color}
+            onClick={() => onChange(color)} className={swatch(active)} style={{ background: color }}
+          >
+            {active && <Check className="size-4 text-white mix-blend-difference" strokeWidth={3} />}
+          </button>
+        );
+      })}
+      <label title="Elegir otro color"
+        className={cn(swatch(custom), "cursor-pointer overflow-hidden",
+          !custom && "bg-[conic-gradient(from_90deg,#f43f5e,#f59e0b,#84cc16,#06b6d4,#6366f1,#d946ef,#f43f5e)]")}
+        style={custom ? { background: current } : undefined}
+      >
+        {custom ? <Check className="size-4 text-white mix-blend-difference" strokeWidth={3} /> : <Plus className="size-4 text-white drop-shadow" strokeWidth={3} />}
+        <input type="color" value={current} onChange={(event) => onChange(event.target.value)} className="sr-only" aria-label="Elegir otro color" />
+      </label>
+      {value && <span className="font-mono text-xs text-muted-foreground uppercase">{value}</span>}
+    </div>
+  );
+}
+
+function AppearanceFields({ draft, set, setUploading }: {
+  draft: ProfileDraft; set: SetDraft; setUploading: (busy: boolean) => void;
+}) {
+  return (
+    <div className="grid gap-7">
+      <AppearanceGroup title="Tema" text="Fondo, tipografía y colores base de tu tienda.">
+        <ThemePicker value={draft.theme} onChange={(theme) => set({ theme })} />
+      </AppearanceGroup>
+      <AppearanceGroup title="Color principal" text="Botones, precios destacados y filtros seleccionados.">
+        <AccentPicker theme={draft.theme} value={draft.accentColor} onChange={(accentColor) => set({ accentColor })} />
+      </AppearanceGroup>
+      <AppearanceGroup title="Logo e imagen de fondo" text="Opcionales · JPG, PNG, WebP o GIF hasta 5 MB.">
+        <div className="grid gap-4 sm:grid-cols-2">
+          {shopImages.map(({ key, variant, label, hint }) => (
+            <div key={key} className="grid content-start gap-2">
+              <div className="flex items-baseline justify-between gap-2">
+                <span className="text-sm font-medium">{label}</span>
+                <span className="truncate text-xs text-muted-foreground">{hint}</span>
+              </div>
+              <PanelImageUpload
+                label={label} value={draft[key]} variant={variant}
+                onChange={(value) => set({ [key]: value })} onBusyChange={setUploading}
+              />
+            </div>
+          ))}
+        </div>
+      </AppearanceGroup>
     </div>
   );
 }
@@ -242,6 +343,7 @@ export function ProfileEditor({ shop }: { shop: PanelShop }) {
   const initial = useMemo(() => toDraft(shop), [shop]);
   const [draft, setDraft] = useState(initial);
   const [showErrors, setShowErrors] = useState(false);
+  const [uploading, setUploading] = useState(false);
   const { run, pending } = usePanelAction();
   const errors = validateProfile(draft);
   const visibleErrors = showErrors ? errors : {};
@@ -250,6 +352,7 @@ export function ProfileEditor({ shop }: { shop: PanelShop }) {
 
   async function save(event: FormEvent) {
     event.preventDefault();
+    if (uploading || pending) return;
     if (hasErrors(errors)) {
       setShowErrors(true);
       requestAnimationFrame(() => document.querySelector<HTMLElement>("[aria-invalid=true]")?.focus());
@@ -264,12 +367,12 @@ export function ProfileEditor({ shop }: { shop: PanelShop }) {
 
   return (
     <form onSubmit={save} noValidate className="grid gap-6 lg:grid-cols-[minmax(0,1fr)_340px] lg:items-start">
-      <fieldset disabled={pending} className="grid min-w-0 gap-5">
+      <fieldset disabled={pending || uploading} className="grid min-w-0 gap-5">
         <FormSection title="Identidad" text="Lo primero que ven tus clientes al abrir tu enlace.">
           <IdentityFields draft={draft} set={set} errors={visibleErrors} />
         </FormSection>
-        <FormSection title="Apariencia" text="Elegí colores y tipografía. La vista previa se actualiza al instante.">
-          <ThemePicker value={draft.theme} onChange={(theme) => set({ theme })} />
+        <FormSection title="Apariencia">
+          <AppearanceFields draft={draft} set={set} setUploading={setUploading} />
         </FormSection>
         <FormSection title="Contacto y redes" text="Aparecen como botones en tu tienda.">
           <ContactFields draft={draft} set={set} errors={visibleErrors} />
@@ -279,7 +382,7 @@ export function ProfileEditor({ shop }: { shop: PanelShop }) {
         </FormSection>
         <SaveBar dirty={dirty || pending} pending={pending} onDiscard={() => { setDraft(initial); setShowErrors(false); }} />
       </fieldset>
-      <aside className="hidden lg:sticky lg:top-8 lg:block">
+      <aside className="lg:sticky lg:top-8">
         <StorefrontPreview shop={previewShop(draft, shop.products)} slug={shop.slug} />
       </aside>
     </form>
@@ -294,6 +397,7 @@ export function CreateShopWizard({ operator }: { operator: boolean }) {
   const link = useShopSlugField();
   const [email, setEmail] = useState("");
   const [showErrors, setShowErrors] = useState(false);
+  const [uploading, setUploading] = useState(false);
   const { run, pending } = usePanelAction();
   const set: SetDraft = (patch) => setDraft((current) => ({ ...current, ...patch }));
   const errors = validateProfile(draft);
@@ -307,6 +411,7 @@ export function CreateShopWizard({ operator }: { operator: boolean }) {
 
   async function submit(event: FormEvent) {
     event.preventDefault();
+    if (uploading || pending) return;
     if (!stepValid[step]) {
       setShowErrors(true);
       return;
@@ -329,7 +434,7 @@ export function CreateShopWizard({ operator }: { operator: boolean }) {
 
   return (
     <form onSubmit={submit} noValidate className="grid gap-6 lg:grid-cols-[minmax(0,1fr)_340px] lg:items-start">
-      <fieldset disabled={pending} className="grid min-w-0 gap-5">
+      <fieldset disabled={pending || uploading} className="grid min-w-0 gap-5">
         <Stepper
           steps={wizardSteps.map((label) => ({ label }))} current={step}
           onSelect={setStep} canSelect={(index) => index < step || stepValid.slice(0, index).every(Boolean)}
@@ -372,8 +477,8 @@ export function CreateShopWizard({ operator }: { operator: boolean }) {
           </FormSection>
         )}
         {step === 1 && (
-          <FormSection title="Elegí un tema" text="Mirá a la derecha cómo queda. Lo podés cambiar después.">
-            <ThemePicker value={draft.theme} onChange={(theme) => set({ theme })} />
+          <FormSection title="Apariencia">
+            <AppearanceFields draft={draft} set={set} setUploading={setUploading} />
           </FormSection>
         )}
         {step === 2 && (

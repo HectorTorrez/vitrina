@@ -1,7 +1,9 @@
+import { PanelImageUpload } from "./PanelImageUpload";
+import { uploadImage } from "./uploadImage";
 import { useMemo, useRef, useState, type FormEvent, type KeyboardEvent } from "react";
 import {
-  ArrowDown, ArrowLeft, ArrowRight, ArrowUp, Check, Clock, Copy, ExternalLink, ImageIcon, Layers, Link2, Loader2,
-  Package, Plus, Sparkles, Trash2, Upload, X,
+  ArrowDown, ArrowLeft, ArrowRight, ArrowUp, Check, Clock, Copy, ExternalLink, ImagePlus, Layers, Link2, Loader2,
+  Package, Plus, Sparkles, Star, Trash2, X,
 } from "lucide-react";
 import { price, type Product } from "./catalog";
 import type { PanelShop } from "./panel";
@@ -14,6 +16,7 @@ import {
 } from "@/components/ui/alert-dialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
 import { Sheet, SheetContent, SheetDescription, SheetTitle } from "@/components/ui/sheet";
 import { Switch } from "@/components/ui/switch";
 import { cn } from "@/lib/utils";
@@ -24,11 +27,13 @@ interface GroupDraft { id: string; name: string; values: OptionDraft[] }
 export interface ItemDraft {
   kind: Product["kind"];
   name: string;
+  description: string;
   slug: string;
   slugEdited: boolean;
   price: string;
   duration: string;
   imageUrl: string;
+  gallery: string[];
   groups: GroupDraft[];
   available: boolean;
   hidden: boolean;
@@ -40,16 +45,21 @@ const newId = () => "n" + ++counter;
 const money = (cents: number) => (cents / 100).toFixed(2);
 const toCents = (value: string) => Math.round(Number(value.replace(",", ".") || 0) * 100);
 const validMoney = (value: string) => /^\d{1,6}([.,]\d{0,2})?$/.test(value.trim());
+const validImage = (url: string) => url.startsWith("/media/") || /^https:\/\/[^/\s]+/.test(url);
+const maxDescription = 2000;
+const maxGallery = 8;
 
 function toDraft(item: Product | undefined, nextPosition: number): ItemDraft {
   return {
     kind: item?.kind ?? "product",
     name: item?.name ?? "",
+    description: item?.description ?? "",
     slug: item?.slug ?? "",
     slugEdited: Boolean(item),
     price: item ? money(item.priceCents) : "",
     duration: item?.durationMinutes ? String(item.durationMinutes) : "60",
     imageUrl: item?.imageUrl ?? "",
+    gallery: item?.gallery ?? [],
     groups: (item?.options ?? []).map((group) => ({
       id: newId(),
       name: group.name,
@@ -71,10 +81,12 @@ function fromDraft(draft: ItemDraft) {
   return {
     slug: draft.slug,
     name: draft.name.trim(),
+    description: draft.description.trim(),
     kind: draft.kind,
     durationMinutes: draft.kind === "service" ? Number(draft.duration) : 0,
     priceCents: toCents(draft.price),
     imageUrl: draft.imageUrl.trim(),
+    gallery: draft.gallery,
     options: draft.groups.map((group) => ({
       name: group.name.trim(),
       values: group.values.map((option) => option.value.trim()),
@@ -88,6 +100,7 @@ function fromDraft(draft: ItemDraft) {
 
 interface ItemErrors {
   name?: string;
+  description?: string;
   slug?: string;
   price?: string;
   duration?: string;
@@ -99,6 +112,7 @@ function validate(draft: ItemDraft, takenSlugs: Set<string>, creating: boolean):
   const errors: ItemErrors = { groups: {} };
   if (!draft.name.trim()) errors.name = "Escribí un nombre.";
   else if (draft.name.trim().length > 120) errors.name = "Usá hasta 120 caracteres.";
+  if (draft.description.trim().length > maxDescription) errors.description = `Usá hasta ${maxDescription} caracteres.`;
   if (creating) {
     errors.slug = slugError(draft.slug) ?? (takenSlugs.has(draft.slug) ? "Otra ficha ya usa este enlace." : undefined);
   }
@@ -109,7 +123,7 @@ function validate(draft: ItemDraft, takenSlugs: Set<string>, creating: boolean):
     if (!Number.isInteger(minutes) || minutes < 1 || minutes > 1440) errors.duration = "Entre 1 y 1440 minutos.";
   }
   const url = draft.imageUrl.trim();
-  if (url && !url.startsWith("/media/") && !/^https:\/\/[^/\s]+/.test(url)) errors.imageUrl = "Subí una foto o pegá una dirección que empiece con https://";
+  if (url && !validImage(url)) errors.imageUrl = "Subí una foto o pegá una dirección que empiece con https://";
   const groupNames = new Set<string>();
   for (const group of draft.groups) {
     const groupErrors: { name?: string; values: Record<string, string> } = { values: {} };
@@ -130,12 +144,12 @@ function validate(draft: ItemDraft, takenSlugs: Set<string>, creating: boolean):
   return errors;
 }
 
-const stepFields: (keyof ItemErrors)[][] = [["name", "slug", "price", "duration"], ["imageUrl"], ["groups"], []];
+const stepFields: (keyof ItemErrors)[][] = [["name", "description", "slug", "price", "duration"], ["imageUrl"], ["groups"], []];
 function stepHasError(errors: ItemErrors, step: number) {
   return stepFields[step].some((key) => key === "groups" ? Object.keys(errors.groups).length > 0 : Boolean(errors[key]));
 }
 
-const steps = ["Información", "Foto", "Variantes", "Publicar"];
+const steps = ["Información", "Fotos", "Variantes", "Publicar"];
 
 export function ItemEditor({ shop, item, open, onOpenChange }: {
   shop: PanelShop;
@@ -316,6 +330,18 @@ function BasicsStep({ draft, set, errors, creating, shop, taken }: StepProps & {
         />
       </Field>
 
+      <Field
+        label="Descripción" optional error={errors.description}
+        counter={draft.description.length > maxDescription * 0.8 ? { value: draft.description.length, max: maxDescription } : undefined}
+        hint={draft.kind === "service" ? "Contá qué incluye, cómo se prepara el cliente o cualquier detalle útil." : "Materiales, medidas, cuidados o lo que haga especial a tu producto."}
+      >
+        <Textarea
+          value={draft.description} maxLength={maxDescription} rows={4} className="min-h-24 bg-card"
+          placeholder={draft.kind === "service" ? "Incluye limado, cutícula y esmalte en gel de larga duración." : "Impresión giclée en papel de algodón de 300 g."}
+          onChange={(e) => set({ description: e.target.value })}
+        />
+      </Field>
+
       {creating ? (
         <Field
           label="Enlace de la ficha" error={errors.slug}
@@ -386,82 +412,11 @@ function CopyLink({ path }: { path: string }) {
 }
 
 function PhotoStep({ draft, set, errors }: StepProps) {
-  const [status, setStatus] = useState<{ text: string; error?: boolean; busy?: boolean }>();
-  const [dragging, setDragging] = useState(false);
   const [showUrl, setShowUrl] = useState(Boolean(draft.imageUrl && !draft.imageUrl.startsWith("/media/")));
-  const input = useRef<HTMLInputElement>(null);
-
-  async function upload(file: File) {
-    if (!/^image\/(jpeg|png|webp|gif)$/.test(file.type)) {
-      setStatus({ text: "Usá una foto JPG, PNG, WebP o GIF.", error: true });
-      return;
-    }
-    if (file.size > 5 * 1024 * 1024) {
-      setStatus({ text: "La foto supera los 5 MB. Probá con una más liviana.", error: true });
-      return;
-    }
-    setStatus({ text: "Subiendo foto…", busy: true });
-    try {
-      const response = await fetch("/subir", { method: "POST", body: file });
-      if (response.status === 401) {
-        window.location.assign("/ingresar");
-        return;
-      }
-      if (!response.ok) throw new Error((await response.text()).trim() || "No se pudo subir la foto");
-      const result = await response.json();
-      set({ imageUrl: result.url });
-      setStatus({ text: "Foto lista." });
-    } catch (error) {
-      setStatus({ text: error instanceof Error ? error.message : "No se pudo subir la foto", error: true });
-    }
-  }
 
   return (
     <div className="grid gap-5">
-      <div
-        onDragOver={(e) => { e.preventDefault(); setDragging(true); }}
-        onDragLeave={() => setDragging(false)}
-        onDrop={(e) => {
-          e.preventDefault();
-          setDragging(false);
-          const file = e.dataTransfer.files?.[0];
-          if (file) void upload(file);
-        }}
-        className={cn(
-          "relative grid aspect-[4/3] place-items-center overflow-hidden rounded-2xl border-2 border-dashed bg-muted/40 transition sm:aspect-[16/10]",
-          dragging && "border-primary bg-accent",
-        )}
-      >
-        {draft.imageUrl ? (
-          <>
-            <img src={draft.imageUrl} alt="" referrerPolicy="no-referrer" className="absolute inset-0 size-full object-cover" />
-            <div className="absolute right-3 bottom-3 flex gap-2">
-              <Button type="button" size="sm" variant="secondary" className="rounded-full shadow" onClick={() => input.current?.click()}><Upload /> Cambiar</Button>
-              <Button type="button" size="sm" variant="secondary" className="rounded-full shadow" onClick={() => { set({ imageUrl: "" }); setStatus(undefined); }}><Trash2 /> Quitar</Button>
-            </div>
-          </>
-        ) : (
-          <button type="button" onClick={() => input.current?.click()} className="grid justify-items-center gap-3 p-6 text-center">
-            <span className="grid size-14 place-items-center rounded-2xl bg-card shadow-sm">
-              {status?.busy ? <Loader2 className="size-6 animate-spin" /> : <ImageIcon className="size-6 text-muted-foreground" />}
-            </span>
-            <span className="font-semibold">Arrastrá una foto o tocá para elegirla</span>
-            <span className="text-sm text-muted-foreground">JPG, PNG, WebP o GIF · hasta 5 MB · formato vertical u horizontal</span>
-          </button>
-        )}
-        {status?.busy && draft.imageUrl && <span className="absolute inset-0 grid place-items-center bg-black/40"><Loader2 className="size-8 animate-spin text-white" /></span>}
-        <input
-          ref={input} type="file" className="sr-only" accept="image/jpeg,image/png,image/webp,image/gif" tabIndex={-1}
-          onChange={(event) => {
-            const file = event.target.files?.[0];
-            event.target.value = "";
-            if (file) void upload(file);
-          }}
-        />
-      </div>
-      {status && !status.busy && (
-        status.error ? <FieldError>{status.text}</FieldError> : <p role="status" className="flex items-center gap-1.5 text-sm text-success"><Check className="size-4" /> {status.text}</p>
-      )}
+      <PanelImageUpload label="Foto de la ficha" value={draft.imageUrl} onChange={(imageUrl) => set({ imageUrl })} />
       {showUrl ? (
         <Field label="Dirección de la foto" error={errors.imageUrl} hint="Pegá un enlace HTTPS a una imagen pública.">
           <Input value={draft.imageUrl} onChange={(e) => set({ imageUrl: e.target.value })} placeholder="https://…" maxLength={2048} className="h-10" />
@@ -472,6 +427,101 @@ function PhotoStep({ draft, set, errors }: StepProps) {
         </button>
       )}
       {!draft.imageUrl && <p className="text-sm text-muted-foreground">La foto es opcional, pero las fichas con foto se ven mucho mejor en la tienda y al compartirlas.</p>}
+      <GalleryEditor draft={draft} set={set} />
+    </div>
+  );
+}
+
+function GalleryEditor({ draft, set }: Omit<StepProps, "errors">) {
+  const [busy, setBusy] = useState(0);
+  const [error, setError] = useState<string>();
+  const input = useRef<HTMLInputElement>(null);
+  // Uploads finish one by one; always append to the latest draft.
+  const draftRef = useRef(draft);
+  draftRef.current = draft;
+  const gallery = draft.gallery;
+  const room = maxGallery - gallery.length - busy;
+
+  async function add(files: File[]) {
+    setError(undefined);
+    const batch = files.slice(0, Math.max(0, room));
+    if (files.length > batch.length) setError(`Podés agregar hasta ${maxGallery} fotos adicionales.`);
+    setBusy((count) => count + batch.length);
+    for (const file of batch) {
+      try {
+        const url = await uploadImage(file);
+        if (url) set({ gallery: [...draftRef.current.gallery, url] });
+      } catch (reason) {
+        setError(reason instanceof Error ? reason.message : "No se pudo subir la foto");
+      } finally {
+        setBusy((count) => count - 1);
+      }
+    }
+  }
+
+  const remove = (index: number) => set({ gallery: gallery.filter((_, i) => i !== index) });
+  const makeMain = (index: number) => {
+    const rest = gallery.filter((_, i) => i !== index);
+    set({ imageUrl: gallery[index], gallery: draft.imageUrl ? [draft.imageUrl, ...rest] : rest });
+  };
+  const move = (index: number, delta: number) => {
+    const next = [...gallery];
+    const [photo] = next.splice(index, 1);
+    next.splice(index + delta, 0, photo);
+    set({ gallery: next });
+  };
+
+  return (
+    <div className="grid gap-3 border-t pt-5">
+      <div className="flex items-baseline justify-between gap-3">
+        <div className="grid gap-0.5">
+          <p className="font-medium">Más fotos <span className="font-normal text-muted-foreground">(opcional)</span></p>
+          <p className="text-sm text-muted-foreground">Mostrá otros ángulos, detalles o resultados. Se ven en la página de la ficha.</p>
+        </div>
+        <span className="shrink-0 font-mono text-xs text-muted-foreground">{gallery.length}/{maxGallery}</span>
+      </div>
+      <div className="grid grid-cols-3 gap-2 sm:grid-cols-4">
+        {gallery.map((url, index) => (
+          <div key={url + index} className="group relative aspect-square overflow-hidden rounded-xl bg-muted ring-1 ring-border">
+            <img src={url} alt={`Foto adicional ${index + 1}`} referrerPolicy="no-referrer" className="size-full object-cover" />
+            <div className="absolute inset-x-1 bottom-1 flex justify-between gap-0.5 opacity-100 transition sm:opacity-0 sm:group-focus-within:opacity-100 sm:group-hover:opacity-100">
+              <div className="flex gap-0.5">
+                <Button type="button" variant="secondary" size="icon-xs" aria-label="Mover antes" disabled={index === 0} onClick={() => move(index, -1)}><ArrowLeft /></Button>
+                <Button type="button" variant="secondary" size="icon-xs" aria-label="Mover después" disabled={index === gallery.length - 1} onClick={() => move(index, 1)}><ArrowRight /></Button>
+              </div>
+              <div className="flex gap-0.5">
+                <Button type="button" variant="secondary" size="icon-xs" aria-label="Usar como foto principal" title="Usar como principal" onClick={() => makeMain(index)}><Star /></Button>
+                <Button type="button" variant="secondary" size="icon-xs" aria-label="Quitar foto" onClick={() => remove(index)}><Trash2 /></Button>
+              </div>
+            </div>
+          </div>
+        ))}
+        {Array.from({ length: busy }, (_, index) => (
+          <div key={"busy" + index} className="grid aspect-square place-items-center rounded-xl bg-muted ring-1 ring-border">
+            <Loader2 className="size-5 animate-spin text-muted-foreground" />
+          </div>
+        ))}
+        {room > 0 && (
+          <button
+            type="button" onClick={() => input.current?.click()}
+            onDragOver={(e) => e.preventDefault()}
+            onDrop={(e) => { e.preventDefault(); void add(Array.from(e.dataTransfer.files)); }}
+            className="grid aspect-square place-items-center rounded-xl border-2 border-dashed bg-muted/40 text-muted-foreground transition hover:border-primary hover:text-foreground"
+          >
+            <span className="grid justify-items-center gap-1 text-xs font-medium"><ImagePlus className="size-5" /> Agregar</span>
+          </button>
+        )}
+      </div>
+      <input
+        ref={input} type="file" multiple className="sr-only" tabIndex={-1} aria-label="Agregar fotos adicionales"
+        accept="image/jpeg,image/png,image/webp,image/gif"
+        onChange={(event) => {
+          const files = Array.from(event.target.files ?? []);
+          event.target.value = "";
+          void add(files);
+        }}
+      />
+      {error && <FieldError>{error}</FieldError>}
     </div>
   );
 }
@@ -629,6 +679,7 @@ function PublishStep({ draft, set, shop }: Omit<StepProps, "errors"> & { shop: P
           <dl className="grid grid-cols-[auto_1fr] gap-x-4 gap-y-1 text-muted-foreground [&_dd]:text-right [&_dd]:text-foreground">
             <dt>Tipo</dt><dd>{draft.kind === "service" ? "Servicio · " + draft.duration + " min" : "Producto"}</dd>
             <dt>Precio</dt><dd className="font-mono">{price(toCents(draft.price))}</dd>
+            <dt>Fotos</dt><dd>{(draft.imageUrl ? 1 : 0) + draft.gallery.length || "Ninguna"}</dd>
             <dt>Variantes</dt><dd>{draft.groups.length ? draft.groups.map((group) => group.name || "—").join(", ") : "Ninguna"}</dd>
             <dt>Enlace</dt><dd className="truncate font-mono">/{draft.slug}</dd>
           </dl>
@@ -636,7 +687,7 @@ function PublishStep({ draft, set, shop }: Omit<StepProps, "errors"> & { shop: P
       </div>
       <div className="grid gap-2">
         <p className="text-sm font-medium">Así se verá</p>
-        <StoreFrame theme={shop.theme} className="rounded-2xl p-3">
+        <StoreFrame theme={shop.theme} accentColor={shop.accentColor} className="rounded-2xl p-3">
           <ProductCard product={preview} />
         </StoreFrame>
       </div>

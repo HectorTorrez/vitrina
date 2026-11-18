@@ -1,8 +1,8 @@
 import { useState, type ReactNode } from "react";
 import { createFileRoute, Link, notFound } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
-import { ArrowLeft, Check, Clock, Share2 } from "lucide-react";
-import { acceptsBookings, shopQuery, price, productImage, totalPrice, type Product } from "../catalog";
+import { ArrowLeft, Check, ChevronLeft, ChevronRight, Clock, Share2 } from "lucide-react";
+import { acceptsBookings, shopQuery, price, productImage, productImages, totalPrice, type Product } from "../catalog";
 import { pageHead, siteLanguage } from "../seo";
 import { PublicBooking } from "../PublicBooking";
 import { StoreLayout } from "../store/StoreLayout";
@@ -24,13 +24,15 @@ export const Route = createFileRoute("/tienda/$shop/$product")({
     const url = shopUrl + "/" + p.slug;
     const path = productImage(p);
     const image = path && new URL(path, origin).href;
+    const images = productImages(p).map((src) => new URL(src, origin).href);
     const service = p.kind === "service";
     const displayedPrice = totalPrice(p);
-    const description = [
+    const summary = [
       p.name + " · " + (service ? "Servicio" : "Producto") + " de " + name,
       ...(service ? [p.durationMinutes + " min"] : []),
       p.available ? price(displayedPrice) : "No disponible",
     ].join(" · ");
+    const description = p.description ? summary + ". " + p.description : summary;
     const offer = p.available ? {
       "@type": "Offer", url, price: (displayedPrice / 100).toFixed(2), priceCurrency: "USD",
       ...(!service ? { availability: "https://schema.org/InStock" } : {}),
@@ -52,8 +54,8 @@ export const Route = createFileRoute("/tienda/$shop/$product")({
             "@id": url + "#ficha",
             name: p.name,
             url,
-            description,
-            image,
+            description: p.description || summary,
+            image: images.length > 1 ? images : image,
             offers: offer,
             ...(service ? { provider: { "@type": "Organization", name, url: shopUrl } } : {}),
           },
@@ -91,9 +93,7 @@ function Details() {
       </div>
       <div className={cn("grid gap-8 @3xl:gap-12", "@3xl:grid-cols-[minmax(0,1.05fr)_minmax(0,1fr)]")}>
         <div className="@3xl:sticky @3xl:top-24 @3xl:self-start">
-          <div className="aspect-[4/5] overflow-hidden rounded-3xl bg-store-soft @3xl:aspect-square">
-            <ProductImage product={p} />
-          </div>
+          <ProductGallery key={p.slug} product={p} />
         </div>
         <Order key={p.slug} product={p} phone={data.whatsapp}
           booking={bookable ? <PublicBooking shop={params.shop} service={p} /> : null} />
@@ -112,6 +112,46 @@ function Details() {
         </section>
       )}
     </StoreLayout>
+  );
+}
+
+function ProductGallery({ product }: { product: Product }) {
+  const images = productImages(product);
+  const [current, setCurrent] = useState(0);
+  if (images.length < 2) {
+    return (
+      <div className="aspect-[4/5] overflow-hidden rounded-3xl bg-store-soft @3xl:aspect-square">
+        <ProductImage product={product} />
+      </div>
+    );
+  }
+  const go = (delta: number) => setCurrent((index) => (index + delta + images.length) % images.length);
+  const arrow = "absolute top-1/2 grid size-10 -translate-y-1/2 place-items-center rounded-full bg-store-surface/90 text-store-ink shadow backdrop-blur transition hover:bg-store-surface";
+  return (
+    <div className="grid gap-3" role="region" aria-roledescription="carrusel" aria-label={"Fotos de " + product.name}
+      onKeyDown={(e) => {
+        if (e.key === "ArrowLeft") go(-1);
+        if (e.key === "ArrowRight") go(1);
+      }}>
+      <div className="relative aspect-[4/5] overflow-hidden rounded-3xl bg-store-soft @3xl:aspect-square">
+        <img src={images[current]} alt={`${product.name} · foto ${current + 1} de ${images.length}`} referrerPolicy="no-referrer" className="size-full object-cover" />
+        <button type="button" aria-label="Foto anterior" onClick={() => go(-1)} className={cn(arrow, "left-3")}><ChevronLeft className="size-5" /></button>
+        <button type="button" aria-label="Foto siguiente" onClick={() => go(1)} className={cn(arrow, "right-3")}><ChevronRight className="size-5" /></button>
+        <span className="absolute right-3 bottom-3 rounded-full bg-store-ink/75 px-2.5 py-1 font-mono text-xs text-store-bg">{current + 1}/{images.length}</span>
+      </div>
+      <div className="flex gap-2 overflow-x-auto pb-1">
+        {images.map((src, index) => (
+          <button
+            key={src + index} type="button" aria-label={`Ver foto ${index + 1}`} aria-current={index === current}
+            onClick={() => setCurrent(index)}
+            className={cn("size-16 shrink-0 overflow-hidden rounded-xl ring-2 transition @3xl:size-20",
+              index === current ? "ring-store-ink" : "ring-transparent opacity-70 hover:opacity-100")}
+          >
+            <img src={src} alt="" loading="lazy" referrerPolicy="no-referrer" className="size-full object-cover" />
+          </button>
+        ))}
+      </div>
+    </div>
   );
 }
 
@@ -156,6 +196,10 @@ function Order({ product, phone, booking }: { product: Product; phone: string; b
         </div>
         {service && !booking && product.available && <p className="text-store-muted">El negocio confirma tu cita por WhatsApp.</p>}
       </div>
+
+      {product.description && (
+        <p className="max-w-prose leading-relaxed whitespace-pre-line text-store-muted">{product.description}</p>
+      )}
 
       {options.map((o) => (
         <fieldset key={o.name} className="grid gap-3">

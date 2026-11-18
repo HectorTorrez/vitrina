@@ -23,16 +23,31 @@ func savePanelItem(db *gorm.DB, shopSlug string, item product, create bool) erro
 		return result.Error
 	}
 	result := db.Model(&product{}).Where("shop_slug = ? AND slug = ? AND kind = ?", shopSlug, item.Slug, item.Kind).
-		Select("name", "price_cents", "available", "image_url", "options", "position", "hidden", "duration_minutes").Updates(&item)
+		Select("name", "description", "price_cents", "available", "image_url", "gallery", "options", "position", "hidden", "duration_minutes").Updates(&item)
 	if result.Error == nil && result.RowsAffected == 0 {
 		return gorm.ErrRecordNotFound
 	}
 	return result.Error
 }
 
+const (
+	maxItemDescription = 2000
+	maxGalleryPhotos   = 8
+)
+
+// validImageURL accepts an uploaded photo or a public HTTPS image.
+func validImageURL(raw string) bool {
+	if validMediaPath(raw) {
+		return true
+	}
+	parsed, err := url.Parse(raw)
+	return err == nil && len(raw) <= 2048 && parsed.Scheme == "https" && parsed.Hostname() != "" && parsed.User == nil
+}
+
 func validatePanelItem(item *product) error {
 	item.Name = strings.TrimSpace(item.Name)
 	item.ImageURL = strings.TrimSpace(item.ImageURL)
+	item.Description = strings.TrimSpace(item.Description)
 	if !validSlug(item.Slug) || item.Name == "" || utf8.RuneCountInString(item.Name) > 120 {
 		return validationError("Indicá un nombre y un enlace válido para la ficha")
 	}
@@ -49,11 +64,24 @@ func validatePanelItem(item *product) error {
 	default:
 		return validationError("Elegí producto o servicio")
 	}
-	if item.ImageURL != "" && !validMediaPath(item.ImageURL) {
-		imageURL, err := url.Parse(item.ImageURL)
-		if err != nil || len(item.ImageURL) > 2048 || imageURL.Scheme != "https" || imageURL.Hostname() == "" || imageURL.User != nil {
-			return validationError("Subí una foto o ingresá una URL HTTPS válida")
+	if utf8.RuneCountInString(item.Description) > maxItemDescription {
+		return validationError("La descripción puede tener hasta 2000 caracteres")
+	}
+	if item.ImageURL != "" && !validImageURL(item.ImageURL) {
+		return validationError("Subí una foto o ingresá una URL HTTPS válida")
+	}
+	if len(item.Gallery) > maxGalleryPhotos {
+		return validationError("Podés agregar hasta 8 fotos adicionales")
+	}
+	for i, photo := range item.Gallery {
+		photo = strings.TrimSpace(photo)
+		if !validImageURL(photo) {
+			return validationError("Revisá las fotos adicionales: subilas de nuevo o usá URLs HTTPS válidas")
 		}
+		item.Gallery[i] = photo
+	}
+	if item.Gallery == nil {
+		item.Gallery = []string{}
 	}
 	if len(item.Options) > 8 {
 		return validationError("Podés agregar hasta 8 grupos de variantes")

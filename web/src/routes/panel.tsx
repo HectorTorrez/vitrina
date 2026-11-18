@@ -1,7 +1,8 @@
 import { createFileRoute, Link, redirect } from "@tanstack/react-router";
-import { useState } from "react";
+import { createContext, useContext, useState, type ReactElement } from "react";
+import { Tooltip } from "radix-ui";
 import {
-  ArrowRight, ArrowUpRight, CalendarDays, Check, Copy, LayoutGrid, LogOut, Menu, MessageCircle, Package, Palette, Plus, Store,
+  ArrowRight, ArrowUpRight, CalendarDays, Check, Copy, LayoutGrid, LogOut, Menu, MessageCircle, Package, Palette, PanelLeftClose, PanelLeftOpen, Plus, Store,
   type LucideIcon,
 } from "lucide-react";
 import { getPanel, type PanelShop } from "../panel";
@@ -44,11 +45,31 @@ const nav: { value: Section; label: string; icon: LucideIcon }[] = [
 ];
 
 
+const CompactSidebar = createContext(false);
+
+function SidebarTip({ label, children }: { label: string; children: ReactElement }) {
+  const compact = useContext(CompactSidebar);
+  if (!compact) return children;
+  return (
+    <Tooltip.Root>
+      <Tooltip.Trigger asChild>{children}</Tooltip.Trigger>
+      <Tooltip.Portal>
+          <Tooltip.Content side="right" sideOffset={10} collisionPadding={8}
+            className="z-50 max-w-xs rounded-md bg-ink-dark px-3 py-1.5 text-sm text-white shadow-md">
+            {label}
+            <Tooltip.Arrow className="fill-ink-dark" />
+          </Tooltip.Content>
+      </Tooltip.Portal>
+    </Tooltip.Root>
+  );
+}
+
 function Panel() {
   const { panel } = Route.useRouteContext();
   const search = Route.useSearch();
   const navigate = Route.useNavigate();
   const [menuOpen, setMenuOpen] = useState(false);
+  const [collapsed, setCollapsed] = useState(false);
   const shop = panel.shops.find((s) => s.slug === search.tienda) ?? panel.shops[0];
   const section: Section = search.seccion === "alta" && panel.operator ? "alta"
     : shop && search.seccion && search.seccion !== "alta" ? search.seccion
@@ -67,46 +88,61 @@ function Panel() {
 
   const sidebar = (
     <div className="flex h-full min-w-0 flex-col gap-6 overflow-y-auto px-3 py-5">
-      <Link to="/" className="px-3 font-display text-2xl font-bold tracking-tighter">vitrina</Link>
+      <div className="flex items-center justify-between group-data-[compact]/sidebar:justify-center">
+        <Link to="/" className="px-3 font-display text-2xl font-bold tracking-tighter group-data-[compact]/sidebar:hidden">vitrina</Link>
+        <Button type="button" variant="ghost" size="icon" aria-controls="panel-navigation" aria-expanded={!collapsed}
+          aria-label={collapsed ? "Ampliar menú lateral" : "Reducir menú lateral"}
+          title={collapsed ? "Ampliar menú lateral" : "Reducir menú lateral"}
+          onClick={() => setCollapsed((value) => !value)}
+          className="hidden text-neutral-400 hover:bg-white/10 hover:text-white group-data-[desktop]/sidebar:inline-flex">
+          {collapsed ? <PanelLeftOpen /> : <PanelLeftClose />}
+        </Button>
+      </div>
 
       {shop && (
         panel.shops.length > 1 ? (
           <Select value={shop.slug} onValueChange={switchShop}>
-            <SelectTrigger aria-label="Tienda" className="h-auto w-full rounded-xl border-white/10 bg-white/5 px-3 py-2.5 text-left text-white hover:bg-white/10 [&_svg]:text-white/60!">
-              <ShopBadge name={shop.name} slug={shop.slug} />
-            </SelectTrigger>
+            <SidebarTip label={`Cambiar tienda · ${shop.name}`}>
+              <SelectTrigger aria-label={`Tienda: ${shop.name}`} className="group-data-[compact]/sidebar:justify-center group-data-[compact]/sidebar:px-0 group-data-[compact]/sidebar:[&>svg]:hidden h-auto w-full rounded-xl border-white/10 bg-white/5 px-3 py-2.5 text-left text-white hover:bg-white/10 [&_svg]:text-white/60!">
+                <ShopBadge name={shop.name} slug={shop.slug} logoUrl={shop.logoUrl} />
+              </SelectTrigger>
+            </SidebarTip>
             <SelectContent>
               {panel.shops.map((s) => <SelectItem key={s.slug} value={s.slug}>{s.name}</SelectItem>)}
             </SelectContent>
           </Select>
         ) : (
-          <div className="rounded-xl border border-white/10 bg-white/5 px-3 py-2.5"><ShopBadge name={shop.name} slug={shop.slug} /></div>
+          <div title={shop.name} className="group-data-[compact]/sidebar:flex group-data-[compact]/sidebar:justify-center group-data-[compact]/sidebar:px-0 rounded-xl border border-white/10 bg-white/5 px-3 py-2.5"><ShopBadge name={shop.name} slug={shop.slug} logoUrl={shop.logoUrl} /></div>
         )
       )}
 
       <nav className="grid min-w-0 grid-cols-[minmax(0,1fr)] gap-1" aria-label="Secciones">
         {items.map(({ value, label, icon: Icon }) => (
-          <button
-            key={value} type="button" onClick={() => go(value)} aria-current={section === value ? "page" : undefined}
-            className={cn(
-              "flex h-10 items-center gap-3 rounded-lg px-3 text-sm font-medium transition",
-              section === value ? "bg-white/10 text-white" : "text-neutral-400 hover:bg-white/5 hover:text-white",
-            )}
-          >
-            <Icon className={cn("size-4.5", section === value && "text-brand")} />
-            <span className="min-w-0 flex-1 truncate text-left">{label}</span>
-            {value === "agenda" && upcoming > 0 && <span className="rounded-full bg-brand px-1.5 text-xs leading-5 font-semibold text-ink-dark">{upcoming}</span>}
-            {value === "catalogo" && shop && <span className="text-xs text-neutral-500">{shop.products.length}</span>}
-          </button>
+          <SidebarTip key={value} label={label}>
+            <button
+              type="button" onClick={() => go(value)} aria-current={section === value ? "page" : undefined}
+              className={cn(
+                "group-data-[compact]/sidebar:justify-center group-data-[compact]/sidebar:px-0 flex h-10 items-center gap-3 rounded-lg px-3 text-sm font-medium transition",
+                section === value ? "bg-white/10 text-white" : "text-neutral-400 hover:bg-white/5 hover:text-white",
+              )}
+            >
+              <Icon className={cn("size-4.5", section === value && "text-brand")} />
+              <span className="min-w-0 flex-1 truncate text-left group-data-[compact]/sidebar:sr-only">{label}</span>
+              {value === "agenda" && upcoming > 0 && <span className="group-data-[compact]/sidebar:sr-only rounded-full bg-brand px-1.5 text-xs leading-5 font-semibold text-ink-dark">{upcoming}</span>}
+              {value === "catalogo" && shop && <span className="group-data-[compact]/sidebar:sr-only text-xs text-neutral-500">{shop.products.length}</span>}
+            </button>
+          </SidebarTip>
         ))}
       </nav>
 
       <div className="mt-auto grid min-w-0 grid-cols-[minmax(0,1fr)] gap-3">
         {shop && (
-          <a href={"/tienda/" + shop.slug} target="_blank" rel="noreferrer"
-            className="flex h-10 items-center justify-center gap-2 rounded-lg bg-brand px-3 text-sm font-semibold text-ink-dark transition hover:bg-[#ffb088]">
-            Ver mi tienda <ArrowUpRight className="size-4" />
-          </a>
+          <SidebarTip label="Ver mi tienda">
+            <a href={"/tienda/" + shop.slug} target="_blank" rel="noreferrer"
+              className="flex h-10 items-center justify-center gap-2 rounded-lg bg-brand px-3 text-sm font-semibold text-ink-dark transition hover:bg-[#ffb088]">
+              <span className="group-data-[compact]/sidebar:sr-only">Ver mi tienda</span> <ArrowUpRight className="size-4" />
+            </a>
+          </SidebarTip>
         )}
         <PanelAccount email={panel.email} className="border-t border-white/10 px-1 pt-3" />
       </div>
@@ -114,7 +150,7 @@ function Panel() {
   );
 
   return (
-    <div className={cn("min-h-svh bg-background", section !== "alta" && "lg:pl-64")}>
+    <div className={cn("min-h-svh bg-background", section !== "alta" && (collapsed ? "lg:pl-18" : "lg:pl-64"))}>
       {section === "alta" ? (
         <header className="bg-ink-dark text-white">
           <div className="mx-auto flex h-14 w-[min(100%-32px,1120px)] items-center gap-4">
@@ -129,7 +165,11 @@ function Panel() {
         </header>
       ) : (
         <>
-          <aside className="fixed inset-y-0 left-0 z-40 hidden w-64 overflow-hidden bg-ink-dark text-white lg:block">{sidebar}</aside>
+          <aside data-desktop="" id="panel-navigation" data-compact={collapsed ? "" : undefined} className={cn("group/sidebar fixed inset-y-0 left-0 z-40 hidden overflow-hidden bg-ink-dark text-white lg:block", collapsed ? "w-18" : "w-64")}>
+            <Tooltip.Provider delayDuration={150}>
+              <CompactSidebar.Provider value={collapsed}>{sidebar}</CompactSidebar.Provider>
+            </Tooltip.Provider>
+          </aside>
 
           <header className="sticky top-0 z-40 flex h-14 items-center gap-3 bg-ink-dark px-4 text-white lg:hidden">
             <Sheet open={menuOpen} onOpenChange={setMenuOpen}>
@@ -180,23 +220,27 @@ function Panel() {
 
 function PanelAccount({ email, className }: { email: string; className: string }) {
   return (
-    <div className={cn("flex min-w-0 items-center gap-2", className)}>
+    <div className={cn("flex min-w-0 items-center gap-2 group-data-[compact]/sidebar:flex-col", className)}>
       <span className="grid size-8 shrink-0 place-items-center rounded-full bg-white/10 text-xs font-semibold uppercase">{email[0]}</span>
-      <span className="min-w-0 flex-1 truncate text-sm text-neutral-400" title={email}>{email}</span>
+      <span className="min-w-0 flex-1 truncate text-sm text-neutral-400 group-data-[compact]/sidebar:sr-only" title={email}>{email}</span>
       <form action="/auth" method="post" className="shrink-0">
-        <Button type="submit" name="action" value="logout" variant="ghost" size="icon-sm" className="rounded-full text-neutral-400 hover:bg-white/10 hover:text-white" aria-label="Cerrar sesión" title="Cerrar sesión">
-          <LogOut />
-        </Button>
+        <SidebarTip label="Cerrar sesión">
+          <Button type="submit" name="action" value="logout" variant="ghost" size="icon-sm" className="rounded-full text-neutral-400 hover:bg-white/10 hover:text-white" aria-label="Cerrar sesión">
+            <LogOut />
+          </Button>
+        </SidebarTip>
       </form>
     </div>
   );
 }
 
-function ShopBadge({ name, slug }: { name: string; slug: string }) {
+function ShopBadge({ name, slug, logoUrl }: { name: string; slug: string; logoUrl?: string }) {
   return (
     <span className="flex min-w-0 items-center gap-2.5">
-      <span className="grid size-8 shrink-0 place-items-center rounded-lg bg-brand font-display text-sm font-bold text-ink-dark">{name.trim()[0]?.toUpperCase() ?? "V"}</span>
-      <span className="grid min-w-0 text-left">
+      {logoUrl
+        ? <img src={logoUrl} alt="" className="size-8 shrink-0 rounded-lg object-cover" />
+        : <span className="grid size-8 shrink-0 place-items-center rounded-lg bg-brand font-display text-sm font-bold text-ink-dark">{name.trim()[0]?.toUpperCase() ?? "V"}</span>}
+      <span className="grid min-w-0 text-left group-data-[compact]/sidebar:sr-only">
         <span className="truncate text-sm font-semibold">{name}</span>
         <span className="truncate font-mono text-xs text-neutral-400">/{slug}</span>
       </span>

@@ -5,10 +5,10 @@ import { StoreBrand, StoreFrame, StoreHeader, WhatsAppIcon } from "./StoreParts"
 
 export function StoreLayout({ shop, slug, children }: { shop: Shop; slug: string; children: ReactNode }) {
   return (
-    <StoreFrame theme={shop.theme} className="flex min-h-svh flex-col">
+    <StoreFrame theme={shop.theme} accentColor={shop.accentColor} backgroundUrl={shop.backgroundUrl} className="flex min-h-svh flex-col">
       <StoreHeader brand={
         <Link to="/tienda/$shop" params={{ shop: slug }} className="flex min-w-0 items-center gap-3">
-          <StoreBrand name={shop.name} />
+          <StoreBrand logoUrl={shop.logoUrl} name={shop.name} />
         </Link>
       }>
         {shop.whatsapp && (
