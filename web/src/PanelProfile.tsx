@@ -70,6 +70,10 @@ interface ProfileDraft {
   backgroundUrl: string;
   instagram: string;
   tiktok: string;
+  facebook: string;
+  website: string;
+  address: string;
+  mapUrl: string;
   whatsapp: string;
   booking: boolean;
   days: Day[];
@@ -104,6 +108,10 @@ function toDraft(profile?: Profile): ProfileDraft {
     theme: profile?.theme || "costa",
     instagram: profile?.instagram ?? "",
     tiktok: profile?.tiktok ?? "",
+    facebook: profile?.facebook ?? "",
+    website: profile?.website ?? "",
+    address: profile?.address ?? "",
+    mapUrl: profile?.mapUrl ?? "",
     whatsapp: profile?.whatsapp ? "+" + profile.whatsapp : "",
     booking: acceptsBookings({ hours }),
     days: weekdaysByLocale.es.map((_, index) => {
@@ -142,6 +150,10 @@ function fromDraft(draft: ProfileDraft): Profile {
     backgroundUrl: draft.backgroundUrl,
     instagram: cleanHandle(draft.instagram),
     tiktok: cleanHandle(draft.tiktok),
+    facebook: draft.facebook.trim().replace(/^@+/, ""),
+    website: draft.website.trim(),
+    address: draft.address.trim(),
+    mapUrl: draft.mapUrl.trim(),
     whatsapp: draft.whatsapp.replace(/^\+/, ""),
     hours: draft.booking ? draft.days.map((day) => day.open ? { open: day.from, close: day.to } : { open: "", close: "" }) : [],
     blockedDates: draft.blockedDates,
@@ -582,6 +594,20 @@ function ContactFields({ draft, set, errors }: { draft: ProfileDraft; set: SetDr
         </Field>
         <Field label="TikTok" optional error={errors.tiktok}>
           <AffixInput prefix="@" value={draft.tiktok} onChange={(e) => set({ tiktok: e.target.value })} onBlur={() => set({ tiktok: cleanHandle(draft.tiktok) })} placeholder="tunegocio" maxLength={80} autoCapitalize="none" spellCheck={false} />
+        </Field>
+        <Field label="Facebook" optional>
+          <AffixInput prefix="fb.com/" value={draft.facebook} onChange={(e) => set({ facebook: e.target.value })} placeholder="tunegocio" maxLength={64} autoCapitalize="none" spellCheck={false} />
+        </Field>
+        <Field label={locale === "en" ? "Website" : "Sitio web"} optional>
+          <Input type="url" value={draft.website} onChange={(e) => set({ website: e.target.value })} placeholder="https://tunegocio.com" maxLength={512} className="h-10" />
+        </Field>
+      </div>
+      <div className="grid gap-5 sm:grid-cols-2">
+        <Field label={locale === "en" ? "Address / Location" : "Dirección / Ubicación"} optional>
+          <Input value={draft.address} onChange={(e) => set({ address: e.target.value })} placeholder={locale === "en" ? "123 Main St, Suite 4" : "Col. Escalón, San Salvador"} maxLength={200} className="h-10" />
+        </Field>
+        <Field label={locale === "en" ? "Google Maps / Waze link" : "Enlace de Google Maps / Waze"} optional>
+          <Input type="url" value={draft.mapUrl} onChange={(e) => set({ mapUrl: e.target.value })} placeholder="https://maps.google.com/..." maxLength={512} className="h-10" />
         </Field>
       </div>
     </div>

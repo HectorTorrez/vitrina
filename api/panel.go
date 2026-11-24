@@ -3,6 +3,7 @@ package main
 import (
 	"errors"
 	"net/http"
+	"net/url"
 	"regexp"
 	"slices"
 	"strings"
@@ -128,7 +129,7 @@ func changePanel(db *gorm.DB, account seller, input panelInput) error {
 			return err
 		}
 		return db.Model(&shop{}).Where("slug = ?", input.ShopSlug).
-			Select("name", "description", "theme", "accent_color", "locale", "timezone", "currency", "blocked_dates", "style", "logo_url", "background_url", "instagram", "tiktok", "whatsapp", "hours").Updates(&profile).Error
+			Select("name", "description", "theme", "accent_color", "locale", "timezone", "currency", "blocked_dates", "style", "logo_url", "background_url", "instagram", "tiktok", "facebook", "website", "address", "map_url", "whatsapp", "hours").Updates(&profile).Error
 	case "crear-item", "editar-item":
 		return savePanelItem(db, input.ShopSlug, input.Item, input.Action == "crear-item")
 	case "eliminar-item":
@@ -243,6 +244,10 @@ func validatedProfile(input shop) (shop, error) {
 		BackgroundURL: input.BackgroundURL,
 		Instagram:     strings.TrimPrefix(strings.TrimSpace(input.Instagram), "@"),
 		TikTok:        strings.TrimPrefix(strings.TrimSpace(input.TikTok), "@"),
+		Facebook:      strings.TrimPrefix(strings.TrimSpace(input.Facebook), "@"),
+		Website:       strings.TrimSpace(input.Website),
+		Address:       strings.TrimSpace(input.Address),
+		MapURL:        strings.TrimSpace(input.MapURL),
 	}
 	if profile.Timezone == "" {
 		profile.Timezone = "America/El_Salvador"
@@ -298,6 +303,21 @@ func validatedProfile(input shop) (shop, error) {
 	for _, handle := range []string{profile.Instagram, profile.TikTok} {
 		if handle != "" && !handlePattern.MatchString(handle) {
 			return shop{}, validationError("Ingresá los usuarios de Instagram y TikTok sin la dirección web")
+		}
+	}
+	if profile.Facebook != "" && (utf8.RuneCountInString(profile.Facebook) > 64 || strings.ContainsAny(profile.Facebook, " \t\n/")) {
+		return shop{}, validationError("Ingresá solo el nombre de usuario de Facebook")
+	}
+	if utf8.RuneCountInString(profile.Address) > 200 {
+		return shop{}, validationError("La dirección puede tener hasta 200 caracteres")
+	}
+	for _, raw := range []string{profile.Website, profile.MapURL} {
+		if raw == "" {
+			continue
+		}
+		parsed, err := url.Parse(raw)
+		if err != nil || len(raw) > 512 || (parsed.Scheme != "https" && parsed.Scheme != "http") || parsed.Hostname() == "" || parsed.User != nil {
+			return shop{}, validationError("Ingresá enlaces válidos que empiecen con https://")
 		}
 	}
 	if whatsapp := strings.TrimSpace(input.Whatsapp); whatsapp != "" {

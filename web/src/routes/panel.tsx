@@ -1,8 +1,9 @@
 import { createFileRoute, Link, redirect } from "@tanstack/react-router";
-import { createContext, useContext, useState, type ReactElement } from "react";
+import { createContext, useContext, useEffect, useState, type ReactElement } from "react";
 import { Tooltip } from "radix-ui";
+import QRCode from "qrcode";
 import {
-  ArrowRight, ArrowUpRight, CalendarDays, Check, Copy, LayoutGrid, LogOut, Menu, MessageCircle, Package, Palette, PanelLeftClose, PanelLeftOpen, Plus, Store,
+  ArrowRight, ArrowUpRight, CalendarDays, Check, Copy, Download, LayoutGrid, LogOut, Menu, MessageCircle, Package, Palette, PanelLeftClose, PanelLeftOpen, Plus, QrCode, Store,
   type LucideIcon,
 } from "lucide-react";
 import { getPanel, type PanelShop } from "../panel";
@@ -349,17 +350,68 @@ function QuickLink({ icon: Icon, title, text, onClick }: { icon: LucideIcon; tit
 
 function ShareLink({ slug }: { slug: string }) {
   const [copied, copy] = useCopied();
-  const { t } = useI18n();
+  const [qrOpen, setQrOpen] = useState(false);
+  const [qrPng, setQrPng] = useState("");
+  const [qrSvg, setQrSvg] = useState("");
+  const { locale, t } = useI18n();
+  const en = locale === "en";
   const path = "/tienda/" + slug;
+
+  useEffect(() => {
+    if (!qrOpen) return;
+    const url = window.location.origin + path;
+    void QRCode.toDataURL(url, { width: 640, margin: 2 }).then(setQrPng).catch(() => undefined);
+    void QRCode.toString(url, { type: "svg", margin: 2 }).then(setQrSvg).catch(() => undefined);
+  }, [qrOpen, path]);
+
+  const downloadFile = (href: string, filename: string) => {
+    const a = document.createElement("a");
+    a.href = href;
+    a.download = filename;
+    a.click();
+  };
+
   return (
     <div className="flex h-11 w-full items-center gap-1 rounded-full border bg-card pr-1 pl-4 sm:w-auto">
       <span className="min-w-0 flex-1 truncate font-mono text-sm">{path}</span>
       <Button type="button" variant="ghost" size="sm" className="rounded-full" onClick={() => void copy(window.location.origin + path)}>
         {copied ? <Check className="text-success" /> : <Copy />} {copied ? t("common.copied") : t("common.copy")}
       </Button>
+      <Button type="button" variant="ghost" size="sm" className="rounded-full" onClick={() => setQrOpen(true)} aria-label="QR Code">
+        <QrCode /> QR
+      </Button>
       <Button asChild size="sm" className="rounded-full">
         <a href={path} target="_blank" rel="noreferrer">{t("common.open")} <ArrowUpRight /></a>
       </Button>
+      <Sheet open={qrOpen} onOpenChange={setQrOpen}>
+        <SheetContent className="flex flex-col gap-5 p-6">
+          <div className="grid gap-1">
+            <SheetTitle>{en ? "Storefront QR Code" : "Código QR de tu tienda"}</SheetTitle>
+            <p className="text-sm text-muted-foreground">
+              {en ? "Print it or share it so customers can open your catalog instantly." : "Imprimilo o compartilo para que tus clientes abran tu catálogo al instante."}
+            </p>
+          </div>
+          <div className="grid place-items-center rounded-2xl border bg-white p-6">
+            {qrPng ? <img src={qrPng} alt={`QR ${path}`} className="size-60" /> : <div className="size-60 animate-pulse rounded-xl bg-muted" />}
+          </div>
+          <p className="truncate text-center font-mono text-xs text-muted-foreground">{path}</p>
+          <div className="grid gap-2 sm:grid-cols-2">
+            <Button type="button" disabled={!qrPng} className="rounded-full" onClick={() => downloadFile(qrPng, `${slug}-qr.png`)}>
+              <Download /> PNG
+            </Button>
+            <Button
+              type="button" variant="outline" disabled={!qrSvg} className="rounded-full"
+              onClick={() => {
+                const url = URL.createObjectURL(new Blob([qrSvg], { type: "image/svg+xml" }));
+                downloadFile(url, `${slug}-qr.svg`);
+                URL.revokeObjectURL(url);
+              }}
+            >
+              <Download /> SVG
+            </Button>
+          </div>
+        </SheetContent>
+      </Sheet>
     </div>
   );
 }
