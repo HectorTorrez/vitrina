@@ -1,15 +1,22 @@
+import type { Locale } from "./i18n";
+
 export const siteLanguage = "es-SV";
 export const siteName = "Vitrina";
 export const siteDescription = "Catálogo, citas en línea y WhatsApp en un solo enlace para negocios de El Salvador.";
 export const noIndex = { name: "robots", content: "noindex" };
 
-export function pageHead({ title, description, url, image, structuredData, indexable = true }: {
+export function htmlLang(locale: Locale) {
+  return locale === "en" ? "en" : siteLanguage;
+}
+
+export function pageHead({ title, description, url, image, structuredData, indexable = true, locale = "es" }: {
   title: string;
   description: string;
   url: string;
   image?: string;
   structuredData: Record<string, unknown>;
   indexable?: boolean;
+  locale?: Locale;
 }) {
   const text = Array.from(description.replace(/\s+/g, " ").trim()).slice(0, 200).join("");
   return {
@@ -19,7 +26,7 @@ export function pageHead({ title, description, url, image, structuredData, index
       indexable ? { name: "robots", content: "max-image-preview:large" } : noIndex,
       { property: "og:type", content: "website" },
       { property: "og:site_name", content: siteName },
-      { property: "og:locale", content: "es_SV" },
+      { property: "og:locale", content: locale === "en" ? "en_US" : "es_SV" },
       { property: "og:title", content: title },
       { property: "og:description", content: text },
       { property: "og:url", content: url },

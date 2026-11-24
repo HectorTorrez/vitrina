@@ -8,6 +8,7 @@ import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { cn } from "@/lib/utils";
 import { shopQuery } from "./catalog";
+import { useI18n } from "./i18n";
 
 async function post(input: Record<string, unknown>) {
   const response = await fetch("/gestion", {
@@ -244,28 +245,29 @@ export function Stepper({ steps, current, onSelect, canSelect }: {
   );
 }
 
-export function SaveBar({ dirty, pending, onDiscard, submit = "Guardar cambios", message = "Tenés cambios sin guardar" }: {
+export function SaveBar({ dirty, pending, onDiscard, submit, message }: {
   dirty: boolean;
   pending: boolean;
   onDiscard: () => void;
   submit?: string;
   message?: string;
 }) {
+  const { t } = useI18n();
   return (
     <div className={cn(
       "sticky bottom-4 z-20 flex flex-wrap items-center justify-between gap-3 rounded-2xl border bg-ink-dark px-4 py-3 text-white shadow-2xl transition-all duration-300",
       dirty ? "translate-y-0 opacity-100" : "pointer-events-none translate-y-4 opacity-0",
     )} aria-hidden={!dirty}>
       <p className="flex items-center gap-2 text-sm">
-        <span className="size-2 rounded-full bg-brand" /> {message}
+        <span className="size-2 rounded-full bg-brand" /> {message ?? t("common.unsavedChanges")}
       </p>
       <div className="flex gap-2">
         <Button type="button" variant="ghost" className="rounded-full text-white hover:bg-white/10 hover:text-white" onClick={onDiscard} disabled={pending} tabIndex={dirty ? 0 : -1}>
-          Descartar
+          {t("common.discard")}
         </Button>
         <Button type="submit" className="rounded-full bg-brand px-5 text-ink-dark hover:bg-[#ffb088]" disabled={pending} tabIndex={dirty ? 0 : -1}>
           {pending && <Loader2 className="animate-spin" />}
-          {pending ? "Guardando…" : submit}
+          {pending ? t("common.saving") : (submit ?? t("common.save"))}
         </Button>
       </div>
     </div>

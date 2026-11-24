@@ -4,6 +4,7 @@ import { createServerFn } from "@tanstack/react-start";
 import { cn } from "@/lib/utils";
 import { configuredHomeShop, siteOrigin } from "../api";
 import { fetchDirectory } from "../catalog";
+import { LanguageSwitcher, useI18n } from "../i18n";
 import { pageHead, siteDescription, siteLanguage, siteName } from "../seo";
 
 const getHome = createServerFn({ method: "GET" }).handler(async () => {
@@ -49,12 +50,6 @@ const Arrow = () => (
   </svg>
 );
 
-const steps = [
-  ["Abrís tu tienda", "Elegís tu enlace, como /tienda/tu-negocio, y confirmás tu correo."],
-  ["Cargás tu catálogo", "Fotos, precios, variantes y tu horario de atención, desde el celular."],
-  ["Compartís el enlace", "En tu bio y tus estados. Las reservas caen solas en tu agenda."],
-];
-
 const wrap = "mx-auto w-[min(100%-32px,1312px)] md:w-[min(100%-48px,1312px)] xl:w-[min(100%-128px,1312px)]";
 const btn = "inline-flex items-center gap-2 rounded-full font-semibold whitespace-nowrap transition active:scale-[0.98]";
 const btnAccent = cn(btn, "bg-brand px-6 py-[15px] text-ink-dark hover:bg-[#ffb088]");
@@ -66,7 +61,13 @@ const tileTitle = "font-display text-[28px] leading-[1.05] font-semibold trackin
 
 function Landing() {
   const { shops } = Route.useLoaderData();
+  const { t } = useI18n();
   const firstShop = shops[0]?.slug;
+  const localizedSteps = [
+    [t("landing.how.step1.title"), t("landing.how.step1.desc")],
+    [t("landing.how.step2.title"), t("landing.how.step2.desc")],
+    [t("landing.how.step3.title"), t("landing.how.step3.desc")],
+  ];
 
   return (
     <div className="overflow-x-clip bg-white text-[#111] antialiased">
@@ -74,25 +75,26 @@ function Landing() {
         <nav className={cn(wrap, "grid grid-cols-[1fr_auto] items-center py-6 md:grid-cols-[1fr_auto_1fr]")} aria-label="Principal">
           <Link to="/" className="font-display text-[26px] leading-none font-bold tracking-[-0.035em]">vitrina</Link>
           <div className="hidden gap-8 text-[15px] text-neutral-400 md:flex [&_a:hover]:text-white">
-            <a href="#funciones">Funciones</a>
-            <a href="#como">Cómo funciona</a>
+            <a href="#funciones">{t("landing.nav.features")}</a>
+            <a href="#como">{t("landing.nav.how")}</a>
           </div>
-          <div className="flex items-center justify-end gap-5 text-[15px]">
-            <Link to="/ingresar" className="hover:text-neutral-300">Ingresar</Link>
-            <Link to="/registrarse" className={cn(btnAccent, "px-[18px] py-2.5 text-sm")}>Abrir mi tienda</Link>
+          <div className="flex items-center justify-end gap-3 text-[15px] sm:gap-4">
+            <LanguageSwitcher variant="dark" />
+            <Link to="/ingresar" className="hover:text-neutral-300">{t("landing.nav.login")}</Link>
+            <Link to="/registrarse" className={cn(btnAccent, "px-[18px] py-2.5 text-sm")}>{t("landing.nav.openShop")}</Link>
           </div>
         </nav>
 
         <section className={cn(wrap, "pt-10 pb-16 md:pt-18 md:pb-24")}>
           <div className="mb-7 flex flex-col items-start gap-12 lg:flex-row lg:items-end lg:justify-between">
-            <h1 className="font-display text-[clamp(64px,9.2vw,132px)] leading-[0.9] font-bold tracking-[-0.045em]">Tu negocio<br />nunca cierra.</h1>
+            <h1 className="font-display text-[clamp(64px,9.2vw,132px)] leading-[0.9] font-bold tracking-[-0.045em]">{t("landing.hero.title1")}<br />{t("landing.hero.title2")}</h1>
             <div className="grid max-w-[560px] gap-6 lg:max-w-none lg:shrink-0 lg:basis-[440px]">
-              <p className="text-lg text-neutral-400">Catálogo, citas en línea y WhatsApp en un solo enlace. Tus clientes ven precios, reservan y te escriben mientras vos atendés.</p>
+              <p className="text-lg text-neutral-400">{t("landing.hero.desc")}</p>
               <div className="flex flex-wrap gap-3">
-                <Link className={btnAccent} to="/registrarse">Quiero mi vitrina <Arrow /></Link>
+                <Link className={btnAccent} to="/registrarse">{t("landing.hero.cta")} <Arrow /></Link>
                 {firstShop
-                  ? <Link className={btnGhost} to="/tienda/$shop" params={{ shop: firstShop }}>Ver una tienda</Link>
-                  : <Link className={btnGhost} to="/ingresar">Ya tengo tienda</Link>}
+                  ? <Link className={btnGhost} to="/tienda/$shop" params={{ shop: firstShop }}>{t("landing.hero.viewShop")}</Link>
+                  : <Link className={btnGhost} to="/ingresar">{t("landing.hero.haveShop")}</Link>}
               </div>
             </div>
           </div>
@@ -102,27 +104,27 @@ function Landing() {
 
       <section className="bg-background pt-18 pb-14 md:pt-30" id="funciones">
         <div className={wrap}>
-          <h2 className={cn(h2, "mb-14 md:text-[clamp(36px,4.5vw,64px)]")}>Todo lo que tu negocio necesita<br className="hidden md:block" /> para vender en línea.</h2>
+          <h2 className={cn(h2, "mb-14 md:text-[clamp(36px,4.5vw,64px)]")}>{t("landing.features.title1")}<br className="hidden md:block" /> {t("landing.features.title2")}</h2>
           <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-6">
             <article className={cn(tile, "md:col-span-2 md:min-h-[320px] lg:flex-row lg:gap-10 xl:col-span-4")}>
               <div className="grid content-start gap-4 lg:basis-[340px] lg:shrink-0">
-                <p className={label}>Citas en línea</p>
-                <h3 className={tileTitle}>Tus clientes reservan solos, sin cruces.</h3>
-                <p className="text-muted-foreground">Horarios cada 15 minutos dentro de tu horario de atención. Cada reserva te llega al correo.</p>
+                <p className={label}>{t("landing.features.booking.label")}</p>
+                <h3 className={tileTitle}>{t("landing.features.booking.title")}</h3>
+                <p className="text-muted-foreground">{t("landing.features.booking.desc")}</p>
               </div>
               <Calendar />
             </article>
             <article className={cn(tile, "border-[#12301f] bg-[#12301f] text-white md:min-h-[320px] xl:col-span-2")}>
               <p className={cn(label, "text-brand")}>WhatsApp</p>
-              <h3 className={tileTitle}>Te escriben desde la ficha.</h3>
+              <h3 className={tileTitle}>{t("landing.features.wa.title")}</h3>
               <div className="grid gap-3 text-sm leading-snug">
-                <p className="max-w-[300px] rounded-[10px] bg-[#1f4a31] px-3.5 py-3">Hola, ¿tienen espacio el jueves para manicura en gel?</p>
-                <p className="max-w-[260px] justify-self-end rounded-[10px] bg-[#25d366] px-3.5 py-3 text-[#06210f]">¡Claro! Reservá aquí a las 10:30.</p>
+                <p className="max-w-[300px] rounded-[10px] bg-[#1f4a31] px-3.5 py-3">{t("landing.features.wa.msg1")}</p>
+                <p className="max-w-[260px] justify-self-end rounded-[10px] bg-[#25d366] px-3.5 py-3 text-[#06210f]">{t("landing.features.wa.msg2")}</p>
               </div>
             </article>
             <article className={cn(tile, "xl:col-span-2")}>
-              <p className={label}>Catálogo</p>
-              <h3 className={tileTitle}>Variantes con su propio precio.</h3>
+              <p className={label}>{t("landing.features.catalog.label")}</p>
+              <h3 className={tileTitle}>{t("landing.features.catalog.title")}</h3>
               <dl className="[&>div]:flex [&>div]:items-baseline [&>div]:justify-between [&>div]:border-t [&>div]:py-3.5 [&>div]:text-[15px]">
                 <div><dt>Tamaño · A3</dt><dd className="font-mono text-sm text-brand-ink">+$6.00</dd></div>
                 <div><dt>Papel · Satinado</dt><dd className="font-mono text-sm text-brand-ink">+$2.00</dd></div>
@@ -130,8 +132,8 @@ function Landing() {
               </dl>
             </article>
             <article className={cn(tile, "xl:col-span-2")}>
-              <p className={label}>Vista previa</p>
-              <h3 className={tileTitle}>Se ve bien en cada chat.</h3>
+              <p className={label}>{t("landing.features.preview.label")}</p>
+              <h3 className={tileTitle}>{t("landing.features.preview.title")}</h3>
               <div className="overflow-hidden rounded-lg bg-background">
                 <img src="/landing/lamina.jpg" alt="" loading="lazy" className="h-[110px] w-full object-cover" />
                 <div className="grid gap-0.5 px-3.5 py-3 text-[13px]">
@@ -141,9 +143,9 @@ function Landing() {
               </div>
             </article>
             <article className={cn(tile, "relative min-h-[340px] justify-end border-0 p-7 text-white md:p-7 xl:col-span-2")}>
-              <img src="/landing/local.jpg" alt="Interior de un salón de belleza" loading="lazy" className="absolute inset-0 size-full object-cover" />
+              <img src="/landing/local.jpg" alt="" loading="lazy" className="absolute inset-0 size-full object-cover" />
               <div className="absolute inset-x-0 top-[45%] bottom-0 bg-linear-to-b from-transparent to-black/80" />
-              <h3 className="relative font-display text-[26px] leading-[1.05] font-bold tracking-[-0.03em]">Tu local, también<br />abierto en línea.</h3>
+              <h3 className="relative font-display text-[26px] leading-[1.05] font-bold tracking-[-0.03em]">{t("landing.features.local.title1")}<br />{t("landing.features.local.title2")}</h3>
             </article>
           </div>
         </div>
@@ -151,12 +153,12 @@ function Landing() {
 
       <section className={cn(wrap, "flex flex-col gap-12 py-22 lg:flex-row lg:gap-20 lg:py-30")} id="como">
         <div className="grid max-w-[560px] content-start gap-4 lg:shrink-0 lg:basis-[440px]">
-          <p className={label}>Cómo funciona</p>
-          <h2 className={h2}>De cero a tu primera cita, en una tarde.</h2>
-          <p className="text-muted-foreground">Sin apps que instalar ni contraseñas. Entrás con un enlace a tu correo.</p>
+          <p className={label}>{t("landing.how.label")}</p>
+          <h2 className={h2}>{t("landing.how.title")}</h2>
+          <p className="text-muted-foreground">{t("landing.how.desc")}</p>
         </div>
         <ol className="w-full flex-1">
-          {steps.map(([title, text], i) => (
+          {localizedSteps.map(([title, text], i) => (
             <li key={title} className="grid grid-cols-[auto_1fr] gap-x-5 gap-y-2 border-t py-7 last:border-b md:grid-cols-[auto_280px_1fr] md:gap-8">
               <span className="pt-1.5 font-mono text-[13px] text-brand-ink">0{i + 1}</span>
               <h3 className="font-display text-[26px] leading-[1.15] font-semibold tracking-[-0.025em]">{title}</h3>
@@ -168,15 +170,15 @@ function Landing() {
 
       <section className={wrap}>
         <div className="mb-16 flex flex-wrap items-end justify-between gap-8 rounded-lg bg-ink-dark px-6 py-12 text-white md:px-16 md:py-18">
-          <h2 className="font-display text-[clamp(48px,6.7vw,96px)] leading-[0.92] font-bold tracking-[-0.045em]">Abrí tu vitrina<br />esta semana.</h2>
-          <Link className={cn(btnAccent, "px-7 py-[18px] text-[17px]")} to="/registrarse">Crear mi tienda <Arrow /></Link>
+          <h2 className="font-display text-[clamp(48px,6.7vw,96px)] leading-[0.92] font-bold tracking-[-0.045em]">{t("landing.cta.title1")}<br />{t("landing.cta.title2")}</h2>
+          <Link className={cn(btnAccent, "px-7 py-[18px] text-[17px]")} to="/registrarse">{t("landing.cta.btn")} <Arrow /></Link>
         </div>
       </section>
 
       <footer className={cn(wrap, "flex flex-wrap items-center justify-between gap-x-6 gap-y-3 border-t pt-7 pb-10 text-sm text-muted-foreground")}>
         <span className="font-display text-[22px] font-bold tracking-[-0.035em] text-[#111]">vitrina</span>
-        <span>Catálogos y citas para negocios de El Salvador</span>
-        <Link to="/ingresar" className="text-[#111] underline underline-offset-4">Acceso para vendedores</Link>
+        <span>{t("landing.footer.tagline")}</span>
+        <Link to="/ingresar" className="text-[#111] underline underline-offset-4">{t("landing.footer.sellerAccess")}</Link>
       </footer>
     </div>
   );

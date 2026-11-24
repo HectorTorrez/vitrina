@@ -127,7 +127,7 @@ func changePanel(db *gorm.DB, account seller, input panelInput) error {
 			return err
 		}
 		return db.Model(&shop{}).Where("slug = ?", input.ShopSlug).
-			Select("name", "description", "theme", "accent_color", "logo_url", "background_url", "instagram", "tiktok", "whatsapp", "hours").Updates(&profile).Error
+			Select("name", "description", "theme", "accent_color", "locale", "logo_url", "background_url", "instagram", "tiktok", "whatsapp", "hours").Updates(&profile).Error
 	case "crear-item", "editar-item":
 		return savePanelItem(db, input.ShopSlug, input.Item, input.Action == "crear-item")
 	case "eliminar-item":
@@ -175,6 +175,7 @@ func validatedProfile(input shop) (shop, error) {
 		Description:   strings.TrimSpace(input.Description),
 		Theme:         input.Theme,
 		AccentColor:   strings.ToLower(input.AccentColor),
+		Locale:        strings.ToLower(strings.TrimSpace(input.Locale)),
 		LogoURL:       input.LogoURL,
 		BackgroundURL: input.BackgroundURL,
 		Instagram:     strings.TrimPrefix(strings.TrimSpace(input.Instagram), "@"),
@@ -198,6 +199,9 @@ func validatedProfile(input shop) (shop, error) {
 	}
 	if !slices.Contains(themes, profile.Theme) {
 		return shop{}, validationError("Elegí un tema válido")
+	}
+	if profile.Locale != "" && profile.Locale != "es" && profile.Locale != "en" {
+		return shop{}, validationError("Elegí un idioma válido")
 	}
 	for _, handle := range []string{profile.Instagram, profile.TikTok} {
 		if handle != "" && !handlePattern.MatchString(handle) {

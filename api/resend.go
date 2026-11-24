@@ -62,10 +62,30 @@ func configureResend() (*resendDelivery, error) {
 	}, nil
 }
 
-func (d *resendDelivery) sendLoginLink(ctx context.Context, email, token string) error {
+func requestLocale(r *http.Request) string {
+	if r == nil {
+		return "es"
+	}
+	if cookie, err := r.Cookie("vitrina_locale"); err == nil && (cookie.Value == "en" || cookie.Value == "es") {
+		return cookie.Value
+	}
+	if strings.HasPrefix(strings.ToLower(strings.TrimSpace(r.Header.Get("Accept-Language"))), "en") {
+		return "en"
+	}
+	return "es"
+}
+
+func (d *resendDelivery) sendLoginLink(ctx context.Context, email, token, locale string) error {
 	link := d.origin
 	link.Path = "/confirmar-acceso"
 	link.Fragment = token
+	if locale == "en" {
+		expiry := fmt.Sprintf("expires in %d minutes and can only be used once. If you didn't request it, you can ignore this email.", int(linkLifetime.Minutes()))
+		return d.sendMessage(ctx, []string{email}, "Your Vitrina sign-in link",
+			"Sign in to Vitrina with this link: "+link.String()+"\n\nThis link "+expiry,
+			"<p><a href=\""+html.EscapeString(link.String())+"\">Sign in to Vitrina</a></p><p>This link "+expiry+"</p>",
+			"vitrina-login/"+tokenHash(token))
+	}
 	expiry := fmt.Sprintf("vence en %d minutos y se puede usar una sola vez. Si no lo pediste, podés ignorar este correo.", int(linkLifetime.Minutes()))
 	return d.sendMessage(ctx, []string{email}, "Tu enlace de acceso a Vitrina",
 		"Ingresá a Vitrina con este enlace: "+link.String()+"\n\nEl enlace "+expiry,

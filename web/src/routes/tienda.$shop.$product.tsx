@@ -3,6 +3,7 @@ import { createFileRoute, Link, notFound } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
 import { ArrowLeft, Check, ChevronLeft, ChevronRight, Clock, Share2 } from "lucide-react";
 import { acceptsBookings, shopQuery, price, productImage, productImages, totalPrice, type Product } from "../catalog";
+import { useI18n } from "../i18n";
 import { pageHead, siteLanguage } from "../seo";
 import { PublicBooking } from "../PublicBooking";
 import { StoreLayout } from "../store/StoreLayout";
@@ -77,6 +78,7 @@ export const Route = createFileRoute("/tienda/$shop/$product")({
 function Details() {
   const params = Route.useParams();
   const { data } = useQuery({ ...shopQuery(params.shop), initialData: Route.useLoaderData() });
+  const { t } = useI18n();
   const p = data.products.find((item) => item.slug === params.product);
   if (!p) throw notFound();
   const bookable = p.kind === "service" && p.available && acceptsBookings(data);
@@ -87,7 +89,7 @@ function Details() {
     <StoreLayout shop={data} slug={params.shop}>
       <div className="flex items-center justify-between gap-3 pt-6 pb-4">
         <Link to="/tienda/$shop" params={{ shop: params.shop }} className="inline-flex h-9 items-center gap-1.5 rounded-full pr-3 pl-2 text-sm font-medium transition hover:bg-store-soft">
-          <ArrowLeft className="size-4" /> Catálogo
+          <ArrowLeft className="size-4" /> {t("store.catalog")}
         </Link>
         <ShareButton url={url} title={p.name} />
       </div>
@@ -101,7 +103,7 @@ function Details() {
 
       {others.length > 0 && (
         <section className="mt-20 grid gap-6 border-t border-store-rule pt-10">
-          <h2 className="font-store text-3xl tracking-tight">También te puede interesar</h2>
+          <h2 className="font-store text-3xl tracking-tight">{t("store.alsoLike")}</h2>
           <div className="grid grid-cols-2 gap-x-4 gap-y-8 @3xl:grid-cols-4 @3xl:gap-x-6">
             {others.map((item) => (
               <Link key={item.slug} to="/tienda/$shop/$product" params={{ shop: params.shop, product: item.slug }}>
@@ -157,6 +159,7 @@ function ProductGallery({ product }: { product: Product }) {
 
 function ShareButton({ url, title }: { url: string; title: string }) {
   const [copied, copy] = useCopied(2000);
+  const { t } = useI18n();
   async function share() {
     if (navigator.share) await navigator.share({ title, url }).catch(() => undefined);
     else await copy(url).catch(() => undefined);
@@ -164,37 +167,38 @@ function ShareButton({ url, title }: { url: string; title: string }) {
   return (
     <button type="button" onClick={() => void share()} className="inline-flex h-9 items-center gap-1.5 rounded-full border border-store-rule px-3.5 text-sm font-medium transition hover:border-store-ink">
       {copied ? <Check className="size-4" /> : <Share2 className="size-4" />}
-      {copied ? "Enlace copiado" : "Compartir"}
+      {copied ? t("store.linkCopied") : t("store.share")}
     </button>
   );
 }
 
 function Order({ product, phone, booking }: { product: Product; phone: string; booking: ReactNode }) {
+  const { locale, t } = useI18n();
   const [choices, setChoices] = useState<Record<string, string>>({});
   const [showMessage, setShowMessage] = useState(false);
   const service = product.kind === "service";
   const total = totalPrice(product, choices);
   const options = product.options;
   const message = [
-    (service ? "Hola, quisiera consultar horarios para " : "Hola, quisiera pedir ") + product.name,
+    (service ? t("store.waHelloService") : t("store.waHelloProduct")) + product.name,
     ...options.map((o) => o.name + " · " + (choices[o.name] ?? o.values[0])),
-    "Total · " + price(total),
+    "Total · " + price(total, locale),
   ].join("\n");
 
   return (
     <section className="grid content-start gap-7">
       <div className="grid gap-3">
-        <p className="text-sm font-medium tracking-wide text-store-muted uppercase">{service ? "Servicio" : "Producto"}</p>
+        <p className="text-sm font-medium tracking-wide text-store-muted uppercase">{service ? t("store.service") : t("store.product")}</p>
         <h1 className="font-store text-[clamp(2.2rem,6cqw,3.75rem)] leading-[1.05] font-medium tracking-[-0.03em]">{product.name}</h1>
         <div className="flex flex-wrap items-center gap-3">
-          <p className="font-mono text-2xl font-medium" aria-live="polite">{product.available ? price(total) : "No disponible"}</p>
+          <p className="font-mono text-2xl font-medium" aria-live="polite">{product.available ? price(total, locale) : t("store.unavailable")}</p>
           {service && (
             <span className="inline-flex items-center gap-1.5 rounded-full bg-store-soft px-3 py-1 text-sm font-medium">
               <Clock className="size-3.5" /> {product.durationMinutes} min
             </span>
           )}
         </div>
-        {service && !booking && product.available && <p className="text-store-muted">El negocio confirma tu cita por WhatsApp.</p>}
+        {service && !booking && product.available && <p className="text-store-muted">{t("store.confirmByWa")}</p>}
       </div>
 
       {product.description && (
@@ -219,7 +223,7 @@ function Order({ product, phone, booking }: { product: Product; phone: string; b
                 )}>
                   <input type="radio" name={o.name} className="sr-only" checked={checked} onChange={() => setChoices({ ...choices, [o.name]: v })} />
                   {v}
-                  {extra > 0 && <span className={cn("font-mono text-xs", checked ? "opacity-75" : "text-store-muted")}>+{price(extra)}</span>}
+                  {extra > 0 && <span className={cn("font-mono text-xs", checked ? "opacity-75" : "text-store-muted")}>+{price(extra, locale)}</span>}
                 </label>
               );
             })}
@@ -240,17 +244,17 @@ function Order({ product, phone, booking }: { product: Product; phone: string; b
           >
             <WhatsAppIcon className="size-5" />
             {service
-              ? (booking ? "¿Dudas? Consultá por WhatsApp" : "Consultar horarios por WhatsApp")
-              : "Pedir por WhatsApp · " + price(total)}
+              ? (booking ? t("store.askWaBooking") : t("store.askWaHours"))
+              : t("store.orderWa") + " · " + price(total, locale)}
           </a>
         ) : booking ? null : (
           <div className="grid gap-3">
             <button type="button" onClick={() => setShowMessage(true)} className="h-13 rounded-full bg-store-accent px-6 font-semibold text-store-accent-ink transition hover:opacity-90">
-              {service ? "Preparar consulta" : "Preparar pedido"}
+              {service ? t("store.prepareInquiry") : t("store.prepareOrder")}
             </button>
             {showMessage && (
               <div role="status" className="grid gap-2 rounded-2xl border border-store-rule bg-store-surface p-4 text-sm">
-                <p className="font-semibold">Mensaje · tienda de muestra</p>
+                <p className="font-semibold">{t("store.sampleMsg")}</p>
                 <pre className="font-sans whitespace-pre-wrap text-store-muted">{message}</pre>
               </div>
             )}
@@ -258,7 +262,7 @@ function Order({ product, phone, booking }: { product: Product; phone: string; b
         )
       ) : (
         <p className="rounded-2xl border border-store-rule bg-store-surface p-4 text-store-muted">
-          Esta opción no está disponible por ahora.
+          {t("store.optionUnavailable")}
         </p>
       )}
     </section>

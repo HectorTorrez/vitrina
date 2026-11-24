@@ -1,6 +1,7 @@
 import type { ReactNode } from "react";
 import { CalendarCheck, Clock, ImageIcon } from "lucide-react";
 import { hasSurcharges, price, productImage, type Product, type Shop } from "../catalog";
+import { useI18n, type Locale } from "../i18n";
 import { getTheme, themeStyle } from "../themes";
 import { cn } from "@/lib/utils";
 
@@ -83,19 +84,20 @@ export function SocialLinks({ shop, className }: { shop: Pick<Shop, "instagram" 
 }
 
 export function ShopHero({ shop, bookable }: { shop: Pick<Shop, "name" | "description" | "logoUrl" | "instagram" | "tiktok" | "whatsapp">; bookable: boolean }) {
+  const { t } = useI18n();
   return (
     <section className="grid gap-5 pt-8 pb-8 @3xl:pt-14 @3xl:pb-12">
-      <ShopAvatar logoUrl={shop.logoUrl} name={shop.name || "Tu tienda"} className="size-16 text-2xl @3xl:size-20 @3xl:text-3xl" />
+      <ShopAvatar logoUrl={shop.logoUrl} name={shop.name || t("store.yourShop")} className="size-16 text-2xl @3xl:size-20 @3xl:text-3xl" />
       <div className="grid gap-3">
         <h1 className="font-store text-[clamp(2.4rem,9cqw,5.25rem)] leading-[1.02] font-medium tracking-[-0.035em] break-words">
-          {shop.name || "Tu tienda"}
+          {shop.name || t("store.yourShop")}
         </h1>
         {shop.description && <p className="max-w-2xl text-lg text-store-muted @3xl:text-xl">{shop.description}</p>}
       </div>
       <div className="flex flex-wrap items-center gap-2">
         {bookable && (
           <span className="inline-flex h-9 items-center gap-2 rounded-full bg-store-soft px-3.5 text-sm font-medium">
-            <CalendarCheck className="size-4" /> Reservas en línea
+            <CalendarCheck className="size-4" /> {t("store.onlineBookings")}
           </span>
         )}
         <SocialLinks shop={shop} />
@@ -118,12 +120,13 @@ export function ProductImage({ product, className }: { product: Product; classNa
     );
 }
 
-export function productPrice(product: Product) {
-  if (!product.available) return "No disponible";
-  return (hasSurcharges(product) ? "Desde " : "") + price(product.priceCents);
+export function productPrice(product: Product, locale: Locale = "es") {
+  if (!product.available) return locale === "en" ? "Unavailable" : "No disponible";
+  return (hasSurcharges(product) ? (locale === "en" ? "From " : "Desde ") : "") + price(product.priceCents, locale);
 }
 
 export function ProductCard({ product }: { product: Product }) {
+  const { locale, t } = useI18n();
   const service = product.kind === "service";
   return (
     <article className="group grid gap-3">
@@ -136,13 +139,13 @@ export function ProductCard({ product }: { product: Product }) {
         )}
         {!product.available && (
           <span className="absolute inset-x-3 bottom-3 rounded-full bg-store-ink/85 px-3 py-1.5 text-center text-xs font-medium text-store-bg">
-            No disponible por ahora
+            {t("store.unavailableNow")}
           </span>
         )}
       </div>
       <div className="grid gap-0.5 px-0.5">
         <h3 className="leading-snug font-semibold group-hover:underline group-hover:underline-offset-4">{product.name}</h3>
-        <p className={cn("text-sm", product.available ? "font-mono" : "text-store-muted")}>{productPrice(product)}</p>
+        <p className={cn("text-sm", product.available ? "font-mono" : "text-store-muted")}>{productPrice(product, locale)}</p>
       </div>
     </article>
   );

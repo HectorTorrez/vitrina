@@ -2,11 +2,13 @@ import { useMemo, useState, type FormEvent, type ReactNode } from "react";
 import { ArrowLeft, ArrowRight, Check, Copy, Loader2, Plus, Sparkles, X } from "lucide-react";
 import PhoneInput, { isPossiblePhoneNumber } from "react-phone-number-input";
 import { PhoneCountrySelect } from "./PhoneCountrySelect";
-import phoneLabels from "react-phone-number-input/locale/es";
+import phoneLabelsEs from "react-phone-number-input/locale/es";
+import phoneLabelsEn from "react-phone-number-input/locale/en";
 import "react-phone-number-input/style.css";
 import { acceptsBookings, type Product } from "./catalog";
+import { useI18n } from "./i18n";
 import type { PanelShop, Profile } from "./panel";
-import { AffixInput, Field, FormSection, SaveBar, Stepper, usePanelAction } from "./PanelForm";
+import { AffixInput, Field, FormSection, FormSelect, SaveBar, Stepper, usePanelAction } from "./PanelForm";
 import { useShopSlugField, type ShopSlugStatus } from "./shopSlug";
 import { StorefrontPreview } from "./store/StorefrontPreview";
 import { emailError } from "./AuthLayout";
@@ -18,7 +20,10 @@ import { Switch } from "@/components/ui/switch";
 import { Textarea } from "@/components/ui/textarea";
 import { cn } from "@/lib/utils";
 
-const weekdays = ["Domingo", "Lunes", "Martes", "Miércoles", "Jueves", "Viernes", "Sábado"];
+const weekdaysByLocale = {
+  es: ["Domingo", "Lunes", "Martes", "Miércoles", "Jueves", "Viernes", "Sábado"],
+  en: ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"],
+};
 
 interface Day { open: boolean; from: string; to: string }
 interface ProfileDraft {
@@ -26,6 +31,7 @@ interface ProfileDraft {
   description: string;
   theme: string;
   accentColor: string;
+  locale: "" | "es" | "en";
   logoUrl: string;
   backgroundUrl: string;
   instagram: string;
@@ -44,12 +50,13 @@ function toDraft(profile?: Profile): ProfileDraft {
     logoUrl: profile?.logoUrl ?? "",
     backgroundUrl: profile?.backgroundUrl ?? "",
     accentColor: profile?.accentColor ?? "",
+    locale: profile?.locale ?? "",
     theme: profile?.theme || "costa",
     instagram: profile?.instagram ?? "",
     tiktok: profile?.tiktok ?? "",
     whatsapp: profile?.whatsapp ? "+" + profile.whatsapp : "",
     booking: acceptsBookings({ hours }),
-    days: weekdays.map((_, index) => {
+    days: weekdaysByLocale.es.map((_, index) => {
       const day = hours[index];
       return {
         open: hours.length ? Boolean(day?.open) : index > 0,
@@ -73,6 +80,7 @@ function fromDraft(draft: ProfileDraft): Profile {
     description: draft.description.trim(),
     theme: draft.theme,
     accentColor: draft.accentColor,
+    locale: draft.locale,
     logoUrl: draft.logoUrl,
     backgroundUrl: draft.backgroundUrl,
     instagram: cleanHandle(draft.instagram),
@@ -110,16 +118,28 @@ const hasErrors = (errors: ProfileErrors) => Object.keys(errors).length > 0;
 type SetDraft = (patch: Partial<ProfileDraft>) => void;
 
 function IdentityFields({ draft, set, errors }: { draft: ProfileDraft; set: SetDraft; errors: ProfileErrors }) {
+  const { t } = useI18n();
   return (
     <div className="grid gap-5">
-      <Field label="Nombre de la tienda" error={errors.name} counter={{ value: draft.name.length, max: 100 }}>
+      <Field label={t("profile.shopName")} error={errors.name} counter={{ value: draft.name.length, max: 100 }}>
         <Input value={draft.name} onChange={(e) => set({ name: e.target.value })} maxLength={100} placeholder="Luna Uñas" className="h-10" />
       </Field>
       <Field
-        label="Descripción" optional error={errors.description} counter={{ value: draft.description.length, max: 500 }}
-        hint="Una o dos frases: qué ofrecés y dónde. Aparece debajo del nombre y al compartir el enlace."
+        label={t("profile.description")} optional error={errors.description} counter={{ value: draft.description.length, max: 500 }}
+        hint={t("profile.descriptionHint")}
       >
         <Textarea value={draft.description} onChange={(e) => set({ description: e.target.value })} maxLength={500} rows={3} placeholder="Manicura y cuidado de uñas con cita previa en San Salvador." />
+      </Field>
+      <Field label={t("profile.storeLocale")} hint={t("profile.storeLocaleHint")}>
+        <FormSelect
+          value={draft.locale || "auto"}
+          onValueChange={(value) => set({ locale: value === "auto" ? "" : (value as "es" | "en") })}
+          options={[
+            { value: "auto", label: t("profile.localeAuto") },
+            { value: "es", label: t("profile.localeEs") },
+            { value: "en", label: t("profile.localeEn") },
+          ]}
+        />
       </Field>
     </div>
   );
@@ -255,17 +275,18 @@ function AppearanceFields({ draft, set, setUploading }: {
 }
 
 function ContactFields({ draft, set, errors }: { draft: ProfileDraft; set: SetDraft; errors: ProfileErrors }) {
+  const { locale, t } = useI18n();
   return (
     <div className="grid gap-5">
       <Field
         label="WhatsApp" optional error={errors.whatsapp}
-        hint="Tus clientes pueden escribirte a este número desde cada ficha."
+        hint={t("profile.whatsappHint")}
       >
         <PhoneInput
           defaultCountry="SV"
           international
-          labels={phoneLabels}
-          locales="es"
+          labels={locale === "en" ? phoneLabelsEn : phoneLabelsEs}
+          locales={locale}
           countrySelectComponent={PhoneCountrySelect}
           value={draft.whatsapp || undefined}
           onChange={(value) => set({ whatsapp: value ?? "" })}
@@ -286,45 +307,47 @@ function ContactFields({ draft, set, errors }: { draft: ProfileDraft; set: SetDr
 }
 
 function HoursEditor({ draft, set, errors }: { draft: ProfileDraft; set: SetDraft; errors: ProfileErrors }) {
+  const { locale, t } = useI18n();
+  const weekdays = weekdaysByLocale[locale];
   const setDay = (index: number, patch: Partial<Day>) => set({ days: draft.days.map((day, i) => i === index ? { ...day, ...patch } : day) });
   const firstOpen = draft.days.findIndex((day) => day.open);
   return (
     <div className="grid gap-4">
       <label className="flex cursor-pointer items-start justify-between gap-4 rounded-xl bg-muted/60 p-4">
         <span className="grid gap-0.5">
-          <span className="font-medium">Aceptar reservas en línea</span>
-          <span className="text-sm text-muted-foreground">Tus clientes eligen fecha y hora desde la ficha de cada servicio.</span>
+          <span className="font-medium">{t("profile.acceptBooking")}</span>
+          <span className="text-sm text-muted-foreground">{t("profile.acceptBookingDesc")}</span>
         </span>
         <Switch checked={draft.booking} onCheckedChange={(booking) => set({ booking })} />
       </label>
       {draft.booking && (
         <div className="grid gap-1">
           <div className="mb-1 flex flex-wrap items-center justify-between gap-2">
-            <p className="text-sm text-muted-foreground">Horario de atención (hora de El Salvador). Turnos cada 15 min.</p>
+            <p className="text-sm text-muted-foreground">{t("profile.hoursHint")}</p>
             {firstOpen >= 0 && (
               <Button type="button" variant="ghost" size="sm" className="rounded-full" onClick={() => {
                 const source = draft.days[firstOpen];
                 set({ days: draft.days.map((day) => day.open ? { ...day, from: source.from, to: source.to } : day) });
               }}>
-                <Copy /> Copiar {weekdays[firstOpen].toLowerCase()} a todos
+                <Copy /> {t("profile.copyDay")} {weekdays[firstOpen].toLowerCase()} {t("profile.toAll")}
               </Button>
             )}
           </div>
           {draft.days.map((day, index) => (
             <div key={index} className={cn("grid grid-cols-[1fr_auto] items-center gap-x-3 gap-y-2 rounded-xl px-3 py-2.5 sm:grid-cols-[140px_1fr]", day.open ? "bg-card" : "bg-transparent")}>
               <label className="flex cursor-pointer items-center gap-3">
-                <Switch checked={day.open} onCheckedChange={(open) => setDay(index, { open })} aria-label={"Abrir el " + weekdays[index]} />
+                <Switch checked={day.open} onCheckedChange={(open) => setDay(index, { open })} aria-label={weekdays[index]} />
                 <span className={cn("text-sm font-medium", !day.open && "text-muted-foreground")}>{weekdays[index]}</span>
               </label>
               {day.open ? (
                 <div className="col-span-2 flex flex-wrap items-center gap-2 sm:col-span-1">
-                  <Input type="time" step={900} value={day.from} onChange={(e) => setDay(index, { from: e.target.value })} aria-label={"Abre el " + weekdays[index]} className="h-9 w-32" aria-invalid={errors.days?.[index] ? true : undefined} />
-                  <span className="text-sm text-muted-foreground">a</span>
-                  <Input type="time" step={900} value={day.to} onChange={(e) => setDay(index, { to: e.target.value })} aria-label={"Cierra el " + weekdays[index]} className="h-9 w-32" aria-invalid={errors.days?.[index] ? true : undefined} />
+                  <Input type="time" step={900} value={day.from} onChange={(e) => setDay(index, { from: e.target.value })} aria-label={weekdays[index]} className="h-9 w-32" aria-invalid={errors.days?.[index] ? true : undefined} />
+                  <span className="text-sm text-muted-foreground">{t("profile.to")}</span>
+                  <Input type="time" step={900} value={day.to} onChange={(e) => setDay(index, { to: e.target.value })} aria-label={weekdays[index]} className="h-9 w-32" aria-invalid={errors.days?.[index] ? true : undefined} />
                   {errors.days?.[index] && <span className="text-xs font-medium text-destructive">{errors.days[index]}</span>}
                 </div>
               ) : (
-                <span className="text-right text-sm text-muted-foreground sm:text-left">Cerrado</span>
+                <span className="text-right text-sm text-muted-foreground sm:text-left">{t("profile.closed")}</span>
               )}
             </div>
           ))}

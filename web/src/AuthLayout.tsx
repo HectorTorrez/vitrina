@@ -2,23 +2,23 @@ import { useId, useState, type ComponentProps, type ReactNode } from "react";
 import { Link } from "@tanstack/react-router";
 import { Check, Mail } from "lucide-react";
 import { cn } from "@/lib/utils";
-
-const perks = [
-  "Tu catálogo, tu agenda y tus citas en un solo lugar.",
-  "Entrás sin contraseña, con un enlace a tu correo.",
-  "Funciona igual desde el celular.",
-];
+import { LanguageSwitcher, useI18n } from "./i18n";
 
 export function AuthLayout({ children }: { children: ReactNode }) {
+  const { t } = useI18n();
+  const perks = [t("auth.perk1"), t("auth.perk2"), t("auth.perk3")];
   return (
     <div className="grid min-h-svh bg-white text-[#111] md:grid-cols-2">
       <aside className="relative hidden flex-col justify-between overflow-hidden bg-ink-dark px-12 pt-8 pb-12 text-white md:flex">
         <img src="/landing/local.jpg" alt="" className="absolute inset-0 size-full object-cover opacity-55" />
         <div className="absolute inset-0 bg-linear-to-b from-ink-dark/60 via-ink-dark/0 via-30% to-ink-dark/92 to-75%" />
-        <Link to="/" className="relative font-display text-[26px] leading-none font-bold tracking-[-0.035em]">vitrina</Link>
+        <div className="relative flex items-center justify-between">
+          <Link to="/" className="font-display text-[26px] leading-none font-bold tracking-[-0.035em]">vitrina</Link>
+          <LanguageSwitcher variant="dark" />
+        </div>
         <div className="relative">
           <p className="mb-7 font-display text-[clamp(48px,5.6vw,84px)] leading-[0.92] font-bold tracking-[-0.045em]">
-            Tu negocio<br />nunca cierra.
+            {t("landing.hero.title1")}<br />{t("landing.hero.title2")}
           </p>
           <ul className="grid gap-3 text-neutral-300">
             {perks.map((perk) => (
@@ -33,9 +33,12 @@ export function AuthLayout({ children }: { children: ReactNode }) {
         </div>
       </aside>
       <main className="flex flex-col items-start gap-10 px-5 pt-7 pb-10 md:items-center md:justify-center md:px-8 md:py-12">
-        <Link to="/" className="font-display text-[26px] leading-none font-bold tracking-[-0.035em] md:hidden">vitrina</Link>
+        <div className="flex w-full items-center justify-between md:hidden">
+          <Link to="/" className="font-display text-[26px] leading-none font-bold tracking-[-0.035em]">vitrina</Link>
+          <LanguageSwitcher variant="light" />
+        </div>
         <div className="mt-6 grid w-full gap-4 md:mt-0 md:w-[min(100%,420px)]">{children}</div>
-        <Link to="/" className="text-sm text-muted-foreground transition hover:text-[#111]">← Volver al inicio</Link>
+        <Link to="/" className="text-sm text-muted-foreground transition hover:text-[#111]">← {t("common.backHome")}</Link>
       </main>
     </div>
   );

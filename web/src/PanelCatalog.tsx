@@ -4,6 +4,7 @@ import {
   Pencil, Plus, Search, Trash2,
 } from "lucide-react";
 import { hasSurcharges, price, type Product } from "./catalog";
+import { useI18n } from "./i18n";
 import type { PanelShop } from "./panel";
 import { SectionHead, usePanelAction } from "./PanelForm";
 import { ItemEditor, nextPosition } from "./PanelItemEditor";
@@ -23,6 +24,7 @@ import { cn } from "@/lib/utils";
 type Filter = "all" | "product" | "service" | "hidden";
 
 export function PanelCatalog({ shop }: { shop: PanelShop }) {
+  const { locale, t } = useI18n();
   const products = shop.products;
   const [creating, setCreating] = useState(false);
   const [editing, setEditing] = useState<string | null>(null);
@@ -65,15 +67,15 @@ export function PanelCatalog({ shop }: { shop: PanelShop }) {
   return (
     <div className="grid gap-6">
       <SectionHead
-        label="Catálogo" title="Productos y servicios"
-        text="El orden de esta lista es el de tu tienda. Cambialo con las flechas o desde el menú ···."
-        action={<Button size="lg" className="rounded-full px-5" onClick={() => setCreating(true)}><Plus /> Nueva ficha</Button>}
+        label={t("panel.nav.catalog")} title={t("catalog.title")}
+        text={t("catalog.text")}
+        action={<Button size="lg" className="rounded-full px-5" onClick={() => setCreating(true)}><Plus /> {t("catalog.newItem")}</Button>}
       />
 
       {products.length > 0 && (
         <div className="flex flex-wrap items-center gap-3">
           <div className="flex gap-1 overflow-x-auto rounded-full border bg-card p-1 [scrollbar-width:none]">
-            {([["all", "Todas"], ["service", "Servicios"], ["product", "Productos"], ["hidden", "Ocultas"]] as const)
+            {([["all", t("catalog.filterAll")], ["service", t("store.filterServices")], ["product", t("store.filterProducts")], ["hidden", t("catalog.filterHidden")]] as const)
               .filter(([value]) => value === "all" || counts[value] > 0)
               .map(([value, label]) => (
                 <button
@@ -87,7 +89,7 @@ export function PanelCatalog({ shop }: { shop: PanelShop }) {
           {products.length > 5 && (
             <div className="relative ml-auto w-full sm:w-64">
               <Search className="pointer-events-none absolute top-1/2 left-3 size-4 -translate-y-1/2 text-muted-foreground" />
-              <Input value={query} onChange={(e) => setQuery(e.target.value)} placeholder="Buscar ficha" className="h-10 rounded-full bg-card pl-9" />
+              <Input value={query} onChange={(e) => setQuery(e.target.value)} placeholder={t("catalog.search")} className="h-10 rounded-full bg-card pl-9" />
             </div>
           )}
         </div>
@@ -97,13 +99,13 @@ export function PanelCatalog({ shop }: { shop: PanelShop }) {
         <div className="grid justify-items-center gap-4 rounded-2xl border border-dashed bg-card px-6 py-14 text-center">
           <span className="grid size-14 place-items-center rounded-2xl bg-accent text-brand-ink"><Package className="size-6" /></span>
           <div className="grid gap-1">
-            <p className="font-display text-xl font-semibold">Tu catálogo está vacío</p>
-            <p className="max-w-sm text-muted-foreground">Agregá tu primer producto o servicio. Toma menos de un minuto.</p>
+            <p className="font-display text-xl font-semibold">{t("catalog.emptyTitle")}</p>
+            <p className="max-w-sm text-muted-foreground">{t("catalog.emptyDesc")}</p>
           </div>
-          <Button size="lg" className="rounded-full px-6" onClick={() => setCreating(true)}><Plus /> Crear mi primera ficha</Button>
+          <Button size="lg" className="rounded-full px-6" onClick={() => setCreating(true)}><Plus /> {t("catalog.createFirst")}</Button>
         </div>
       ) : visible.length === 0 ? (
-        <p className="rounded-2xl border border-dashed bg-card p-10 text-center text-muted-foreground">Ninguna ficha coincide con la búsqueda.</p>
+        <p className="rounded-2xl border border-dashed bg-card p-10 text-center text-muted-foreground">{t("catalog.noMatch")}</p>
       ) : (
         <ul className="divide-y overflow-hidden rounded-2xl border bg-card">
           {visible.map((item) => {
@@ -135,8 +137,8 @@ export function PanelCatalog({ shop }: { shop: PanelShop }) {
                     </span>
                   </span>
                   <span className="hidden text-right font-mono text-sm sm:block">
-                    {hasSurcharges(item) && <span className="block text-xs text-muted-foreground">desde</span>}
-                    {price(item.priceCents)}
+                    {hasSurcharges(item) && <span className="block text-xs text-muted-foreground">{t("store.from").toLowerCase()}</span>}
+                    {price(item.priceCents, locale)}
                   </span>
                 </button>
                 <DropdownMenu>

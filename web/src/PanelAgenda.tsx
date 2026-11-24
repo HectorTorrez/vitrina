@@ -1,7 +1,8 @@
 import { useState, type ReactNode } from "react";
 import { ChevronDown, History, MessageCircle, Plus, X } from "lucide-react";
 import type { Product } from "./catalog";
-import { formatLocal, monthShort } from "./booking";
+import { formatLocal, getMonthShort } from "./booking";
+import { useI18n } from "./i18n";
 import { Field, FormSelect, PanelForm, SectionHead, usePanelAction } from "./PanelForm";
 import { field, type Booking, type PanelShop } from "./panel";
 import {
@@ -14,18 +15,20 @@ import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/component
 import { Input } from "@/components/ui/input";
 
 export function PanelAgenda({ shop }: { shop: PanelShop }) {
+  const { locale, t } = useI18n();
   const [adding, setAdding] = useState(false);
   const services = shop.products.filter((item) => item.kind === "service");
   const bookable = services.filter((item) => item.available && !item.hidden);
   const upcoming = shop.bookings.filter((booking) => booking.editable);
   const history = shop.bookings.filter((booking) => !booking.editable).reverse();
   const serviceName = (slug: string) => services.find((item) => item.slug === slug)?.name;
+  const months = getMonthShort(locale);
 
   return (
     <div className="grid gap-6">
       <SectionHead
-        label="Agenda" title="Citas"
-        text={upcoming.length ? upcoming.length + (upcoming.length === 1 ? " cita próxima" : " citas próximas") + " · hora de El Salvador" : "Hora de El Salvador."}
+        label={t("panel.nav.agenda")} title={t("agenda.title")}
+        text={upcoming.length ? `${upcoming.length} ${t("agenda.upcoming").toLowerCase()}` : undefined}
       />
       <div className="grid gap-4">
         {bookable.length > 0 ? (
@@ -35,7 +38,7 @@ export function PanelAgenda({ shop }: { shop: PanelShop }) {
                 <span className="grid size-7 place-items-center rounded-full bg-accent text-accent-foreground">
                   <Plus className={"size-4 transition-transform " + (adding ? "rotate-45" : "")} />
                 </span>
-                Agendar cita
+                {t("agenda.schedule")}
               </button>
             </CollapsibleTrigger>
             <CollapsibleContent className="border-t px-4 py-5">
@@ -44,13 +47,13 @@ export function PanelAgenda({ shop }: { shop: PanelShop }) {
           </Collapsible>
         ) : (
           <p className="rounded-2xl border border-dashed bg-card p-6 text-center text-muted-foreground">
-            Publicá un servicio disponible para agendar nuevas citas.
+            {t("agenda.needService")}
           </p>
         )}
 
-        <h3 className="mt-3 font-mono text-xs font-semibold uppercase tracking-[0.08em] text-muted-foreground">Próximas citas</h3>
+        <h3 className="mt-3 font-mono text-xs font-semibold uppercase tracking-[0.08em] text-muted-foreground">{t("agenda.upcoming")}</h3>
         {upcoming.length === 0 && (
-          <p className="rounded-2xl border border-dashed bg-card p-8 text-center text-muted-foreground">No hay citas próximas.</p>
+          <p className="rounded-2xl border border-dashed bg-card p-8 text-center text-muted-foreground">{t("agenda.noUpcoming")}</p>
         )}
         {upcoming.length > 0 && <div className="divide-y overflow-hidden rounded-2xl border bg-card">
           {upcoming.map((booking) => {
@@ -60,7 +63,7 @@ export function PanelAgenda({ shop }: { shop: PanelShop }) {
                 <>
                   <span className="grid size-13 shrink-0 place-items-center content-center rounded-xl bg-ink-dark font-mono text-[11px] uppercase leading-none text-white">
                     <b className="font-display text-xl leading-none">{booking.startsAt.slice(8, 10)}</b>
-                    {monthShort[Number(booking.startsAt.slice(5, 7)) - 1]}
+                    {months[Number(booking.startsAt.slice(5, 7)) - 1]}
                   </span>
                   <span className="grid min-w-0 flex-1">
                     <span className="truncate font-semibold">{booking.customer}</span>
@@ -68,16 +71,16 @@ export function PanelAgenda({ shop }: { shop: PanelShop }) {
                       {booking.startsAt.slice(11, 16)}–{booking.endsAt.slice(11, 16)} · {name ?? booking.serviceSlug}
                     </span>
                   </span>
-                  {booking.source === "web" && <Badge className="bg-accent text-accent-foreground">En línea</Badge>}
+                  {booking.source === "web" && <Badge className="bg-accent text-accent-foreground">{t("agenda.online")}</Badge>}
                 </>
               }>
                 {booking.phone && (
                   <Button asChild variant="outline" size="sm" className="justify-self-start rounded-full">
                     <a href={"https://wa.me/" + booking.phone + "?text=" + encodeURIComponent(
                       "Hola " + booking.customer + ", te escribimos de " + shop.name + " por tu cita de " +
-                      (name ?? booking.serviceSlug) + " el " + formatLocal(booking.startsAt) + ".",
+                      (name ?? booking.serviceSlug) + " el " + formatLocal(booking.startsAt, true, locale) + ".",
                     )} target="_blank" rel="noreferrer">
-                      <MessageCircle /> Escribir por WhatsApp · +{booking.phone}
+                      <MessageCircle /> {t("agenda.writeWa")} · +{booking.phone}
                     </a>
                   </Button>
                 )}
@@ -92,15 +95,15 @@ export function PanelAgenda({ shop }: { shop: PanelShop }) {
           <Collapsible className="group/history">
             <CollapsibleTrigger asChild>
               <Button variant="ghost" size="sm" className="justify-self-start text-muted-foreground">
-                <History /> Historial ({history.length})
+                <History /> {t("agenda.history")} ({history.length})
               </Button>
             </CollapsibleTrigger>
             <CollapsibleContent>
               <ul className="mt-2 grid gap-2 pl-3 text-sm text-muted-foreground">
                 {history.map((booking) => (
                   <li key={booking.id} className="flex flex-wrap items-center gap-2">
-                    {bookingLabel(booking, serviceName(booking.serviceSlug))}
-                    {booking.cancelled && <Badge variant="secondary">Cancelada</Badge>}
+                    {bookingLabel(booking, serviceName(booking.serviceSlug), locale)}
+                    {booking.cancelled && <Badge variant="secondary">{t("agenda.cancelled")}</Badge>}
                   </li>
                 ))}
               </ul>
@@ -155,10 +158,10 @@ function CancelBooking({ shopSlug, booking }: { shopSlug: string; booking: Booki
   );
 }
 
-function bookingLabel(booking: Booking, service?: string) {
-  return formatLocal(booking.startsAt) + "–" + booking.endsAt.slice(11) +
+function bookingLabel(booking: Booking, service?: string, locale: "es" | "en" = "es") {
+  return formatLocal(booking.startsAt, true, locale) + "–" + booking.endsAt.slice(11) +
     " · " + (service ?? booking.serviceSlug) + " · " + booking.customer +
-    (booking.source === "web" ? " · Reserva en línea" : "");
+    (booking.source === "web" ? (locale === "en" ? " · Online" : " · Reserva en línea") : "");
 }
 
 function BookingForm({ shopSlug, services, booking, onSaved }: {

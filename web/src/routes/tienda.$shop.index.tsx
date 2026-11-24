@@ -3,6 +3,7 @@ import { createFileRoute, Link } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
 import { Search, X } from "lucide-react";
 import { acceptsBookings, shopQuery, productImage, type Product } from "../catalog";
+import { useI18n } from "../i18n";
 import { pageHead, siteLanguage } from "../seo";
 import { foldAccents } from "../slug";
 import { StoreLayout } from "../store/StoreLayout";
@@ -49,6 +50,7 @@ const normalize = (text: string) => foldAccents(text).toLowerCase();
 function Catalog() {
   const { shop } = Route.useParams();
   const { data } = useQuery({ ...shopQuery(shop), initialData: Route.useLoaderData() });
+  const { t } = useI18n();
   const [filter, setFilter] = useState<Filter>("all");
   const [query, setQuery] = useState("");
   const bookable = acceptsBookings(data) && data.products.some((p) => p.kind === "service");
@@ -64,9 +66,9 @@ function Catalog() {
   }, [data.products, filter, query]);
 
   const filters: { value: Filter; label: string }[] = [
-    { value: "all", label: "Todo" },
-    { value: "service", label: "Servicios" },
-    { value: "product", label: "Productos" },
+    { value: "all", label: t("store.filterAll") },
+    { value: "service", label: t("store.filterServices") },
+    { value: "product", label: t("store.filterProducts") },
   ];
   const showFilters = counts.product > 0 && counts.service > 0;
 
@@ -75,9 +77,9 @@ function Catalog() {
       <ShopHero shop={data} bookable={bookable} />
 
       <div className={cn("sticky top-16 z-20 -mx-4 flex flex-wrap items-center gap-3 border-y border-store-rule bg-store-bg/90 px-4 py-3 backdrop-blur-md @3xl:mx-0 @3xl:rounded-full @3xl:border @3xl:px-3 @3xl:py-2", counts.all <= 4 && "@3xl:w-fit")}>
-        <h2 className="sr-only">Catálogo</h2>
+        <h2 className="sr-only">{t("store.catalog")}</h2>
         {showFilters ? (
-          <div className="flex gap-1" role="tablist" aria-label="Filtrar">
+          <div className="flex gap-1" role="tablist" aria-label={t("store.catalog")}>
             {filters.map((option) => (
               <button
                 key={option.value} type="button" role="tab" aria-selected={filter === option.value}
@@ -93,18 +95,18 @@ function Catalog() {
           </div>
         ) : (
           <p className="px-2 text-sm font-medium">
-            {counts.all} {counts.all === 1 ? "opción" : "opciones"}
+            {counts.all} {counts.all === 1 ? t("store.optionSingular") : t("store.optionPlural")}
           </p>
         )}
         {counts.all > 4 && (
           <label className="relative ml-auto flex w-full items-center @xl:w-64">
             <Search className="pointer-events-none absolute left-3 size-4 text-store-muted" />
             <input
-              type="search" value={query} onChange={(event) => setQuery(event.target.value)} placeholder="Buscar en el catálogo"
+              type="search" value={query} onChange={(event) => setQuery(event.target.value)} placeholder={t("store.searchPlaceholder")}
               className="h-9 w-full rounded-full border border-store-rule bg-store-surface pr-9 pl-9 text-sm text-store-ink outline-none placeholder:text-store-muted focus:border-store-ink [&::-webkit-search-cancel-button]:hidden"
             />
             {query && (
-              <button type="button" aria-label="Limpiar búsqueda" onClick={() => setQuery("")} className="absolute right-2 grid size-6 place-items-center rounded-full hover:bg-store-soft">
+              <button type="button" aria-label={t("store.clearSearch")} onClick={() => setQuery("")} className="absolute right-2 grid size-6 place-items-center rounded-full hover:bg-store-soft">
                 <X className="size-3.5" />
               </button>
             )}
@@ -122,9 +124,9 @@ function Catalog() {
         </div>
       ) : (
         <div className="mt-8 grid justify-items-center gap-2 rounded-2xl border border-dashed border-store-rule px-6 py-16 text-center">
-          <p className="font-store text-2xl">{counts.all ? "Sin resultados" : "Muy pronto"}</p>
+          <p className="font-store text-2xl">{counts.all ? t("store.noResults") : t("store.comingSoon")}</p>
           <p className="text-store-muted">
-            {counts.all ? "Probá con otra búsqueda o filtro." : "Esta tienda todavía está preparando su catálogo."}
+            {counts.all ? t("store.noResultsDesc") : t("store.comingSoonDesc")}
           </p>
         </div>
       )}

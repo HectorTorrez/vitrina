@@ -65,6 +65,7 @@ type shop struct {
 	Description   string `json:"description"`
 	Theme         string `json:"theme"`
 	AccentColor   string `json:"accentColor"`
+	Locale        string `json:"locale" gorm:"not null;default:''"`
 	LogoURL       string `json:"logoUrl"`
 	BackgroundURL string `json:"backgroundUrl"`
 	Instagram     string `json:"instagram"`

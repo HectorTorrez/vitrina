@@ -1,6 +1,7 @@
 import { useLayoutEffect, useRef, useState, type ReactNode } from "react";
 import { Monitor, Smartphone } from "lucide-react";
 import { acceptsBookings, type Product, type Shop } from "../catalog";
+import { useI18n } from "../i18n";
 import { ProductCard, ShopHero, StoreBrand, StoreFrame, StoreHeader, WhatsAppIcon } from "./StoreParts";
 import { themeStyle } from "../themes";
 import { cn } from "@/lib/utils";
@@ -17,6 +18,7 @@ export function StorefrontPreview({ shop, slug, className }: {
   slug: string;
   className?: string;
 }) {
+  const { t } = useI18n();
   const [device, setDevice] = useState<"phone" | "desktop">("phone");
   const visible = shop.products.filter((product) => !product.hidden);
   const products = (visible.length ? visible : samples).slice(0, device === "phone" ? 4 : 6);
@@ -25,9 +27,9 @@ export function StorefrontPreview({ shop, slug, className }: {
   return (
     <div className={cn("grid gap-3", className)}>
       <div className="flex items-center justify-between gap-3">
-        <p className="text-sm font-medium">Vista previa</p>
-        <div className="flex rounded-full border bg-card p-0.5" role="radiogroup" aria-label="Dispositivo">
-          {([["phone", Smartphone, "Celular"], ["desktop", Monitor, "Computadora"]] as const).map(([value, Icon, label]) => (
+        <p className="text-sm font-medium">{t("profile.preview")}</p>
+        <div className="flex rounded-full border bg-card p-0.5" role="radiogroup" aria-label="Device">
+          {([["phone", Smartphone, t("profile.phone")], ["desktop", Monitor, t("profile.desktop")]] as const).map(([value, Icon, label]) => (
             <button
               key={value} type="button" role="radio" aria-checked={device === value} aria-label={label} title={label}
               onClick={() => setDevice(value)}

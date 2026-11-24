@@ -12,6 +12,7 @@ import { SectionHead } from "../PanelForm";
 import { CreateShopWizard, ProfileEditor } from "../PanelProfile";
 import { formatLocal } from "../booking";
 import { acceptsBookings } from "../catalog";
+import { LanguageSwitcher, useI18n } from "../i18n";
 import { useCopied } from "@/lib/useCopied";
 import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger } from "@/components/ui/select";
@@ -37,14 +38,6 @@ export const Route = createFileRoute("/panel")({
   component: Panel,
 });
 
-const nav: { value: Section; label: string; icon: LucideIcon }[] = [
-  { value: "inicio", label: "Inicio", icon: LayoutGrid },
-  { value: "catalogo", label: "Catálogo", icon: Package },
-  { value: "agenda", label: "Agenda", icon: CalendarDays },
-  { value: "tienda", label: "Mi tienda", icon: Palette },
-];
-
-
 const CompactSidebar = createContext(false);
 
 function SidebarTip({ label, children }: { label: string; children: ReactElement }) {
@@ -68,6 +61,7 @@ function Panel() {
   const { panel } = Route.useRouteContext();
   const search = Route.useSearch();
   const navigate = Route.useNavigate();
+  const { t } = useI18n();
   const [menuOpen, setMenuOpen] = useState(false);
   const [collapsed, setCollapsed] = useState(false);
   const shop = panel.shops.find((s) => s.slug === search.tienda) ?? panel.shops[0];
@@ -82,7 +76,13 @@ function Panel() {
     setMenuOpen(false);
     void navigate({ search: { tienda, seccion: section === "alta" ? "inicio" : section } });
   };
-  const items = [...(shop ? nav : []), ...(panel.operator ? [{ value: "alta" as const, label: "Alta de tiendas", icon: Plus }] : [])];
+  const localizedNav: { value: Section; label: string; icon: LucideIcon }[] = [
+    { value: "inicio", label: t("panel.nav.home"), icon: LayoutGrid },
+    { value: "catalogo", label: t("panel.nav.catalog"), icon: Package },
+    { value: "agenda", label: t("panel.nav.agenda"), icon: CalendarDays },
+    { value: "tienda", label: t("panel.nav.shop"), icon: Palette },
+  ];
+  const items = [...(shop ? localizedNav : []), ...(panel.operator ? [{ value: "alta" as const, label: t("panel.nav.create"), icon: Plus }] : [])];
   const upcoming = shop?.bookings.filter((booking) => booking.editable).length ?? 0;
   const current = items.find((item) => item.value === section);
 
@@ -91,8 +91,8 @@ function Panel() {
       <div className="flex items-center justify-between group-data-[compact]/sidebar:justify-center">
         <Link to="/" className="px-3 font-display text-2xl font-bold tracking-tighter group-data-[compact]/sidebar:hidden">vitrina</Link>
         <Button type="button" variant="ghost" size="icon" aria-controls="panel-navigation" aria-expanded={!collapsed}
-          aria-label={collapsed ? "Ampliar menú lateral" : "Reducir menú lateral"}
-          title={collapsed ? "Ampliar menú lateral" : "Reducir menú lateral"}
+          aria-label={collapsed ? t("panel.expandSidebar") : t("panel.collapseSidebar")}
+          title={collapsed ? t("panel.expandSidebar") : t("panel.collapseSidebar")}
           onClick={() => setCollapsed((value) => !value)}
           className="hidden text-neutral-400 hover:bg-white/10 hover:text-white group-data-[desktop]/sidebar:inline-flex">
           {collapsed ? <PanelLeftOpen /> : <PanelLeftClose />}
@@ -102,8 +102,8 @@ function Panel() {
       {shop && (
         panel.shops.length > 1 ? (
           <Select value={shop.slug} onValueChange={switchShop}>
-            <SidebarTip label={`Cambiar tienda · ${shop.name}`}>
-              <SelectTrigger aria-label={`Tienda: ${shop.name}`} className="group-data-[compact]/sidebar:justify-center group-data-[compact]/sidebar:px-0 group-data-[compact]/sidebar:[&>svg]:hidden h-auto w-full rounded-xl border-white/10 bg-white/5 px-3 py-2.5 text-left text-white hover:bg-white/10 [&_svg]:text-white/60!">
+            <SidebarTip label={shop.name}>
+              <SelectTrigger aria-label={shop.name} className="group-data-[compact]/sidebar:justify-center group-data-[compact]/sidebar:px-0 group-data-[compact]/sidebar:[&>svg]:hidden h-auto w-full rounded-xl border-white/10 bg-white/5 px-3 py-2.5 text-left text-white hover:bg-white/10 [&_svg]:text-white/60!">
                 <ShopBadge name={shop.name} slug={shop.slug} logoUrl={shop.logoUrl} />
               </SelectTrigger>
             </SidebarTip>
@@ -116,7 +116,7 @@ function Panel() {
         )
       )}
 
-      <nav className="grid min-w-0 grid-cols-[minmax(0,1fr)] gap-1" aria-label="Secciones">
+      <nav className="grid min-w-0 grid-cols-[minmax(0,1fr)] gap-1" aria-label="Sections">
         {items.map(({ value, label, icon: Icon }) => (
           <SidebarTip key={value} label={label}>
             <button
@@ -136,11 +136,14 @@ function Panel() {
       </nav>
 
       <div className="mt-auto grid min-w-0 grid-cols-[minmax(0,1fr)] gap-3">
+        <div className="flex justify-center group-data-[compact]/sidebar:justify-center">
+          <LanguageSwitcher variant="dark" className="w-full justify-center group-data-[compact]/sidebar:w-auto" />
+        </div>
         {shop && (
-          <SidebarTip label="Ver mi tienda">
+          <SidebarTip label={t("panel.viewShop")}>
             <a href={"/tienda/" + shop.slug} target="_blank" rel="noreferrer"
               className="flex h-10 items-center justify-center gap-2 rounded-lg bg-brand px-3 text-sm font-semibold text-ink-dark transition hover:bg-[#ffb088]">
-              <span className="group-data-[compact]/sidebar:sr-only">Ver mi tienda</span> <ArrowUpRight className="size-4" />
+              <span className="group-data-[compact]/sidebar:sr-only">{t("panel.viewShop")}</span> <ArrowUpRight className="size-4" />
             </a>
           </SidebarTip>
         )}
@@ -198,7 +201,7 @@ function Panel() {
         {section === "agenda" && shop && <PanelAgenda key={shop.slug} shop={shop} />}
         {section === "tienda" && shop && (
           <div className="grid gap-6">
-            <SectionHead label="Mi tienda" title="Perfil público" text="Nombre, apariencia, contacto y horario. Mirá los cambios en vivo antes de guardar." />
+            <SectionHead label={t("profile.sectionLabel")} title={t("profile.sectionTitle")} text={t("profile.sectionText")} />
             <ProfileEditor key={shop.slug} shop={shop} />
           </div>
         )}
@@ -249,15 +252,16 @@ function ShopBadge({ name, slug, logoUrl }: { name: string; slug: string; logoUr
 }
 
 function Overview({ shop, go }: { shop: PanelShop; go: (section: Section) => void }) {
+  const { locale, t } = useI18n();
   const products = shop.products;
   const published = products.filter((item) => !item.hidden);
   const upcoming = shop.bookings.filter((booking) => booking.editable);
   const hasServices = products.some((item) => item.kind === "service");
   const tasks: { done: boolean; title: string; text: string; section: Section; cta: string }[] = [
-    { done: published.length > 0, title: "Publicá tu primera ficha", text: "Un producto o servicio con foto y precio.", section: "catalogo", cta: "Agregar ficha" },
-    { done: Boolean(shop.description), title: "Contá de qué se trata", text: "Una descripción corta debajo del nombre.", section: "tienda", cta: "Escribir" },
-    { done: Boolean(shop.whatsapp), title: "Conectá tu WhatsApp", text: "Así te escriben desde cada ficha.", section: "tienda", cta: "Agregar número" },
-    ...(hasServices ? [{ done: acceptsBookings(shop), title: "Activá las reservas en línea", text: "Definí tu horario y recibí citas solas.", section: "tienda" as const, cta: "Configurar" }] : []),
+    { done: published.length > 0, title: t("panel.overview.task1.title"), text: t("panel.overview.task1.text"), section: "catalogo", cta: t("panel.overview.task1.cta") },
+    { done: Boolean(shop.description), title: t("panel.overview.task2.title"), text: t("panel.overview.task2.text"), section: "tienda", cta: t("panel.overview.task2.cta") },
+    { done: Boolean(shop.whatsapp), title: t("panel.overview.task3.title"), text: t("panel.overview.task3.text"), section: "tienda", cta: t("panel.overview.task3.cta") },
+    ...(hasServices ? [{ done: acceptsBookings(shop), title: t("panel.overview.task4.title"), text: t("panel.overview.task4.text"), section: "tienda" as const, cta: t("panel.overview.task4.cta") }] : []),
   ];
   const done = tasks.filter((task) => task.done).length;
 
@@ -265,27 +269,27 @@ function Overview({ shop, go }: { shop: PanelShop; go: (section: Section) => voi
     <div className="grid gap-8">
       <div className="flex flex-wrap items-end justify-between gap-6">
         <div className="grid gap-2">
-          <p className="font-mono text-xs font-medium tracking-[0.1em] text-brand-ink uppercase">Tu tienda</p>
+          <p className="font-mono text-xs font-medium tracking-[0.1em] text-brand-ink uppercase">{t("panel.overview.eyebrow")}</p>
           <h1 className="font-display text-4xl leading-[0.95] font-bold tracking-[-0.04em] break-words sm:text-5xl">{shop.name}</h1>
         </div>
         <ShareLink slug={shop.slug} />
       </div>
 
       <div className="grid gap-4 sm:grid-cols-3">
-        <Stat icon={Package} label="Fichas publicadas" value={published.length} hint={products.length - published.length ? (products.length - published.length) + " ocultas" : undefined} onClick={() => go("catalogo")} />
-        <Stat icon={CalendarDays} label="Citas próximas" value={upcoming.length} hint={upcoming[0] ? "Próxima: " + formatLocal(upcoming[0].startsAt) : undefined} onClick={() => go("agenda")} />
-        <Stat icon={MessageCircle} label="WhatsApp" value={shop.whatsapp ? "Conectado" : "Sin número"} hint={shop.whatsapp ? "+" + shop.whatsapp : "Agregalo en Mi tienda"} onClick={() => go("tienda")} />
+        <Stat icon={Package} label={t("panel.overview.published")} value={published.length} hint={products.length - published.length ? (products.length - published.length) + " " + t("panel.overview.hiddenCount") : undefined} onClick={() => go("catalogo")} />
+        <Stat icon={CalendarDays} label={t("panel.overview.upcoming")} value={upcoming.length} hint={upcoming[0] ? t("panel.overview.next") + " " + formatLocal(upcoming[0].startsAt, true, locale) : undefined} onClick={() => go("agenda")} />
+        <Stat icon={MessageCircle} label="WhatsApp" value={shop.whatsapp ? t("panel.overview.connected") : t("panel.overview.noNumber")} hint={shop.whatsapp ? "+" + shop.whatsapp : t("panel.overview.addInShop")} onClick={() => go("tienda")} />
       </div>
 
       {done < tasks.length && (
         <section className="grid gap-5 rounded-2xl border bg-card p-5 sm:p-6">
           <div className="flex flex-wrap items-center justify-between gap-3">
             <div className="grid gap-1">
-              <h2 className="font-display text-xl font-semibold tracking-tight">Primeros pasos</h2>
-              <p className="text-sm text-muted-foreground">Completá estos pasos para que tu tienda esté lista para compartir.</p>
+              <h2 className="font-display text-xl font-semibold tracking-tight">{t("panel.overview.firstSteps")}</h2>
+              <p className="text-sm text-muted-foreground">{t("panel.overview.firstStepsDesc")}</p>
             </div>
             <div className="flex items-center gap-3">
-              <span className="text-sm font-medium">{done} de {tasks.length}</span>
+              <span className="text-sm font-medium">{done} {t("panel.overview.of")} {tasks.length}</span>
               <span className="h-2 w-28 overflow-hidden rounded-full bg-muted">
                 <span className="block h-full rounded-full bg-success transition-all" style={{ width: (done / tasks.length) * 100 + "%" }} />
               </span>
@@ -313,8 +317,8 @@ function Overview({ shop, go }: { shop: PanelShop; go: (section: Section) => voi
       )}
 
       <div className="grid gap-4 sm:grid-cols-2">
-        <QuickLink icon={Plus} title="Nueva ficha" text="Agregá un producto o servicio." onClick={() => go("catalogo")} />
-        <QuickLink icon={Store} title="Personalizar tienda" text="Tema, descripción, redes y horario." onClick={() => go("tienda")} />
+        <QuickLink icon={Plus} title={t("panel.overview.newItem")} text={t("panel.overview.newItemDesc")} onClick={() => go("catalogo")} />
+        <QuickLink icon={Store} title={t("panel.overview.customize")} text={t("panel.overview.customizeDesc")} onClick={() => go("tienda")} />
       </div>
     </div>
   );
@@ -345,15 +349,16 @@ function QuickLink({ icon: Icon, title, text, onClick }: { icon: LucideIcon; tit
 
 function ShareLink({ slug }: { slug: string }) {
   const [copied, copy] = useCopied();
+  const { t } = useI18n();
   const path = "/tienda/" + slug;
   return (
     <div className="flex h-11 w-full items-center gap-1 rounded-full border bg-card pr-1 pl-4 sm:w-auto">
       <span className="min-w-0 flex-1 truncate font-mono text-sm">{path}</span>
       <Button type="button" variant="ghost" size="sm" className="rounded-full" onClick={() => void copy(window.location.origin + path)}>
-        {copied ? <Check className="text-success" /> : <Copy />} {copied ? "Copiado" : "Copiar"}
+        {copied ? <Check className="text-success" /> : <Copy />} {copied ? t("common.copied") : t("common.copy")}
       </Button>
       <Button asChild size="sm" className="rounded-full">
-        <a href={path} target="_blank" rel="noreferrer">Abrir <ArrowUpRight /></a>
+        <a href={path} target="_blank" rel="noreferrer">{t("common.open")} <ArrowUpRight /></a>
       </Button>
     </div>
   );
