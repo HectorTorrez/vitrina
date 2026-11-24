@@ -51,6 +51,10 @@ export interface Shop {
   backgroundUrl?: string;
   instagram: string;
   tiktok: string;
+  facebook?: string;
+  website?: string;
+  address?: string;
+  mapUrl?: string;
   whatsapp: string;
   /** Seven entries, Sunday first; empty when online booking is off. */
   hours: { open: string; close: string }[];

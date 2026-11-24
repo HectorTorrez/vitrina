@@ -1,5 +1,5 @@
 import type { ReactNode } from "react";
-import { CalendarCheck, Clock, ImageIcon } from "lucide-react";
+import { CalendarCheck, Clock, Globe, ImageIcon, MapPin } from "lucide-react";
 import { hasSurcharges, price, productImage, type Product, type Shop, type ShopStyle } from "../catalog";
 import { useI18n, type Locale } from "../i18n";
 import { cardAspectClass, cardRadiusClass, getTheme, isDarkColor, themeStyle } from "../themes";
@@ -71,11 +71,11 @@ export function WhatsAppIcon(props: { className?: string }) {
   );
 }
 
-export function SocialLinks({ shop, className }: { shop: Pick<Shop, "instagram" | "tiktok" | "whatsapp">; className?: string }) {
+export function SocialLinks({ shop, className }: { shop: Pick<Shop, "instagram" | "tiktok" | "facebook" | "website" | "address" | "mapUrl" | "whatsapp">; className?: string }) {
   const chip = "inline-flex h-9 items-center gap-2 rounded-full border border-store-rule bg-store-surface/60 px-3.5 text-sm font-medium transition hover:border-store-ink";
-  if (!shop.instagram && !shop.tiktok && !shop.whatsapp) return null;
+  if (!shop.instagram && !shop.tiktok && !shop.facebook && !shop.website && !shop.address && !shop.mapUrl && !shop.whatsapp) return null;
   return (
-    <nav aria-label="Redes sociales" className={cn("flex flex-wrap gap-2", className)}>
+    <nav aria-label="Links" className={cn("flex flex-wrap gap-2", className)}>
       {shop.whatsapp && (
         <a className={chip} href={"https://wa.me/" + shop.whatsapp} target="_blank" rel="noreferrer">
           <WhatsAppIcon className="size-4" /> WhatsApp
@@ -91,11 +91,32 @@ export function SocialLinks({ shop, className }: { shop: Pick<Shop, "instagram" 
           <TikTokIcon className="size-4" /> @{shop.tiktok}
         </a>
       )}
+      {shop.facebook && (
+        <a className={chip} href={"https://facebook.com/" + encodeURIComponent(shop.facebook)} target="_blank" rel="noreferrer">
+          Facebook
+        </a>
+      )}
+      {shop.website && (
+        <a className={chip} href={shop.website} target="_blank" rel="noreferrer">
+          <Globe className="size-4" /> {shop.website.replace(/^https?:\/\/(www\.)?/, "").replace(/\/.*$/, "")}
+        </a>
+      )}
+      {(shop.address || shop.mapUrl) && (
+        shop.mapUrl ? (
+          <a className={chip} href={shop.mapUrl} target="_blank" rel="noreferrer">
+            <MapPin className="size-4 shrink-0" /> <span className="max-w-[240px] truncate">{shop.address || "Maps"}</span>
+          </a>
+        ) : (
+          <span className="inline-flex h-9 items-center gap-2 rounded-full border border-store-rule bg-store-surface/60 px-3.5 text-sm text-store-muted">
+            <MapPin className="size-4 shrink-0" /> <span className="max-w-[260px] truncate">{shop.address}</span>
+          </span>
+        )
+      )}
     </nav>
   );
 }
 
-export function ShopHero({ shop, bookable }: { shop: Pick<Shop, "name" | "description" | "logoUrl" | "instagram" | "tiktok" | "whatsapp" | "style">; bookable: boolean }) {
+export function ShopHero({ shop, bookable }: { shop: Pick<Shop, "name" | "description" | "logoUrl" | "instagram" | "tiktok" | "facebook" | "website" | "address" | "mapUrl" | "whatsapp" | "style">; bookable: boolean }) {
   const { t } = useI18n();
   const layout = shop.style?.heroLayout || "left";
   const centered = layout === "center";

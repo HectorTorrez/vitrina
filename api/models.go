@@ -92,6 +92,10 @@ type shop struct {
 	BackgroundURL string `json:"backgroundUrl"`
 	Instagram     string `json:"instagram"`
 	TikTok        string `json:"tiktok" gorm:"column:tiktok"`
+	Facebook      string `json:"facebook" gorm:"not null;default:''"`
+	Website       string `json:"website" gorm:"not null;default:''"`
+	Address       string `json:"address" gorm:"not null;default:''"`
+	MapURL        string `json:"mapUrl" gorm:"not null;default:''"`
 	Whatsapp      string `json:"whatsapp"`
 	// Hours holds seven entries indexed by time.Weekday (Sunday first). Empty disables online booking.
 	Hours        []dayHours `json:"hours" gorm:"serializer:json;type:jsonb;not null;default:'[]'"`

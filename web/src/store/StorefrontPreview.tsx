@@ -14,7 +14,7 @@ const samples: Product[] = [
 ];
 
 export function StorefrontPreview({ shop, slug, className }: {
-  shop: Pick<Shop, "logoUrl" | "backgroundUrl" | "name" | "description" | "theme" | "accentColor" | "style" | "instagram" | "tiktok" | "whatsapp" | "hours" | "products">;
+  shop: Pick<Shop, "logoUrl" | "backgroundUrl" | "name" | "description" | "theme" | "accentColor" | "style" | "instagram" | "tiktok" | "facebook" | "website" | "address" | "mapUrl" | "whatsapp" | "hours" | "products">;
   slug: string;
   className?: string;
 }) {
@@ -65,7 +65,7 @@ export function StorefrontPreview({ shop, slug, className }: {
 }
 
 function StorePage({ shop, products, bookable }: {
-  shop: Pick<Shop, "logoUrl" | "backgroundUrl" | "name" | "description" | "theme" | "accentColor" | "style" | "instagram" | "tiktok" | "whatsapp">;
+  shop: Pick<Shop, "logoUrl" | "backgroundUrl" | "name" | "description" | "theme" | "accentColor" | "style" | "instagram" | "tiktok" | "facebook" | "website" | "address" | "mapUrl" | "whatsapp">;
   products: Product[];
   bookable: boolean;
 }) {
