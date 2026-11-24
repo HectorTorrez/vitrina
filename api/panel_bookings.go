@@ -20,7 +20,7 @@ type panelBooking struct {
 	Editable    bool   `json:"editable"`
 }
 
-func loadPanelBookings(db *gorm.DB, email string) (map[string][]panelBooking, error) {
+func loadPanelBookings(db *gorm.DB, email string, zones map[string]*time.Location) (map[string][]panelBooking, error) {
 	var bookings []reservation
 	err := db.Where("shop_slug IN (?)", db.Model(&shopMembership{}).Select("shop_slug").Where("seller_email = ?", email)).
 		Order("starts_at, id").Find(&bookings).Error
@@ -30,6 +30,10 @@ func loadPanelBookings(db *gorm.DB, email string) (map[string][]panelBooking, er
 	now := time.Now()
 	result := make(map[string][]panelBooking)
 	for _, r := range bookings {
+		loc := zones[r.ShopSlug]
+		if loc == nil {
+			loc = shopZone
+		}
 		result[r.ShopSlug] = append(result[r.ShopSlug], panelBooking{
 			ID:          r.ID,
 			ServiceSlug: r.ServiceSlug,
@@ -37,8 +41,8 @@ func loadPanelBookings(db *gorm.DB, email string) (map[string][]panelBooking, er
 			Phone:       r.Phone,
 			Notes:       r.Notes,
 			Source:      r.Source,
-			StartsAt:    r.StartsAt.In(shopZone).Format(localMinute),
-			EndsAt:      r.EndsAt.In(shopZone).Format(localMinute),
+			StartsAt:    r.StartsAt.In(loc).Format(localMinute),
+			EndsAt:      r.EndsAt.In(loc).Format(localMinute),
 			Cancelled:   r.CancelledAt != nil,
 			Editable:    r.CancelledAt == nil && r.StartsAt.After(now),
 		})
@@ -64,7 +68,9 @@ func changePanelBooking(db *gorm.DB, input panelInput) error {
 			return tx.Model(&r).Update("cancelled_at", now).Error
 		})
 	}
-	start, err := time.ParseInLocation(localMinute, booking.StartsAt, shopZone)
+	var s shop
+	_ = db.Select("timezone").Take(&s, "slug = ?", input.ShopSlug).Error
+	start, err := time.ParseInLocation(localMinute, booking.StartsAt, s.location())
 	if err != nil || !start.After(time.Now()) || !validSlug(booking.ServiceSlug) {
 		return validationError("Elegí un servicio y una fecha futura")
 	}

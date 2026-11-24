@@ -105,7 +105,7 @@ function Catalog() {
 
   return (
     <StoreLayout shop={data} slug={shop}>
-      <ShopHero shop={data} bookable={bookable} />
+      <ShopHero shop={data} bookable={bookable} onWhatsAppClick={() => trackEvent(shop, "whatsapp_click")} />
 
       <div className={cn("sticky top-16 z-20 -mx-4 flex flex-wrap items-center gap-3 border-y border-store-rule bg-store-bg/90 px-4 py-3 backdrop-blur-md @3xl:mx-0 @3xl:rounded-full @3xl:border @3xl:px-3 @3xl:py-2", counts.all <= 4 && "@3xl:w-fit")}>
         <h2 className="sr-only">{t("store.catalog")}</h2>

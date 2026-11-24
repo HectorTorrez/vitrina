@@ -192,7 +192,7 @@ export function FormSelect({ id, options, placeholder, className, ...props }: Co
 }) {
   return (
     <Select {...props}>
-      <SelectTrigger id={id} className={cn("w-full", className)}>
+      <SelectTrigger id={id} className={cn("w-full min-w-0", className)}>
         <SelectValue placeholder={placeholder} />
       </SelectTrigger>
       <SelectContent>

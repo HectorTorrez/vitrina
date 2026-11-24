@@ -84,7 +84,11 @@ func loadPanel(db *gorm.DB, account seller) (panelAccess, error) {
 	if err != nil {
 		return result, err
 	}
-	bookings, err := loadPanelBookings(db, account.Email)
+	zones := make(map[string]*time.Location, len(shops))
+	for _, s := range shops {
+		zones[s.Slug] = s.location()
+	}
+	bookings, err := loadPanelBookings(db, account.Email, zones)
 	if err != nil {
 		return result, err
 	}

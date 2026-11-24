@@ -150,23 +150,23 @@ type publicBookingResult struct {
 	EndsAt   string `json:"endsAt"`
 }
 
-func bookPublic(db *gorm.DB, shopSlug string, input publicBookingInput, now time.Time) (reservation, product, error) {
+func bookPublic(db *gorm.DB, shopSlug string, input publicBookingInput, now time.Time) (reservation, product, shop, error) {
 	var r reservation
 	var service product
+	var s shop
 	customer, err := cleanCustomer(input.Customer)
 	if err != nil {
-		return r, service, err
+		return r, service, s, err
 	}
 	phone, ok := normalizePhone(input.Phone)
 	if !ok {
-		return r, service, validationError("Indicá un teléfono válido, con código de país")
+		return r, service, s, validationError("Indicá un teléfono válido, con código de país")
 	}
 	notes := strings.TrimSpace(input.Notes)
 	if utf8.RuneCountInString(notes) > 300 {
-		return r, service, validationError("Las notas pueden tener hasta 300 caracteres")
+		return r, service, s, validationError("Las notas pueden tener hasta 300 caracteres")
 	}
 	err = withShopAgenda(db, shopSlug, func(tx *gorm.DB) error {
-		var s shop
 		s, service, err = publicService(tx, shopSlug, input.Service)
 		if err != nil {
 			return err
@@ -210,7 +210,7 @@ func bookPublic(db *gorm.DB, shopSlug string, input publicBookingInput, now time
 		}
 		return errSlotTaken
 	})
-	return r, service, err
+	return r, service, s, err
 }
 
 func publicBookingRoutes(mux *http.ServeMux, db *gorm.DB, delivery *resendDelivery) {
@@ -245,7 +245,7 @@ func publicBookingRoutes(mux *http.ServeMux, db *gorm.DB, delivery *resendDelive
 		if !readJSON(w, r, &input, 4096) {
 			return
 		}
-		booking, service, err := bookPublic(db.WithContext(r.Context()), r.PathValue("slug"), input, time.Now())
+		booking, service, bookedShop, err := bookPublic(db.WithContext(r.Context()), r.PathValue("slug"), input, time.Now())
 		if err != nil {
 			writeError(w, err)
 			return
@@ -258,7 +258,7 @@ func publicBookingRoutes(mux *http.ServeMux, db *gorm.DB, delivery *resendDelive
 					defer func() { <-notify }()
 					ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 					defer cancel()
-					if err := notifyNewBooking(ctx, db, delivery, booking, service, locale); err != nil {
+					if err := notifyNewBooking(ctx, db, delivery, booking, service, bookedShop, locale); err != nil {
 						log.Printf("No se pudo avisar la reserva %d: %v", booking.ID, err)
 					}
 				}()
@@ -266,15 +266,46 @@ func publicBookingRoutes(mux *http.ServeMux, db *gorm.DB, delivery *resendDelive
 				log.Printf("Aviso de la reserva %d omitido: demasiados envíos en curso", booking.ID)
 			}
 		}
+		loc := bookedShop.location()
 		writeJSON(w, http.StatusCreated, publicBookingResult{
 			Service:  service.Name,
-			StartsAt: booking.StartsAt.In(shopZone).Format(localMinute),
-			EndsAt:   booking.EndsAt.In(shopZone).Format(localMinute),
+			StartsAt: booking.StartsAt.In(loc).Format(localMinute),
+			EndsAt:   booking.EndsAt.In(loc).Format(localMinute),
 		})
 	})
 }
 
-func notifyNewBooking(ctx context.Context, db *gorm.DB, delivery *resendDelivery, booking reservation, service product, locale string) error {
+func bookingEmailContent(booking reservation, service product, s shop, panelURL, locale string) (subject, text string) {
+	if s.Locale == "en" || s.Locale == "es" {
+		locale = s.Locale
+	}
+	loc := s.location()
+	tz := s.Timezone
+	if tz == "" {
+		tz = "America/El_Salvador"
+	}
+	when := booking.StartsAt.In(loc).Format("02/01/2006 15:04")
+	if locale == "en" {
+		subject = "New booking: " + service.Name + " · " + when
+		text = "New booking received from your online store.\n\n" +
+			"Service: " + service.Name + "\n" +
+			"Date: " + when + " (" + tz + ")\n" +
+			"Customer: " + booking.Customer + "\n" +
+			"Phone: +" + booking.Phone + "\n\n" +
+			"Review or cancel it at " + panelURL
+		return subject, text
+	}
+	subject = "Nueva cita: " + service.Name + " · " + when
+	text = "Nueva cita reservada desde la tienda en línea.\n\n" +
+		"Servicio: " + service.Name + "\n" +
+		"Fecha: " + when + " (" + tz + ")\n" +
+		"Cliente: " + booking.Customer + "\n" +
+		"Teléfono: +" + booking.Phone + "\n\n" +
+		"Revisala o cancelala en " + panelURL
+	return subject, text
+}
+
+func notifyNewBooking(ctx context.Context, db *gorm.DB, delivery *resendDelivery, booking reservation, service product, s shop, locale string) error {
 	var emails []string
 	if err := db.WithContext(ctx).Model(&shopMembership{}).Where("shop_slug = ?", booking.ShopSlug).Pluck("seller_email", &emails).Error; err != nil {
 		return err
@@ -282,27 +313,8 @@ func notifyNewBooking(ctx context.Context, db *gorm.DB, delivery *resendDelivery
 	if len(emails) == 0 {
 		return nil
 	}
-	var s shop
-	if err := db.WithContext(ctx).Select("locale").Take(&s, "slug = ?", booking.ShopSlug).Error; err == nil && (s.Locale == "en" || s.Locale == "es") {
-		locale = s.Locale
-	}
-	when := booking.StartsAt.In(shopZone).Format("02/01/2006 15:04")
 	panel := delivery.origin
 	panel.Path = "/panel"
-	if locale == "en" {
-		text := "New booking received from your online store.\n\n" +
-			"Service: " + service.Name + "\n" +
-			"Date: " + when + " (El Salvador time)\n" +
-			"Customer: " + booking.Customer + "\n" +
-			"Phone: +" + booking.Phone + "\n\n" +
-			"Review or cancel it at " + panel.String()
-		return delivery.send(ctx, emails, "New booking: "+service.Name+" · "+when, text, "vitrina-booking/"+booking.ShopSlug+"/"+strconv.FormatUint(uint64(booking.ID), 10))
-	}
-	text := "Nueva cita reservada desde la tienda en línea.\n\n" +
-		"Servicio: " + service.Name + "\n" +
-		"Fecha: " + when + " (hora de El Salvador)\n" +
-		"Cliente: " + booking.Customer + "\n" +
-		"Teléfono: +" + booking.Phone + "\n\n" +
-		"Revisala o cancelala en " + panel.String()
-	return delivery.send(ctx, emails, "Nueva cita: "+service.Name+" · "+when, text, "vitrina-booking/"+booking.ShopSlug+"/"+strconv.FormatUint(uint64(booking.ID), 10))
+	subject, text := bookingEmailContent(booking, service, s, panel.String(), locale)
+	return delivery.send(ctx, emails, subject, text, "vitrina-booking/"+booking.ShopSlug+"/"+strconv.FormatUint(uint64(booking.ID), 10))
 }
