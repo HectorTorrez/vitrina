@@ -1,7 +1,8 @@
-import { useState, type ReactNode } from "react";
+import { useEffect, useState, type ReactNode } from "react";
 import { createFileRoute, Link, notFound } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
 import { ArrowLeft, Check, ChevronLeft, ChevronRight, Clock, Share2, ShoppingBag } from "lucide-react";
+import { trackEvent } from "../analytics";
 import { acceptsBookings, shopQuery, price, productImage, productImages, totalPrice, type Product } from "../catalog";
 import { useI18n } from "../i18n";
 import { pageHead, siteLanguage } from "../seo";
@@ -82,6 +83,9 @@ function Details() {
   const { t } = useI18n();
   const p = data.products.find((item) => item.slug === params.product);
   if (!p) throw notFound();
+  useEffect(() => {
+    trackEvent(params.shop, "product_view", p.slug);
+  }, [params.shop, p.slug]);
   const bookable = p.kind === "service" && p.available && acceptsBookings(data);
   const others = data.products.filter((item) => item.slug !== p.slug).slice(0, 4);
   const url = data.origin + "/tienda/" + params.shop + "/" + p.slug;
@@ -98,7 +102,7 @@ function Details() {
         <div className="@3xl:sticky @3xl:top-24 @3xl:self-start">
           <ProductGallery key={p.slug} product={p} />
         </div>
-        <Order key={p.slug} product={p} phone={data.whatsapp}
+        <Order key={p.slug} shopSlug={params.shop} product={p} phone={data.whatsapp}
           booking={bookable ? <PublicBooking shop={params.shop} shopName={data.name} timeZone={data.timezone} service={p} /> : null} />
       </div>
 
@@ -173,7 +177,7 @@ function ShareButton({ url, title }: { url: string; title: string }) {
   );
 }
 
-function Order({ product, phone, booking }: { product: Product; phone: string; booking: ReactNode }) {
+function Order({ shopSlug, product, phone, booking }: { shopSlug: string; product: Product; phone: string; booking: ReactNode }) {
   const { locale, t } = useI18n();
   const cart = useCart();
   const [choices, setChoices] = useState<Record<string, string>>({});
@@ -262,6 +266,7 @@ function Order({ product, phone, booking }: { product: Product; phone: string; b
           )}
           {phone ? (
             <a
+              onClick={() => trackEvent(shopSlug, "whatsapp_click", product.slug)}
               className={cn(
                 "flex h-13 items-center justify-center gap-2 rounded-full px-6 font-semibold transition",
                 booking || (!service && cart) ? "border border-store-rule hover:border-store-ink" : "bg-store-accent text-store-accent-ink hover:opacity-90",

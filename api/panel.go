@@ -23,7 +23,8 @@ type shopMembership struct {
 
 type panelShop struct {
 	shop
-	Bookings []panelBooking `json:"bookings"`
+	Bookings  []panelBooking `json:"bookings"`
+	Analytics shopAnalytics  `json:"analytics"`
 }
 
 type panelAccess struct {
@@ -35,6 +36,7 @@ type panelAccess struct {
 type panelInput struct {
 	Booking  panelBooking
 	Item     product
+	Order    []string
 	Action   string
 	ShopSlug string
 	Email    string
@@ -86,12 +88,17 @@ func loadPanel(db *gorm.DB, account seller) (panelAccess, error) {
 	if err != nil {
 		return result, err
 	}
+	analytics := loadPanelAnalytics(db, account.Email)
 	for _, s := range shops {
 		shopBookings := bookings[s.Slug]
 		if shopBookings == nil {
 			shopBookings = []panelBooking{}
 		}
-		result.Shops = append(result.Shops, panelShop{shop: s, Bookings: shopBookings})
+		stat := analytics[s.Slug]
+		if stat.TopItems == nil {
+			stat.TopItems = []topItemStat{}
+		}
+		result.Shops = append(result.Shops, panelShop{shop: s, Bookings: shopBookings, Analytics: stat})
 	}
 	return result, nil
 }
@@ -134,6 +141,8 @@ func changePanel(db *gorm.DB, account seller, input panelInput) error {
 		return savePanelItem(db, input.ShopSlug, input.Item, input.Action == "crear-item")
 	case "eliminar-item":
 		return deletePanelItem(db, input.ShopSlug, input.Item.Slug)
+	case "reordenar-items":
+		return reorderPanelItems(db, input.ShopSlug, input.Order)
 	case "agendar", "reprogramar", "cancelar":
 		return changePanelBooking(db, input)
 	default:

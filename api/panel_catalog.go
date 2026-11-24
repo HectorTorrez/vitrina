@@ -151,3 +151,25 @@ func deletePanelItem(db *gorm.DB, shopSlug, slug string) error {
 		return result.Error
 	})
 }
+
+func reorderPanelItems(db *gorm.DB, shopSlug string, slugs []string) error {
+	if len(slugs) == 0 || len(slugs) > 500 {
+		return validationError("Indicá un orden válido")
+	}
+	seen := make(map[string]bool, len(slugs))
+	for _, slug := range slugs {
+		if !validSlug(slug) || seen[slug] {
+			return validationError("Indicá fichas válidas para ordenar")
+		}
+		seen[slug] = true
+	}
+	return db.Transaction(func(tx *gorm.DB) error {
+		for index, slug := range slugs {
+			if err := tx.Model(&product{}).Where("shop_slug = ? AND slug = ?", shopSlug, slug).
+				Update("position", index*10).Error; err != nil {
+				return err
+			}
+		}
+		return nil
+	})
+}
