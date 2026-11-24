@@ -1,26 +1,38 @@
 import type { ReactNode } from "react";
 import { CalendarCheck, Clock, ImageIcon } from "lucide-react";
-import { hasSurcharges, price, productImage, type Product, type Shop } from "../catalog";
+import { hasSurcharges, price, productImage, type Product, type Shop, type ShopStyle } from "../catalog";
 import { useI18n, type Locale } from "../i18n";
-import { getTheme, themeStyle } from "../themes";
+import { cardAspectClass, cardRadiusClass, getTheme, isDarkColor, themeStyle } from "../themes";
 import { cn } from "@/lib/utils";
 
 /** Themed, container-query driven wrapper; the panel preview renders the same tree in a small box. */
-export function StoreFrame({ theme, accentColor, backgroundUrl, className, children }: { theme: string; accentColor?: string; backgroundUrl?: string; className?: string; children: ReactNode }) {
+export function StoreFrame({ theme, accentColor, backgroundUrl, style, className, children }: {
+  theme: string; accentColor?: string; backgroundUrl?: string; style?: ShopStyle; className?: string; children: ReactNode;
+}) {
+  const dark = style?.bgColor ? isDarkColor(style.bgColor) : getTheme(theme).dark;
   return (
     <div
       data-store-theme={theme}
       style={{
-        ...themeStyle(theme, accentColor),
+        ...themeStyle(theme, accentColor, style),
         ...(backgroundUrl && {
           backgroundImage: `linear-gradient(var(--store-veil), var(--store-veil)), url("${backgroundUrl}")`,
           backgroundPosition: "center top",
           backgroundSize: "cover",
         }),
       }}
-      className={cn("@container [--store-veil:color-mix(in_srgb,var(--s-bg)_82%,transparent)] bg-store-bg text-store-ink antialiased", getTheme(theme).dark && "[color-scheme:dark]", className)}
+      className={cn("@container bg-store-bg text-store-ink antialiased", dark && "[color-scheme:dark]", className)}
     >
       {children}
+    </div>
+  );
+}
+
+export function AnnouncementBar({ text }: { text?: string }) {
+  if (!text?.trim()) return null;
+  return (
+    <div className="bg-store-accent px-4 py-2 text-center text-xs font-medium text-store-accent-ink sm:text-sm">
+      {text.trim()}
     </div>
   );
 }
@@ -83,18 +95,30 @@ export function SocialLinks({ shop, className }: { shop: Pick<Shop, "instagram" 
   );
 }
 
-export function ShopHero({ shop, bookable }: { shop: Pick<Shop, "name" | "description" | "logoUrl" | "instagram" | "tiktok" | "whatsapp">; bookable: boolean }) {
+export function ShopHero({ shop, bookable }: { shop: Pick<Shop, "name" | "description" | "logoUrl" | "instagram" | "tiktok" | "whatsapp" | "style">; bookable: boolean }) {
   const { t } = useI18n();
+  const layout = shop.style?.heroLayout || "left";
+  const centered = layout === "center";
+  const compact = layout === "compact";
   return (
-    <section className="grid gap-5 pt-8 pb-8 @3xl:pt-14 @3xl:pb-12">
-      <ShopAvatar logoUrl={shop.logoUrl} name={shop.name || t("store.yourShop")} className="size-16 text-2xl @3xl:size-20 @3xl:text-3xl" />
-      <div className="grid gap-3">
-        <h1 className="font-store text-[clamp(2.4rem,9cqw,5.25rem)] leading-[1.02] font-medium tracking-[-0.035em] break-words">
-          {shop.name || t("store.yourShop")}
-        </h1>
-        {shop.description && <p className="max-w-2xl text-lg text-store-muted @3xl:text-xl">{shop.description}</p>}
+    <section className={cn(
+      "grid gap-5",
+      compact ? "py-6 @3xl:py-8" : "pt-8 pb-8 @3xl:pt-14 @3xl:pb-12",
+      centered && "justify-items-center text-center",
+    )}>
+      <div className={cn("flex items-center gap-4", centered && "flex-col", !compact && "flex-col items-start", centered && "items-center")}>
+        <ShopAvatar logoUrl={shop.logoUrl} name={shop.name || t("store.yourShop")} className={compact ? "size-14 text-xl" : "size-16 text-2xl @3xl:size-20 @3xl:text-3xl"} />
+        <div className={cn("grid gap-2", !compact && "gap-3")}>
+          <h1 className={cn(
+            "font-store leading-[1.02] font-medium tracking-[-0.035em] break-words",
+            compact ? "text-[clamp(1.75rem,5cqw,3rem)]" : "text-[clamp(2.4rem,9cqw,5.25rem)]",
+          )}>
+            {shop.name || t("store.yourShop")}
+          </h1>
+          {shop.description && <p className={cn("max-w-2xl text-store-muted", compact ? "text-base" : "text-lg @3xl:text-xl")}>{shop.description}</p>}
+        </div>
       </div>
-      <div className="flex flex-wrap items-center gap-2">
+      <div className={cn("flex flex-wrap items-center gap-2", centered && "justify-center")}>
         {bookable && (
           <span className="inline-flex h-9 items-center gap-2 rounded-full bg-store-soft px-3.5 text-sm font-medium">
             <CalendarCheck className="size-4" /> {t("store.onlineBookings")}
@@ -125,12 +149,35 @@ export function productPrice(product: Product, locale: Locale = "es") {
   return (hasSurcharges(product) ? (locale === "en" ? "From " : "Desde ") : "") + price(product.priceCents, locale);
 }
 
-export function ProductCard({ product }: { product: Product }) {
+export function ProductCard({ product, style }: { product: Product; style?: ShopStyle }) {
   const { locale, t } = useI18n();
   const service = product.kind === "service";
+  const radius = cardRadiusClass(style?.radius);
+  const aspect = cardAspectClass(style?.cardAspect);
+  if (style?.catalogLayout === "list") {
+    return (
+      <article className={cn("group flex items-center gap-4 border border-store-rule bg-store-surface/70 p-3 transition hover:border-store-ink", radius)}>
+        <div className={cn("relative size-20 shrink-0 overflow-hidden bg-store-soft sm:size-24", radius)}>
+          <ProductImage product={product} className="transition duration-500 group-hover:scale-[1.04]" />
+        </div>
+        <div className="grid min-w-0 flex-1 gap-1">
+          <div className="flex flex-wrap items-center gap-2">
+            <h3 className="truncate leading-snug font-semibold group-hover:underline group-hover:underline-offset-4">{product.name}</h3>
+            {service && (
+              <span className="inline-flex items-center gap-1 rounded-full bg-store-soft px-2 py-0.5 text-xs font-medium text-store-ink">
+                <Clock className="size-3" /> {product.durationMinutes} min
+              </span>
+            )}
+          </div>
+          {product.description && <p className="line-clamp-2 text-sm text-store-muted">{product.description}</p>}
+          <p className={cn("text-sm", product.available ? "font-mono font-medium" : "text-store-muted")}>{productPrice(product, locale)}</p>
+        </div>
+      </article>
+    );
+  }
   return (
     <article className="group grid gap-3">
-      <div className="relative aspect-[4/5] overflow-hidden rounded-2xl bg-store-soft">
+      <div className={cn("relative overflow-hidden bg-store-soft", aspect, radius)}>
         <ProductImage product={product} className="transition duration-500 group-hover:scale-[1.03]" />
         {service && (
           <span className="absolute top-3 left-3 inline-flex items-center gap-1 rounded-full bg-store-surface/90 px-2.5 py-1 text-xs font-medium text-store-ink backdrop-blur">

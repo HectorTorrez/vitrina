@@ -59,14 +59,31 @@ type dayHours struct {
 	Open  string `json:"open"`
 	Close string `json:"close"`
 }
+
+// shopStyle holds optional visual overrides applied on top of the selected theme.
+type shopStyle struct {
+	Font          string `json:"font,omitempty"`
+	BgColor       string `json:"bgColor,omitempty"`
+	SurfaceColor  string `json:"surfaceColor,omitempty"`
+	InkColor      string `json:"inkColor,omitempty"`
+	Radius        string `json:"radius,omitempty"`
+	ButtonStyle   string `json:"buttonStyle,omitempty"`
+	HeroLayout    string `json:"heroLayout,omitempty"`
+	CatalogLayout string `json:"catalogLayout,omitempty"`
+	CardAspect    string `json:"cardAspect,omitempty"`
+	VeilOpacity   int    `json:"veilOpacity,omitempty"`
+	Announcement  string `json:"announcement,omitempty"`
+}
+
 type shop struct {
-	Slug          string `json:"slug" gorm:"primaryKey"`
-	Name          string `json:"name"`
-	Description   string `json:"description"`
-	Theme         string `json:"theme"`
-	AccentColor   string `json:"accentColor"`
-	Locale        string `json:"locale" gorm:"not null;default:''"`
-	LogoURL       string `json:"logoUrl"`
+	Slug          string    `json:"slug" gorm:"primaryKey"`
+	Name          string    `json:"name"`
+	Description   string    `json:"description"`
+	Theme         string    `json:"theme"`
+	AccentColor   string    `json:"accentColor"`
+	Locale        string    `json:"locale" gorm:"not null;default:''"`
+	Style         shopStyle `json:"style" gorm:"serializer:json;type:jsonb;not null;default:'{}'"`
+	LogoURL       string    `json:"logoUrl"`
 	BackgroundURL string `json:"backgroundUrl"`
 	Instagram     string `json:"instagram"`
 	TikTok        string `json:"tiktok" gorm:"column:tiktok"`

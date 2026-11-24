@@ -20,6 +20,20 @@ export interface Product {
   hidden: boolean;
   options: { name: string; values: string[]; prices?: number[] }[];
 }
+export interface ShopStyle {
+  font?: "" | "fraunces" | "bricolage" | "playfair" | "dm-sans" | "space-grotesk";
+  bgColor?: string;
+  surfaceColor?: string;
+  inkColor?: string;
+  radius?: "" | "sharp" | "soft" | "pill";
+  buttonStyle?: "" | "solid" | "outline" | "soft";
+  heroLayout?: "" | "left" | "center" | "compact";
+  catalogLayout?: "" | "grid" | "list";
+  cardAspect?: "" | "4/5" | "1/1" | "4/3";
+  veilOpacity?: number;
+  announcement?: string;
+}
+
 export interface Shop {
   slug: string;
   name: string;
@@ -27,6 +41,7 @@ export interface Shop {
   theme: string;
   accentColor?: string;
   locale?: "" | "es" | "en";
+  style?: ShopStyle;
   logoUrl?: string;
   backgroundUrl?: string;
   instagram: string;

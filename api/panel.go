@@ -127,7 +127,7 @@ func changePanel(db *gorm.DB, account seller, input panelInput) error {
 			return err
 		}
 		return db.Model(&shop{}).Where("slug = ?", input.ShopSlug).
-			Select("name", "description", "theme", "accent_color", "locale", "logo_url", "background_url", "instagram", "tiktok", "whatsapp", "hours").Updates(&profile).Error
+			Select("name", "description", "theme", "accent_color", "locale", "style", "logo_url", "background_url", "instagram", "tiktok", "whatsapp", "hours").Updates(&profile).Error
 	case "crear-item", "editar-item":
 		return savePanelItem(db, input.ShopSlug, input.Item, input.Action == "crear-item")
 	case "eliminar-item":
@@ -167,15 +167,74 @@ func createPanelShop(db *gorm.DB, input panelInput) error {
 // Keep in sync with the themes in web/src/themes.ts.
 var themes = []string{"costa", "arena", "noche", "lienzo", "rosa", "sol", "cielo", "lavanda", "bosque"}
 
-var accentPattern = regexp.MustCompile(`^#[0-9a-f]{6}$`)
+var (
+	accentPattern       = regexp.MustCompile(`^#[0-9a-f]{6}$`)
+	validStyleFonts     = []string{"", "fraunces", "bricolage", "playfair", "dm-sans", "space-grotesk"}
+	validStyleRadii     = []string{"", "sharp", "soft", "pill"}
+	validStyleButtons   = []string{"", "solid", "outline", "soft"}
+	validStyleHeroes    = []string{"", "left", "center", "compact"}
+	validStyleCatalogs  = []string{"", "grid", "list"}
+	validStyleAspects   = []string{"", "4/5", "1/1", "4/3"}
+)
+
+func validatedStyle(input shopStyle) (shopStyle, error) {
+	style := shopStyle{
+		Font:          strings.TrimSpace(input.Font),
+		BgColor:       strings.ToLower(strings.TrimSpace(input.BgColor)),
+		SurfaceColor:  strings.ToLower(strings.TrimSpace(input.SurfaceColor)),
+		InkColor:      strings.ToLower(strings.TrimSpace(input.InkColor)),
+		Radius:        strings.TrimSpace(input.Radius),
+		ButtonStyle:   strings.TrimSpace(input.ButtonStyle),
+		HeroLayout:    strings.TrimSpace(input.HeroLayout),
+		CatalogLayout: strings.TrimSpace(input.CatalogLayout),
+		CardAspect:    strings.TrimSpace(input.CardAspect),
+		VeilOpacity:   input.VeilOpacity,
+		Announcement:  strings.TrimSpace(input.Announcement),
+	}
+	if !slices.Contains(validStyleFonts, style.Font) {
+		return shopStyle{}, validationError("Elegí una tipografía válida")
+	}
+	for _, color := range []string{style.BgColor, style.SurfaceColor, style.InkColor} {
+		if color != "" && !accentPattern.MatchString(color) {
+			return shopStyle{}, validationError("Elegí colores en formato hexadecimal válido")
+		}
+	}
+	if !slices.Contains(validStyleRadii, style.Radius) {
+		return shopStyle{}, validationError("Elegí un estilo de bordes válido")
+	}
+	if !slices.Contains(validStyleButtons, style.ButtonStyle) {
+		return shopStyle{}, validationError("Elegí un estilo de botones válido")
+	}
+	if !slices.Contains(validStyleHeroes, style.HeroLayout) {
+		return shopStyle{}, validationError("Elegí un diseño de portada válido")
+	}
+	if !slices.Contains(validStyleCatalogs, style.CatalogLayout) {
+		return shopStyle{}, validationError("Elegí un diseño de catálogo válido")
+	}
+	if !slices.Contains(validStyleAspects, style.CardAspect) {
+		return shopStyle{}, validationError("Elegí una proporción de imagen válida")
+	}
+	if style.VeilOpacity != 0 && (style.VeilOpacity < 40 || style.VeilOpacity > 95) {
+		return shopStyle{}, validationError("La opacidad del fondo debe estar entre 40 y 95")
+	}
+	if utf8.RuneCountInString(style.Announcement) > 140 {
+		return shopStyle{}, validationError("El anuncio puede tener hasta 140 caracteres")
+	}
+	return style, nil
+}
 
 func validatedProfile(input shop) (shop, error) {
+	style, err := validatedStyle(input.Style)
+	if err != nil {
+		return shop{}, err
+	}
 	profile := shop{
 		Name:          strings.TrimSpace(input.Name),
 		Description:   strings.TrimSpace(input.Description),
 		Theme:         input.Theme,
 		AccentColor:   strings.ToLower(input.AccentColor),
 		Locale:        strings.ToLower(strings.TrimSpace(input.Locale)),
+		Style:         style,
 		LogoURL:       input.LogoURL,
 		BackgroundURL: input.BackgroundURL,
 		Instagram:     strings.TrimPrefix(strings.TrimSpace(input.Instagram), "@"),

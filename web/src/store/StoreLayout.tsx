@@ -2,12 +2,15 @@ import type { ReactNode } from "react";
 import { Link } from "@tanstack/react-router";
 import type { Shop } from "../catalog";
 import { LanguageSwitcher, useI18n } from "../i18n";
-import { StoreBrand, StoreFrame, StoreHeader, WhatsAppIcon } from "./StoreParts";
+import { buttonRadiusClass, primaryButtonClass } from "../themes";
+import { cn } from "@/lib/utils";
+import { AnnouncementBar, StoreBrand, StoreFrame, StoreHeader, WhatsAppIcon } from "./StoreParts";
 
 export function StoreLayout({ shop, slug, children }: { shop: Shop; slug: string; children: ReactNode }) {
   const { t } = useI18n();
   return (
-    <StoreFrame theme={shop.theme} accentColor={shop.accentColor} backgroundUrl={shop.backgroundUrl} className="flex min-h-svh flex-col">
+    <StoreFrame theme={shop.theme} accentColor={shop.accentColor} backgroundUrl={shop.backgroundUrl} style={shop.style} className="flex min-h-svh flex-col">
+      <AnnouncementBar text={shop.style?.announcement} />
       <StoreHeader brand={
         <Link to="/tienda/$shop" params={{ shop: slug }} className="flex min-w-0 items-center gap-3">
           <StoreBrand logoUrl={shop.logoUrl} name={shop.name} />
@@ -18,7 +21,11 @@ export function StoreLayout({ shop, slug, children }: { shop: Shop; slug: string
           {shop.whatsapp && (
             <a
               href={"https://wa.me/" + shop.whatsapp} target="_blank" rel="noreferrer"
-              className="inline-flex h-9 items-center gap-2 rounded-full bg-store-accent px-3.5 text-sm font-medium text-store-accent-ink transition hover:opacity-90"
+              className={cn(
+                "inline-flex h-9 items-center gap-2 px-3.5 text-sm font-medium transition",
+                buttonRadiusClass(shop.style?.radius),
+                primaryButtonClass(shop.style?.buttonStyle),
+              )}
             >
               <WhatsAppIcon className="size-4" /> <span className="hidden @sm:inline">{t("store.writeUs")}</span>
             </a>

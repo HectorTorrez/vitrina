@@ -1,4 +1,5 @@
 import type { CSSProperties } from "react";
+import type { ShopStyle } from "./catalog";
 
 export interface StoreTheme {
   value: string;
@@ -71,27 +72,82 @@ export function getTheme(value: string | undefined) {
   return themes.find((theme) => theme.value === value) ?? themes[0];
 }
 
-function contrastingText(hex: string) {
+export const fontChoices: { value: NonNullable<ShopStyle["font"]>; label: string; family: string }[] = [
+  { value: "", label: "Default", family: "" },
+  { value: "fraunces", label: "Fraunces", family: '"Fraunces", Georgia, serif' },
+  { value: "bricolage", label: "Bricolage", family: '"Bricolage Grotesque", Inter, system-ui, sans-serif' },
+  { value: "playfair", label: "Playfair", family: '"Playfair Display", Georgia, serif' },
+  { value: "dm-sans", label: "DM Sans", family: '"DM Sans", Inter, system-ui, sans-serif' },
+  { value: "space-grotesk", label: "Space Grotesk", family: '"Space Grotesk", Inter, system-ui, sans-serif' },
+];
+
+export function relativeLuminance(hex: string) {
   const linear = (start: number) => {
     const channel = parseInt(hex.slice(start, start + 2), 16) / 255;
     return channel <= 0.04045 ? channel / 12.92 : ((channel + 0.055) / 1.055) ** 2.4;
   };
-  const luminance = 0.2126 * linear(1) + 0.7152 * linear(3) + 0.0722 * linear(5);
+  return 0.2126 * linear(1) + 0.7152 * linear(3) + 0.0722 * linear(5);
+}
+
+export function contrastRatio(hexA: string, hexB: string) {
+  if (!/^#[0-9a-f]{6}$/i.test(hexA) || !/^#[0-9a-f]{6}$/i.test(hexB)) return 21;
+  const l1 = relativeLuminance(hexA);
+  const l2 = relativeLuminance(hexB);
+  return (Math.max(l1, l2) + 0.05) / (Math.min(l1, l2) + 0.05);
+}
+
+function contrastingText(hex: string) {
+  const luminance = relativeLuminance(hex);
   return (luminance + 0.05) / 0.05 >= 1.05 / (luminance + 0.05) ? "#000000" : "#ffffff";
 }
 
+export function isDarkColor(hex: string) {
+  return /^#[0-9a-f]{6}$/i.test(hex) && relativeLuminance(hex) < 0.18;
+}
+
 /** CSS variables consumed by the `store-*` Tailwind colors and `font-store`. */
-export function themeStyle(value: string | undefined, accentColor?: string): CSSProperties {
+export function themeStyle(value: string | undefined, accentColor?: string, style?: ShopStyle): CSSProperties {
   const { colors, display } = getTheme(value);
+  const bg = style?.bgColor || colors.bg;
+  const surface = style?.surfaceColor || colors.surface;
+  const ink = style?.inkColor || colors.ink;
+  const accent = accentColor || colors.accent;
+  const fontChoice = style?.font ? fontChoices.find((f) => f.value === style.font)?.family : undefined;
+  const veil = style?.veilOpacity ? `${style.veilOpacity}%` : "82%";
   return {
-    "--s-bg": colors.bg,
-    "--s-surface": colors.surface,
-    "--s-ink": colors.ink,
-    "--s-muted": colors.muted,
-    "--s-rule": colors.rule,
-    "--s-accent": accentColor || colors.accent,
+    "--s-bg": bg,
+    "--s-surface": surface,
+    "--s-ink": ink,
+    "--s-muted": style?.inkColor ? `color-mix(in srgb, ${ink} 65%, ${bg})` : colors.muted,
+    "--s-rule": style?.bgColor || style?.inkColor ? `color-mix(in srgb, ${ink} 18%, ${bg})` : colors.rule,
+    "--s-accent": accent,
     "--s-accent-ink": accentColor ? contrastingText(accentColor) : colors.accentInk,
-    "--s-soft": colors.soft,
-    "--s-display": display === "serif" ? '"Fraunces", Georgia, serif' : '"Bricolage Grotesque", Inter, system-ui, sans-serif',
+    "--s-soft": style?.bgColor || style?.inkColor ? `color-mix(in srgb, ${ink} 9%, ${bg})` : colors.soft,
+    "--s-display": fontChoice || (display === "serif" ? '"Fraunces", Georgia, serif' : '"Bricolage Grotesque", Inter, system-ui, sans-serif'),
+    "--store-veil": `color-mix(in srgb, ${bg} ${veil}, transparent)`,
   } as CSSProperties;
+}
+
+export function cardRadiusClass(radius?: ShopStyle["radius"]) {
+  if (radius === "sharp") return "rounded-md";
+  if (radius === "pill") return "rounded-3xl";
+  return "rounded-2xl";
+}
+
+export function buttonRadiusClass(radius?: ShopStyle["radius"]) {
+  if (radius === "sharp") return "rounded-md";
+  if (radius === "soft") return "rounded-xl";
+  return "rounded-full";
+}
+
+export function cardAspectClass(aspect?: ShopStyle["cardAspect"]) {
+  if (aspect === "1/1") return "aspect-square";
+  if (aspect === "4/3") return "aspect-[4/3]";
+  return "aspect-[4/5]";
+}
+
+export function primaryButtonClass(buttonStyle?: ShopStyle["buttonStyle"]) {
+  if (buttonStyle === "outline") return "border-2 border-store-accent text-store-ink hover:bg-store-accent hover:text-store-accent-ink";
+  if (buttonStyle === "soft") return "bg-store-soft text-store-ink hover:bg-store-accent hover:text-store-accent-ink";
+  return "bg-store-accent text-store-accent-ink hover:opacity-90";
 }
