@@ -1,5 +1,6 @@
-import { createFileRoute, Link, redirect } from "@tanstack/react-router";
-import { createContext, useContext, useEffect, useState, type ReactElement } from "react";
+import { createFileRoute, Link, redirect, useRouter } from "@tanstack/react-router";
+import { useQueryClient } from "@tanstack/react-query";
+import { createContext, useContext, useEffect, useRef, useState, type ReactElement } from "react";
 import { Tooltip } from "radix-ui";
 import QRCode from "qrcode";
 import {
@@ -13,8 +14,9 @@ import { SectionHead } from "../PanelForm";
 import { PanelOrders } from "../PanelOrders";
 import { CreateShopWizard, ProfileEditor } from "../PanelProfile";
 import { formatLocal, shopToday } from "../booking";
-import { acceptsBookings, price } from "../catalog";
+import { acceptsBookings, price, shopQuery } from "../catalog";
 import { LanguageSwitcher, useI18n } from "../i18n";
+import { usePanelRealtime } from "../realtime";
 import { useCopied } from "@/lib/useCopied";
 import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger } from "@/components/ui/select";
@@ -61,11 +63,25 @@ function SidebarTip({ label, children }: { label: string; children: ReactElement
 
 function Panel() {
   const { panel } = Route.useRouteContext();
+  const router = useRouter();
+  const queryClient = useQueryClient();
   const search = Route.useSearch();
   const navigate = Route.useNavigate();
   const { locale, t } = useI18n();
   const [menuOpen, setMenuOpen] = useState(false);
   const [collapsed, setCollapsed] = useState(false);
+
+  const invalidateTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  useEffect(() => () => {
+    if (invalidateTimer.current) clearTimeout(invalidateTimer.current);
+  }, []);
+  usePanelRealtime((event) => {
+    void queryClient.invalidateQueries({ queryKey: shopQuery(event.shop).queryKey });
+    if (invalidateTimer.current) clearTimeout(invalidateTimer.current);
+    invalidateTimer.current = setTimeout(() => {
+      void router.invalidate();
+    }, 150);
+  });
   const shop = panel.shops.find((s) => s.slug === search.tienda) ?? panel.shops[0];
   const section: Section = search.seccion === "alta" && panel.operator ? "alta"
     : shop && search.seccion && search.seccion !== "alta" ? search.seccion

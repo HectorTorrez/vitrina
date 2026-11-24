@@ -1,9 +1,11 @@
 import { useEffect, useMemo, useState, type FormEvent } from "react";
 import { Link } from "@tanstack/react-router";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { CalendarCheck, CalendarDays, CalendarPlus, Check, Copy, Download, ExternalLink, Loader2, UserRound } from "lucide-react";
 import { buildIcsContent, createBooking, formatLocal, getMonthShort, getSlots, getWeekdayShort, googleCalendarUrl, shopToday } from "./booking";
 import type { Product, StaffMember } from "./catalog";
 import { useI18n, type Locale } from "./i18n";
+import { useShopRealtime } from "./realtime";
 import { DatePicker } from "@/components/ui/date-picker";
 import { cn } from "@/lib/utils";
 import { useCopied } from "@/lib/useCopied";
@@ -50,11 +52,9 @@ export function PublicBooking({
     [staff, service.slug],
   );
 
+  const queryClient = useQueryClient();
   const [staffId, setStaffId] = useState("");
   const [date, setDate] = useState(() => shopToday(0, timeZone));
-  const [slots, setSlots] = useState<string[] | null>(null);
-  const [loadingSlots, setLoadingSlots] = useState(true);
-  const [slotError, setSlotError] = useState("");
   const [time, setTime] = useState("");
   const [pending, setPending] = useState(false);
   const [error, setError] = useState("");
@@ -72,21 +72,33 @@ export function PublicBooking({
     }
   }, [eligibleStaff, staffId]);
 
+  const slotsQueryKey = ["slots", shop, service.slug, date, staffId || ""] as const;
+  const slotsQuery = useQuery({
+    queryKey: slotsQueryKey,
+    queryFn: () => getSlots({ data: { shop, service: service.slug, date, staff: staffId || undefined } }),
+    staleTime: 0,
+  });
+
+  const slots = slotsQuery.data?.slots ?? null;
+  const loadingSlots = slotsQuery.isPending;
+  const slotError = slotsQuery.isError ? t("booking.errLoad") : (slotsQuery.data?.error ?? "");
+
+  // Clear selected time when switching date/staff or when a live update removes the chosen slot.
   useEffect(() => {
-    let current = true;
-    setLoadingSlots(true);
     setTime("");
-    setSlotError("");
-    getSlots({ data: { shop, service: service.slug, date, staff: staffId || undefined } })
-      .then((result) => {
-        if (!current) return;
-        setSlots(result.slots);
-        setSlotError(result.error ?? "");
-      })
-      .catch(() => current && setSlotError(t("booking.errLoad")))
-      .finally(() => current && setLoadingSlots(false));
-    return () => { current = false; };
   }, [shop, service.slug, date, staffId]);
+
+  useEffect(() => {
+    if (time && slots && !slots.includes(time)) {
+      setTime("");
+    }
+  }, [slots, time]);
+
+  useShopRealtime(shop, (event) => {
+    if (event.topics.includes("bookings") || event.topics.includes("shop")) {
+      void queryClient.invalidateQueries({ queryKey: ["slots", shop] });
+    }
+  });
 
   const nameError = customer.trim().length < 2 ? t("booking.nameError") : null;
   const phoneError = phone.replace(/\D/g, "").length < 8 ? t("booking.phoneError") : null;
@@ -126,8 +138,11 @@ export function PublicBooking({
         });
       } else {
         setError(result.error);
-        const fresh = await getSlots({ data: { shop, service: service.slug, date, staff: staffId || undefined } });
-        setSlots(fresh.slots);
+        const fresh = await queryClient.fetchQuery({
+          queryKey: slotsQueryKey,
+          queryFn: () => getSlots({ data: { shop, service: service.slug, date, staff: staffId || undefined } }),
+          staleTime: 0,
+        });
         if (!fresh.slots.includes(time)) setTime("");
       }
     } catch {

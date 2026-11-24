@@ -1,10 +1,11 @@
 import { useEffect, useMemo, useState } from "react";
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { Search, X } from "lucide-react";
 import { trackEvent } from "../analytics";
 import { acceptsBookings, shopQuery, productImage, type Product } from "../catalog";
 import { useI18n } from "../i18n";
+import { useShopRealtime } from "../realtime";
 import { htmlLang, pageHead, resolveShopLocale, shopLocalBusinessSchema } from "../seo";
 import { foldAccents } from "../slug";
 import { StoreLayout } from "../store/StoreLayout";
@@ -64,7 +65,13 @@ const normalize = (text: string) => foldAccents(text).toLowerCase();
 
 function Catalog() {
   const { shop } = Route.useParams();
+  const queryClient = useQueryClient();
   const { data } = useQuery({ ...shopQuery(shop), initialData: Route.useLoaderData() });
+  useShopRealtime(shop, (event) => {
+    if (event.topics.includes("shop")) {
+      void queryClient.invalidateQueries({ queryKey: shopQuery(shop).queryKey });
+    }
+  });
   const { t } = useI18n();
   const [filter, setFilter] = useState<Filter>("all");
   const [category, setCategory] = useState<string>("all");

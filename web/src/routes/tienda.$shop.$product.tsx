@@ -1,10 +1,11 @@
 import { useEffect, useState, type ReactNode } from "react";
 import { createFileRoute, Link, notFound } from "@tanstack/react-router";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { ArrowLeft, Check, ChevronLeft, ChevronRight, Clock, Share2, ShoppingBag } from "lucide-react";
 import { trackEvent } from "../analytics";
 import { acceptsBookings, isProductAvailable, shopQuery, price, productImage, productImages, totalPrice, type Product } from "../catalog";
 import { useI18n } from "../i18n";
+import { useShopRealtime } from "../realtime";
 import { htmlLang, pageHead, resolveShopLocale, shopLocalBusinessSchema } from "../seo";
 import { PublicBooking } from "../PublicBooking";
 import { useCart } from "../store/CartContext";
@@ -90,7 +91,13 @@ export const Route = createFileRoute("/tienda/$shop/$product")({
 
 function Details() {
   const params = Route.useParams();
+  const queryClient = useQueryClient();
   const { data } = useQuery({ ...shopQuery(params.shop), initialData: Route.useLoaderData() });
+  useShopRealtime(params.shop, (event) => {
+    if (event.topics.includes("shop")) {
+      void queryClient.invalidateQueries({ queryKey: shopQuery(params.shop).queryKey });
+    }
+  });
   const { t } = useI18n();
   const p = data.products.find((item) => item.slug === params.product);
   if (!p) throw notFound();
