@@ -128,7 +128,7 @@ export function PublicBooking({ shop, shopName, timeZone, service }: { shop: str
         <label className="relative inline-flex h-9 cursor-pointer items-center gap-1.5 rounded-full border border-store-rule px-3 text-sm font-medium hover:border-store-ink">
           <CalendarDays className="size-4" /> {t("booking.otherDate")}
           <input
-            type="date" value={date} min={shopToday()} max={shopToday(60)} aria-label={t("booking.otherDate")}
+            type="date" value={date} min={shopToday(0, timeZone)} max={shopToday(60, timeZone)} aria-label={t("booking.otherDate")}
             className="absolute inset-0 cursor-pointer opacity-0"
             onChange={(event) => event.target.value && setDate(event.target.value)}
           />
@@ -147,7 +147,7 @@ export function PublicBooking({ shop, shopName, timeZone, service }: { shop: str
                 active ? "border-store-accent bg-store-accent text-store-accent-ink" : "border-store-rule hover:border-store-ink",
               )}
             >
-              <span className="text-xs capitalize opacity-75">{day === shopToday() ? t("booking.today") : weekday}</span>
+              <span className="text-xs capitalize opacity-75">{day === shopToday(0, timeZone) ? t("booking.today") : weekday}</span>
               <span className="text-xl leading-none font-semibold">{number}</span>
               <span className="text-xs opacity-75">{month}</span>
             </button>

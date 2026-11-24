@@ -132,3 +132,37 @@ func TestPublicBooking(t *testing.T) {
 		t.Fatalf("slots after bookings: %v", got)
 	}
 }
+
+func TestBookingEmailContentUsesShopTimezone(t *testing.T) {
+	ny, err := time.LoadLocation("America/New_York")
+	if err != nil {
+		t.Fatal(err)
+	}
+	start := time.Date(2027, 6, 15, 14, 30, 0, 0, ny) // 14:30 EDT = 12:30 El Salvador
+	b := reservation{
+		ShopSlug: "ny-studio",
+		Customer: "Alex",
+		Phone:    "15550100000",
+		StartsAt: start,
+		EndsAt:   start.Add(45 * time.Minute),
+	}
+	svc := product{Name: "Haircut"}
+	s := shop{Slug: "ny-studio", Timezone: "America/New_York", Locale: "en"}
+
+	subject, body := bookingEmailContent(b, svc, s, "https://vitrina.example/panel", "es")
+	if !strings.Contains(subject, "15/06/2027 14:30") {
+		t.Fatalf("expected NY local time in subject, got %q", subject)
+	}
+	if !strings.Contains(body, "Date: 15/06/2027 14:30 (America/New_York)") {
+		t.Fatalf("expected NY timezone in body, got %q", body)
+	}
+
+	s.Locale = "es"
+	subjectEs, bodyEs := bookingEmailContent(b, svc, s, "https://vitrina.example/panel", "en")
+	if !strings.Contains(subjectEs, "Nueva cita: Haircut · 15/06/2027 14:30") {
+		t.Fatalf("expected Spanish subject with NY time, got %q", subjectEs)
+	}
+	if !strings.Contains(bodyEs, "Fecha: 15/06/2027 14:30 (America/New_York)") {
+		t.Fatalf("expected Spanish body with NY timezone, got %q", bodyEs)
+	}
+}

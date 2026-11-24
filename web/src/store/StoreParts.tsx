@@ -71,13 +71,13 @@ export function WhatsAppIcon(props: { className?: string }) {
   );
 }
 
-export function SocialLinks({ shop, className }: { shop: Pick<Shop, "instagram" | "tiktok" | "facebook" | "website" | "address" | "mapUrl" | "whatsapp">; className?: string }) {
+export function SocialLinks({ shop, className, onWhatsAppClick }: { shop: Pick<Shop, "instagram" | "tiktok" | "facebook" | "website" | "address" | "mapUrl" | "whatsapp">; className?: string; onWhatsAppClick?: () => void }) {
   const chip = "inline-flex h-9 items-center gap-2 rounded-full border border-store-rule bg-store-surface/60 px-3.5 text-sm font-medium transition hover:border-store-ink";
   if (!shop.instagram && !shop.tiktok && !shop.facebook && !shop.website && !shop.address && !shop.mapUrl && !shop.whatsapp) return null;
   return (
     <nav aria-label="Links" className={cn("flex flex-wrap gap-2", className)}>
       {shop.whatsapp && (
-        <a className={chip} href={"https://wa.me/" + shop.whatsapp} target="_blank" rel="noreferrer">
+        <a className={chip} onClick={onWhatsAppClick} href={"https://wa.me/" + shop.whatsapp} target="_blank" rel="noreferrer">
           <WhatsAppIcon className="size-4" /> WhatsApp
         </a>
       )}
@@ -116,7 +116,7 @@ export function SocialLinks({ shop, className }: { shop: Pick<Shop, "instagram" 
   );
 }
 
-export function ShopHero({ shop, bookable }: { shop: Pick<Shop, "name" | "description" | "logoUrl" | "instagram" | "tiktok" | "facebook" | "website" | "address" | "mapUrl" | "whatsapp" | "style">; bookable: boolean }) {
+export function ShopHero({ shop, bookable, onWhatsAppClick }: { shop: Pick<Shop, "name" | "description" | "logoUrl" | "instagram" | "tiktok" | "facebook" | "website" | "address" | "mapUrl" | "whatsapp" | "style">; bookable: boolean; onWhatsAppClick?: () => void }) {
   const { t } = useI18n();
   const layout = shop.style?.heroLayout || "left";
   const centered = layout === "center";
@@ -145,7 +145,7 @@ export function ShopHero({ shop, bookable }: { shop: Pick<Shop, "name" | "descri
             <CalendarCheck className="size-4" /> {t("store.onlineBookings")}
           </span>
         )}
-        <SocialLinks shop={shop} />
+        <SocialLinks shop={shop} onWhatsAppClick={onWhatsAppClick} />
       </div>
     </section>
   );

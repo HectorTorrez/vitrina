@@ -1,5 +1,6 @@
 import { createContext, useContext, useEffect, useMemo, useState, type ReactNode } from "react";
 import { Minus, Plus, ShoppingBag, Trash2 } from "lucide-react";
+import { trackEvent } from "../analytics";
 import { price, productImage, totalPrice, type Product, type Shop } from "../catalog";
 import { useI18n } from "../i18n";
 import { buttonRadiusClass, primaryButtonClass } from "../themes";
@@ -111,7 +112,7 @@ export function CartProvider({ shop, slug, children }: { shop: Shop; slug: strin
   return (
     <CartContext.Provider value={value}>
       {children}
-      <CartDrawer shop={shop} />
+      <CartDrawer shop={shop} slug={slug} />
     </CartContext.Provider>
   );
 }
@@ -140,7 +141,7 @@ export function CartTriggerButton({ style }: { style?: Shop["style"] }) {
   );
 }
 
-function CartDrawer({ shop }: { shop: Shop }) {
+function CartDrawer({ shop, slug }: { shop: Shop; slug: string }) {
   const cart = useCart();
   const { locale } = useI18n();
   const en = locale === "en";
@@ -239,6 +240,7 @@ function CartDrawer({ shop }: { shop: Shop }) {
             </div>
             {shop.whatsapp ? (
               <a
+                onClick={() => trackEvent(slug, "whatsapp_click")}
                 href={"https://wa.me/" + shop.whatsapp + "?text=" + encodeURIComponent(message)}
                 target="_blank" rel="noreferrer"
                 className={cn(

@@ -1,5 +1,6 @@
 import type { ReactNode } from "react";
 import { Link } from "@tanstack/react-router";
+import { trackEvent } from "../analytics";
 import type { Shop } from "../catalog";
 import { LanguageSwitcher, useI18n } from "../i18n";
 import { buttonRadiusClass, primaryButtonClass } from "../themes";
@@ -23,6 +24,7 @@ export function StoreLayout({ shop, slug, children }: { shop: Shop; slug: string
             <CartTriggerButton style={shop.style} />
             {shop.whatsapp && (
               <a
+                onClick={() => trackEvent(slug, "whatsapp_click")}
                 href={"https://wa.me/" + shop.whatsapp} target="_blank" rel="noreferrer"
                 className={cn(
                   "inline-flex h-9 items-center gap-2 px-3.5 text-sm font-medium transition",
