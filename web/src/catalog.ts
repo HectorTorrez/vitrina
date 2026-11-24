@@ -47,6 +47,35 @@ export interface DeliveryConfig {
   deliveryNote?: string;
 }
 
+export interface TimeBlock {
+  open: string;
+  close: string;
+}
+
+export interface DayHours {
+  open: string;
+  close: string;
+  blocks?: TimeBlock[];
+}
+
+export interface BookingConfig {
+  bufferMinutes?: number;
+  leadTimeMinutes?: number;
+  horizonDays?: number;
+  cancelNoticeHours?: number;
+  reminderHoursBefore?: number;
+  reminder2HoursBefore?: number;
+}
+
+export interface StaffMember {
+  id: string;
+  name: string;
+  role?: string;
+  active: boolean;
+  serviceSlugs?: string[];
+  hours?: DayHours[];
+}
+
 export interface Shop {
   slug: string;
   name: string;
@@ -69,8 +98,10 @@ export interface Shop {
   mapUrl?: string;
   whatsapp: string;
   /** Seven entries, Sunday first; empty when online booking is off. */
-  hours: { open: string; close: string }[];
+  hours: DayHours[];
   blockedDates?: string[];
+  bookingConfig?: BookingConfig;
+  staff?: StaffMember[];
   products: Product[];
   /** Public origin of the site, added by the web server for absolute share links. */
   origin: string;
@@ -106,7 +137,7 @@ export const shopQuery = (slug: string) =>
   });
 
 export function acceptsBookings(shop: Pick<Shop, "hours">) {
-  return shop.hours.some((day) => day.open);
+  return shop.hours.some((day) => Boolean(day.open) || Boolean(day.blocks?.some((b) => b.open)));
 }
 
 export function isProductAvailable(product: Pick<Product, "available" | "stock">) {

@@ -10,17 +10,21 @@ import (
 type panelBooking struct {
 	ID          uint   `json:"id"`
 	ServiceSlug string `json:"serviceSlug"`
+	StaffID     string `json:"staffId,omitempty"`
+	StaffName   string `json:"staffName,omitempty"`
 	Customer    string `json:"customer"`
 	Phone       string `json:"phone"`
+	Email       string `json:"email,omitempty"`
 	Notes       string `json:"notes"`
 	Source      string `json:"source"`
+	ManageToken string `json:"manageToken,omitempty"`
 	StartsAt    string `json:"startsAt"`
 	EndsAt      string `json:"endsAt"`
 	Cancelled   bool   `json:"cancelled"`
 	Editable    bool   `json:"editable"`
 }
 
-func loadPanelBookings(db *gorm.DB, email string, zones map[string]*time.Location) (map[string][]panelBooking, error) {
+func loadPanelBookings(db *gorm.DB, email string, zones map[string]*time.Location, shopsBySlug map[string]shop) (map[string][]panelBooking, error) {
 	var bookings []reservation
 	err := db.Where("shop_slug IN (?)", db.Model(&shopMembership{}).Select("shop_slug").Where("seller_email = ?", email)).
 		Order("starts_at, id").Find(&bookings).Error
@@ -34,13 +38,21 @@ func loadPanelBookings(db *gorm.DB, email string, zones map[string]*time.Locatio
 		if loc == nil {
 			loc = shopZone
 		}
+		token := ""
+		if r.ManageToken != nil {
+			token = *r.ManageToken
+		}
 		result[r.ShopSlug] = append(result[r.ShopSlug], panelBooking{
 			ID:          r.ID,
 			ServiceSlug: r.ServiceSlug,
+			StaffID:     r.StaffID,
+			StaffName:   shopsBySlug[r.ShopSlug].staffName(r.StaffID),
 			Customer:    r.Customer,
 			Phone:       r.Phone,
+			Email:       r.Email,
 			Notes:       r.Notes,
 			Source:      r.Source,
+			ManageToken: token,
 			StartsAt:    r.StartsAt.In(loc).Format(localMinute),
 			EndsAt:      r.EndsAt.In(loc).Format(localMinute),
 			Cancelled:   r.CancelledAt != nil,
@@ -85,6 +97,6 @@ func changePanelBooking(db *gorm.DB, input panelInput) error {
 			return validationError("Indicá un teléfono válido, con código de país")
 		}
 	}
-	_, err = saveBooking(db, input.ShopSlug, booking.ServiceSlug, start, customer, phone, booking.ID)
+	_, err = saveBooking(db, input.ShopSlug, booking.ServiceSlug, start, customer, phone, booking.StaffID, booking.ID)
 	return err
 }

@@ -62,6 +62,9 @@ func main() {
 	server := http.Server{Addr: addr, Handler: noStore(mux), ReadHeaderTimeout: 5 * time.Second, ReadTimeout: 10 * time.Second, WriteTimeout: 30 * time.Second, IdleTimeout: 2 * time.Minute}
 	stop, cancel := signal.NotifyContext(context.Background(), os.Interrupt, syscall.SIGTERM)
 	defer cancel()
+	if delivery != nil {
+		go startReminderWorker(stop, db, delivery)
+	}
 	go func() {
 		<-stop.Done()
 		ctx, done := context.WithTimeout(context.Background(), 10*time.Second)

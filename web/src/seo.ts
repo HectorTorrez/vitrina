@@ -49,14 +49,17 @@ export function shopLocalBusinessSchema(shop: Shop, url: string, description: st
     socialUrl(shop.website),
   ].filter((v): v is string => Boolean(v));
 
-  const openingHoursSpecification = shop.hours
-    .map((day, idx) => day.open && day.close ? {
-      "@type": "OpeningHoursSpecification",
-      dayOfWeek: schemaDays[idx],
-      opens: day.open,
-      closes: day.close,
-    } : null)
-    .filter(Boolean);
+  const openingHoursSpecification = shop.hours.flatMap((day, idx) => {
+    const blocks = day.blocks?.length ? day.blocks : (day.open && day.close ? [{ open: day.open, close: day.close }] : []);
+    return blocks
+      .filter((b) => b.open && b.close)
+      .map((b) => ({
+        "@type": "OpeningHoursSpecification",
+        dayOfWeek: schemaDays[idx],
+        opens: b.open,
+        closes: b.close,
+      }));
+  });
 
   const phone = shop.whatsapp?.replace(/[^\d+]/g, "");
   const logo = shop.logoUrl ? new URL(shop.logoUrl, shop.origin).href : undefined;

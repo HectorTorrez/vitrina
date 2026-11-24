@@ -21,6 +21,7 @@ import { Route as RegistrarseRouteImport } from './routes/registrarse'
 import { Route as RobotsDottxtRouteImport } from './routes/robots[.]txt'
 import { Route as SitemapDotxmlRouteImport } from './routes/sitemap[.]xml'
 import { Route as SubirRouteImport } from './routes/subir'
+import { Route as CitaTokenRouteImport } from './routes/cita.$token'
 import { Route as MediaNameRouteImport } from './routes/media.$name'
 import { Route as TiendaShopIndexRouteImport } from './routes/tienda.$shop.index'
 import { Route as TiendaShopProductRouteImport } from './routes/tienda.$shop.$product'
@@ -85,6 +86,11 @@ const SubirRoute = SubirRouteImport.update({
   path: '/subir',
   getParentRoute: () => rootRouteImport,
 } as any)
+const CitaTokenRoute = CitaTokenRouteImport.update({
+  id: '/cita/$token',
+  path: '/cita/$token',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const MediaNameRoute = MediaNameRouteImport.update({
   id: '/media/$name',
   path: '/media/$name',
@@ -114,6 +120,7 @@ export interface FileRoutesByFullPath {
   '/robots.txt': typeof RobotsDottxtRoute
   '/sitemap.xml': typeof SitemapDotxmlRoute
   '/subir': typeof SubirRoute
+  '/cita/$token': typeof CitaTokenRoute
   '/media/$name': typeof MediaNameRoute
   '/tienda/$shop/$product': typeof TiendaShopProductRoute
   '/tienda/$shop/': typeof TiendaShopIndexRoute
@@ -131,6 +138,7 @@ export interface FileRoutesByTo {
   '/robots.txt': typeof RobotsDottxtRoute
   '/sitemap.xml': typeof SitemapDotxmlRoute
   '/subir': typeof SubirRoute
+  '/cita/$token': typeof CitaTokenRoute
   '/media/$name': typeof MediaNameRoute
   '/tienda/$shop/$product': typeof TiendaShopProductRoute
   '/tienda/$shop': typeof TiendaShopIndexRoute
@@ -149,6 +157,7 @@ export interface FileRoutesById {
   '/robots.txt': typeof RobotsDottxtRoute
   '/sitemap.xml': typeof SitemapDotxmlRoute
   '/subir': typeof SubirRoute
+  '/cita/$token': typeof CitaTokenRoute
   '/media/$name': typeof MediaNameRoute
   '/tienda/$shop/$product': typeof TiendaShopProductRoute
   '/tienda/$shop/': typeof TiendaShopIndexRoute
@@ -168,6 +177,7 @@ export interface FileRouteTypes {
     | '/robots.txt'
     | '/sitemap.xml'
     | '/subir'
+    | '/cita/$token'
     | '/media/$name'
     | '/tienda/$shop/$product'
     | '/tienda/$shop/'
@@ -185,6 +195,7 @@ export interface FileRouteTypes {
     | '/robots.txt'
     | '/sitemap.xml'
     | '/subir'
+    | '/cita/$token'
     | '/media/$name'
     | '/tienda/$shop/$product'
     | '/tienda/$shop'
@@ -202,6 +213,7 @@ export interface FileRouteTypes {
     | '/robots.txt'
     | '/sitemap.xml'
     | '/subir'
+    | '/cita/$token'
     | '/media/$name'
     | '/tienda/$shop/$product'
     | '/tienda/$shop/'
@@ -220,6 +232,7 @@ export interface RootRouteChildren {
   RobotsDottxtRoute: typeof RobotsDottxtRoute
   SitemapDotxmlRoute: typeof SitemapDotxmlRoute
   SubirRoute: typeof SubirRoute
+  CitaTokenRoute: typeof CitaTokenRoute
   MediaNameRoute: typeof MediaNameRoute
   TiendaShopProductRoute: typeof TiendaShopProductRoute
   TiendaShopIndexRoute: typeof TiendaShopIndexRoute
@@ -311,6 +324,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof SubirRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/cita/$token': {
+      id: '/cita/$token'
+      path: '/cita/$token'
+      fullPath: '/cita/$token'
+      preLoaderRoute: typeof CitaTokenRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/media/$name': {
       id: '/media/$name'
       path: '/media/$name'
@@ -348,6 +368,7 @@ const rootRouteChildren: RootRouteChildren = {
   RobotsDottxtRoute: RobotsDottxtRoute,
   SitemapDotxmlRoute: SitemapDotxmlRoute,
   SubirRoute: SubirRoute,
+  CitaTokenRoute: CitaTokenRoute,
   MediaNameRoute: MediaNameRoute,
   TiendaShopProductRoute: TiendaShopProductRoute,
   TiendaShopIndexRoute: TiendaShopIndexRoute,

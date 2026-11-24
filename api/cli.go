@@ -100,7 +100,7 @@ func reserveCommand(db *gorm.DB, args []string) error {
 	if err != nil {
 		return err
 	}
-	r, err := saveBooking(db, args[0], args[1], start, customer, "", 0)
+	r, err := saveBooking(db, args[0], args[1], start, customer, "", "", 0)
 	if err == nil {
 		fmt.Printf("Reserva %d confirmada hasta %s\n", r.ID, r.EndsAt.Format(time.RFC3339))
 	}

@@ -90,10 +90,12 @@ func loadPanel(db *gorm.DB, account seller) (panelAccess, error) {
 		return result, err
 	}
 	zones := make(map[string]*time.Location, len(shops))
+	shopsBySlug := make(map[string]shop, len(shops))
 	for _, s := range shops {
 		zones[s.Slug] = s.location()
+		shopsBySlug[s.Slug] = s
 	}
-	bookings, err := loadPanelBookings(db, account.Email, zones)
+	bookings, err := loadPanelBookings(db, account.Email, zones, shopsBySlug)
 	if err != nil {
 		return result, err
 	}
@@ -167,7 +169,7 @@ func changePanel(db *gorm.DB, account seller, input panelInput) error {
 			return err
 		}
 		return db.Model(&shop{}).Where("slug = ?", input.ShopSlug).
-			Select("name", "description", "theme", "accent_color", "locale", "timezone", "currency", "blocked_dates", "style", "delivery", "payment_methods", "logo_url", "background_url", "instagram", "tiktok", "facebook", "website", "address", "map_url", "whatsapp", "hours").Updates(&profile).Error
+			Select("name", "description", "theme", "accent_color", "locale", "timezone", "currency", "blocked_dates", "booking_config", "staff", "style", "delivery", "payment_methods", "logo_url", "background_url", "instagram", "tiktok", "facebook", "website", "address", "map_url", "whatsapp", "hours").Updates(&profile).Error
 	case "crear-item", "editar-item":
 		return savePanelItem(db, input.ShopSlug, input.Item, input.Action == "crear-item")
 	case "eliminar-item":
@@ -339,6 +341,16 @@ func validatedProfile(input shop) (shop, error) {
 		return shop{}, err
 	}
 	profile.Hours = hours
+	cfg, err := validatedBookingConfig(input.BookingConfig)
+	if err != nil {
+		return shop{}, err
+	}
+	profile.BookingConfig = cfg
+	staff, err := validatedStaff(input.Staff)
+	if err != nil {
+		return shop{}, err
+	}
+	profile.Staff = staff
 	if profile.Name == "" || utf8.RuneCountInString(profile.Name) > 100 || utf8.RuneCountInString(profile.Description) > 500 {
 		return shop{}, validationError("Indicá un nombre de hasta 100 caracteres y una descripción de hasta 500")
 	}
@@ -384,4 +396,85 @@ func validatedProfile(input shop) (shop, error) {
 		profile.Whatsapp = phone
 	}
 	return profile, nil
+}
+
+func validatedBookingConfig(input bookingConfig) (bookingConfig, error) {
+	cfg := input
+	if cfg.BufferMinutes < 0 || cfg.BufferMinutes > 120 {
+		return bookingConfig{}, validationError("El tiempo de descanso entre citas debe estar entre 0 y 120 minutos")
+	}
+	if cfg.LeadTimeMinutes != 0 && (cfg.LeadTimeMinutes < 15 || cfg.LeadTimeMinutes > 10080) {
+		return bookingConfig{}, validationError("La anticipación mínima debe estar entre 15 minutos y 7 días")
+	}
+	if cfg.HorizonDays != 0 && (cfg.HorizonDays < 1 || cfg.HorizonDays > 365) {
+		return bookingConfig{}, validationError("El horizonte de reserva debe estar entre 1 y 365 días")
+	}
+	if cfg.CancelNoticeHours < 0 || cfg.CancelNoticeHours > 168 {
+		return bookingConfig{}, validationError("El aviso de cancelación debe estar entre 0 y 168 horas")
+	}
+	if cfg.ReminderHoursBefore < 0 || cfg.ReminderHoursBefore > 72 {
+		return bookingConfig{}, validationError("El primer recordatorio debe estar entre 0 y 72 horas antes")
+	}
+	if cfg.Reminder2HoursBefore < 0 || cfg.Reminder2HoursBefore > 72 {
+		return bookingConfig{}, validationError("El segundo recordatorio debe estar entre 0 y 72 horas antes")
+	}
+	if cfg.Reminder2HoursBefore != 0 && cfg.Reminder2HoursBefore == cfg.ReminderHoursBefore {
+		cfg.Reminder2HoursBefore = 0
+	}
+	return cfg, nil
+}
+
+func validatedStaff(input []staffMember) ([]staffMember, error) {
+	if len(input) == 0 {
+		return []staffMember{}, nil
+	}
+	if len(input) > 20 {
+		return nil, validationError("Podés agregar hasta 20 especialistas o estaciones")
+	}
+	seen := make(map[string]bool, len(input))
+	out := make([]staffMember, 0, len(input))
+	for _, m := range input {
+		id := strings.ToLower(strings.TrimSpace(m.ID))
+		if !validSlug(id) {
+			return nil, validationError("Cada especialista necesita un identificador válido")
+		}
+		if seen[id] {
+			return nil, validationError("No puede haber dos especialistas con el mismo identificador")
+		}
+		seen[id] = true
+		name := strings.TrimSpace(m.Name)
+		if name == "" || utf8.RuneCountInString(name) > 80 {
+			return nil, validationError("Indicá un nombre de hasta 80 caracteres para cada especialista")
+		}
+		role := strings.TrimSpace(m.Role)
+		if utf8.RuneCountInString(role) > 60 {
+			return nil, validationError("El rol del especialista puede tener hasta 60 caracteres")
+		}
+		var services []string
+		seenSvc := make(map[string]bool)
+		for _, raw := range m.ServiceSlugs {
+			slug := strings.TrimSpace(raw)
+			if slug == "" || seenSvc[slug] {
+				continue
+			}
+			if !validSlug(slug) {
+				return nil, validationError("Servicio asignado inválido en especialista")
+			}
+			seenSvc[slug] = true
+			services = append(services, slug)
+		}
+		hours, err := validatedHours(m.Hours)
+		if err != nil {
+			return nil, err
+		}
+		out = append(out, staffMember{
+			ID:           id,
+			Name:         name,
+			Role:         role,
+			Active:       m.Active,
+			ServiceSlugs: services,
+			Hours:        hours,
+		})
+	}
+	return out, nil
 }

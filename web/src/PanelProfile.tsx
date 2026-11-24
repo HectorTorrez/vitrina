@@ -5,7 +5,7 @@ import { PhoneCountrySelect } from "./PhoneCountrySelect";
 import phoneLabelsEs from "react-phone-number-input/locale/es";
 import phoneLabelsEn from "react-phone-number-input/locale/en";
 import "react-phone-number-input/style.css";
-import { acceptsBookings, PAYMENT_METHOD_PRESETS, type DeliveryConfig, type Product, type ShopStyle } from "./catalog";
+import { acceptsBookings, PAYMENT_METHOD_PRESETS, type BookingConfig, type DeliveryConfig, type Product, type ShopStyle, type StaffMember, type TimeBlock } from "./catalog";
 import { useI18n } from "./i18n";
 import type { PanelShop, Profile } from "./panel";
 import { AffixInput, Field, FormSection, FormSelect, SaveBar, Stepper, usePanelAction } from "./PanelForm";
@@ -15,6 +15,7 @@ import { emailError } from "./AuthLayout";
 import { PanelImageUpload } from "./PanelImageUpload";
 import { contrastRatio, fontChoices, getTheme, themes } from "./themes";
 import { Button } from "@/components/ui/button";
+import { DatePicker } from "@/components/ui/date-picker";
 import { Input } from "@/components/ui/input";
 import { Switch } from "@/components/ui/switch";
 import { Textarea } from "@/components/ui/textarea";
@@ -56,7 +57,7 @@ const currencyOptions = [
   { value: "CAD", label: "CAD ($)" },
 ];
 
-interface Day { open: boolean; from: string; to: string }
+interface Day { open: boolean; blocks: TimeBlock[] }
 interface ProfileDraft {
   name: string;
   description: string;
@@ -87,8 +88,10 @@ interface ProfileDraft {
   booking: boolean;
   days: Day[];
   blockedDates: string[];
+  bookingConfig: BookingConfig;
+  staff: StaffMember[];
 }
-type ProfileErrors = Partial<Record<"name" | "description" | "instagram" | "tiktok" | "whatsapp" | "hours", string>> & { days?: Record<number, string> };
+type ProfileErrors = Partial<Record<"name" | "description" | "instagram" | "tiktok" | "whatsapp" | "hours" | "staff", string>> & { days?: Record<number, string> };
 
 function toDraft(profile?: Profile): ProfileDraft {
   const hours = profile?.hours ?? [];
@@ -134,13 +137,29 @@ function toDraft(profile?: Profile): ProfileDraft {
     booking: acceptsBookings({ hours }),
     days: weekdaysByLocale.es.map((_, index) => {
       const day = hours[index];
+      const existingBlocks = day?.blocks?.length
+        ? day.blocks.map((b) => ({ open: b.open, close: b.close }))
+        : day?.open
+          ? [{ open: day.open, close: day.close || "18:00" }]
+          : [];
       return {
-        open: hours.length ? Boolean(day?.open) : index > 0,
-        from: day?.open || "09:00",
-        to: day?.close || "18:00",
+        open: hours.length ? existingBlocks.length > 0 : index > 0,
+        blocks: existingBlocks.length > 0 ? existingBlocks : [{ open: "09:00", close: "18:00" }],
       };
     }),
     blockedDates: profile?.blockedDates ?? [],
+    bookingConfig: {
+      bufferMinutes: profile?.bookingConfig?.bufferMinutes ?? 0,
+      leadTimeMinutes: profile?.bookingConfig?.leadTimeMinutes ?? 60,
+      horizonDays: profile?.bookingConfig?.horizonDays ?? 60,
+      cancelNoticeHours: profile?.bookingConfig?.cancelNoticeHours ?? 2,
+      reminderHoursBefore: profile?.bookingConfig?.reminderHoursBefore ?? 24,
+      reminder2HoursBefore: profile?.bookingConfig?.reminder2HoursBefore ?? 0,
+    },
+    staff: (profile?.staff ?? []).map((m) => ({
+      ...m,
+      serviceSlugs: m.serviceSlugs ? [...m.serviceSlugs] : [],
+    })),
   };
 }
 
@@ -186,8 +205,32 @@ function fromDraft(draft: ProfileDraft): Profile {
     address: draft.address.trim(),
     mapUrl: draft.mapUrl.trim(),
     whatsapp: draft.whatsapp.replace(/^\+/, ""),
-    hours: draft.booking ? draft.days.map((day) => day.open ? { open: day.from, close: day.to } : { open: "", close: "" }) : [],
+    hours: draft.booking
+      ? draft.days.map((day) => {
+          if (!day.open || day.blocks.length === 0) return { open: "", close: "" };
+          const sorted = [...day.blocks].sort((a, b) => a.open.localeCompare(b.open));
+          return sorted.length > 1
+            ? { open: sorted[0].open, close: sorted[sorted.length - 1].close, blocks: sorted }
+            : { open: sorted[0].open, close: sorted[0].close };
+        })
+      : [],
     blockedDates: draft.blockedDates,
+    bookingConfig: {
+      bufferMinutes: draft.bookingConfig.bufferMinutes || 0,
+      leadTimeMinutes: draft.bookingConfig.leadTimeMinutes || 60,
+      horizonDays: draft.bookingConfig.horizonDays || 60,
+      cancelNoticeHours: draft.bookingConfig.cancelNoticeHours || 0,
+      reminderHoursBefore: draft.bookingConfig.reminderHoursBefore || 0,
+      reminder2HoursBefore: draft.bookingConfig.reminder2HoursBefore || 0,
+    },
+    staff: draft.staff.map((m) => ({
+      id: m.id.trim(),
+      name: m.name.trim(),
+      role: (m.role ?? "").trim(),
+      active: m.active,
+      serviceSlugs: m.serviceSlugs?.length ? m.serviceSlugs : undefined,
+      hours: m.hours?.length ? m.hours : undefined,
+    })),
   };
 }
 
@@ -206,10 +249,29 @@ function validateProfile(draft: ProfileDraft): ProfileErrors {
   if (draft.booking) {
     const days: Record<number, string> = {};
     draft.days.forEach((day, index) => {
-      if (day.open && (!day.from || !day.to || day.from >= day.to)) days[index] = "La apertura debe ser antes del cierre.";
+      if (!day.open) return;
+      if (day.blocks.length === 0) {
+        days[index] = "Agregá al menos un bloque horario.";
+        return;
+      }
+      const sorted = [...day.blocks].sort((a, b) => a.open.localeCompare(b.open));
+      for (let i = 0; i < sorted.length; i++) {
+        const b = sorted[i];
+        if (!b.open || !b.close || b.open >= b.close) {
+          days[index] = "La apertura debe ser antes del cierre.";
+          return;
+        }
+        if (i > 0 && sorted[i].open < sorted[i - 1].close) {
+          days[index] = "Los bloques horarios no pueden superponerse.";
+          return;
+        }
+      }
     });
     if (Object.keys(days).length) errors.days = days;
     if (!draft.days.some((day) => day.open)) errors.hours = "Abrí al menos un día o desactivá las reservas en línea.";
+  }
+  if (draft.staff.some((m) => !m.name.trim() || !m.id.trim())) {
+    errors.staff = "Cada especialista necesita un nombre.";
   }
   return errors;
 }
@@ -826,10 +888,29 @@ function CommerceFields({ draft, set }: { draft: ProfileDraft; set: SetDraft }) 
   );
 }
 
-function HoursEditor({ draft, set, errors }: { draft: ProfileDraft; set: SetDraft; errors: ProfileErrors }) {
+function HoursEditor({ draft, set, errors, services = [] }: { draft: ProfileDraft; set: SetDraft; errors: ProfileErrors; services?: Product[] }) {
   const { locale, t } = useI18n();
+  const en = locale === "en";
   const weekdays = weekdaysByLocale[locale];
   const setDay = (index: number, patch: Partial<Day>) => set({ days: draft.days.map((day, i) => i === index ? { ...day, ...patch } : day) });
+  const setBlock = (dayIndex: number, blockIndex: number, patch: Partial<TimeBlock>) => {
+    const day = draft.days[dayIndex];
+    const blocks = day.blocks.map((b, i) => i === blockIndex ? { ...b, ...patch } : b);
+    setDay(dayIndex, { blocks });
+  };
+  const addBlock = (dayIndex: number) => {
+    const day = draft.days[dayIndex];
+    if (day.blocks.length >= 4) return;
+    const last = day.blocks[day.blocks.length - 1];
+    const nextOpen = last?.close && last.close < "17:00" ? "14:00" : "15:00";
+    const nextClose = nextOpen < "18:00" ? "18:00" : "20:00";
+    setDay(dayIndex, { blocks: [...day.blocks, { open: nextOpen, close: nextClose }] });
+  };
+  const removeBlock = (dayIndex: number, blockIndex: number) => {
+    const day = draft.days[dayIndex];
+    if (day.blocks.length <= 1) return;
+    setDay(dayIndex, { blocks: day.blocks.filter((_, i) => i !== blockIndex) });
+  };
   const firstOpen = draft.days.findIndex((day) => day.open);
   return (
     <div className="grid gap-4">
@@ -843,38 +924,259 @@ function HoursEditor({ draft, set, errors }: { draft: ProfileDraft; set: SetDraf
       {draft.booking && (
         <div className="grid gap-1">
           <div className="mb-1 flex flex-wrap items-center justify-between gap-2">
-            <p className="text-sm text-muted-foreground">{t("profile.hoursHint")}</p>
+            <p className="text-sm text-muted-foreground">
+              {en ? "Add split shifts (e.g. lunch breaks) using the + button." : "Podés agregar horarios partidos (ej. pausa de almuerzo) con el botón +."}
+            </p>
             {firstOpen >= 0 && (
               <Button type="button" variant="ghost" size="sm" className="rounded-full" onClick={() => {
                 const source = draft.days[firstOpen];
-                set({ days: draft.days.map((day) => day.open ? { ...day, from: source.from, to: source.to } : day) });
+                set({
+                  days: draft.days.map((day) => day.open ? { ...day, blocks: source.blocks.map((b) => ({ ...b })) } : day),
+                });
               }}>
                 <Copy /> {t("profile.copyDay")} {weekdays[firstOpen].toLowerCase()} {t("profile.toAll")}
               </Button>
             )}
           </div>
           {draft.days.map((day, index) => (
-            <div key={index} className={cn("grid grid-cols-[1fr_auto] items-center gap-x-3 gap-y-2 rounded-xl px-3 py-2.5 sm:grid-cols-[140px_1fr]", day.open ? "bg-card" : "bg-transparent")}>
-              <label className="flex cursor-pointer items-center gap-3">
+            <div key={index} className={cn("grid grid-cols-[1fr_auto] items-start gap-x-3 gap-y-2 rounded-xl px-3 py-2.5 sm:grid-cols-[140px_1fr]", day.open ? "bg-card" : "bg-transparent")}>
+              <label className="flex cursor-pointer items-center gap-3 pt-1.5">
                 <Switch checked={day.open} onCheckedChange={(open) => setDay(index, { open })} aria-label={weekdays[index]} />
                 <span className={cn("text-sm font-medium", !day.open && "text-muted-foreground")}>{weekdays[index]}</span>
               </label>
               {day.open ? (
-                <div className="col-span-2 flex flex-wrap items-center gap-2 sm:col-span-1">
-                  <Input type="time" step={900} value={day.from} onChange={(e) => setDay(index, { from: e.target.value })} aria-label={weekdays[index]} className="h-9 w-32" aria-invalid={errors.days?.[index] ? true : undefined} />
-                  <span className="text-sm text-muted-foreground">{t("profile.to")}</span>
-                  <Input type="time" step={900} value={day.to} onChange={(e) => setDay(index, { to: e.target.value })} aria-label={weekdays[index]} className="h-9 w-32" aria-invalid={errors.days?.[index] ? true : undefined} />
+                <div className="col-span-2 grid gap-2 sm:col-span-1">
+                  {day.blocks.map((block, bIdx) => (
+                    <div key={bIdx} className="flex flex-wrap items-center gap-2">
+                      <Input type="time" step={900} value={block.open} onChange={(e) => setBlock(index, bIdx, { open: e.target.value })} aria-label={weekdays[index]} className="h-9 w-32" aria-invalid={errors.days?.[index] ? true : undefined} />
+                      <span className="text-sm text-muted-foreground">{t("profile.to")}</span>
+                      <Input type="time" step={900} value={block.close} onChange={(e) => setBlock(index, bIdx, { close: e.target.value })} aria-label={weekdays[index]} className="h-9 w-32" aria-invalid={errors.days?.[index] ? true : undefined} />
+                      {bIdx === day.blocks.length - 1 && day.blocks.length < 4 && (
+                        <Button type="button" variant="ghost" size="icon-xs" className="rounded-full" title={en ? "Add shift" : "Agregar turno"} onClick={() => addBlock(index)}>
+                          <Plus className="size-3.5" />
+                        </Button>
+                      )}
+                      {day.blocks.length > 1 && (
+                        <Button type="button" variant="ghost" size="icon-xs" className="rounded-full text-muted-foreground hover:text-destructive" title={en ? "Remove shift" : "Quitar turno"} onClick={() => removeBlock(index, bIdx)}>
+                          <X className="size-3.5" />
+                        </Button>
+                      )}
+                    </div>
+                  ))}
                   {errors.days?.[index] && <span className="text-xs font-medium text-destructive">{errors.days[index]}</span>}
                 </div>
               ) : (
-                <span className="text-right text-sm text-muted-foreground sm:text-left">{t("profile.closed")}</span>
+                <span className="pt-1.5 text-right text-sm text-muted-foreground sm:text-left">{t("profile.closed")}</span>
               )}
             </div>
           ))}
           {errors.hours && <p className="text-sm font-medium text-destructive">{errors.hours}</p>}
+          <BookingConfigEditor config={draft.bookingConfig} onChange={(bookingConfig) => set({ bookingConfig })} />
+          <StaffEditor staff={draft.staff} services={services} error={errors.staff} onChange={(staff) => set({ staff })} />
           <BlockedDatesEditor dates={draft.blockedDates} onChange={(blockedDates) => set({ blockedDates })} />
         </div>
       )}
+    </div>
+  );
+}
+
+function BookingConfigEditor({ config, onChange }: { config: BookingConfig; onChange: (next: BookingConfig) => void }) {
+  const { locale } = useI18n();
+  const en = locale === "en";
+  const patch = (p: Partial<BookingConfig>) => onChange({ ...config, ...p });
+  return (
+    <div className="mt-4 grid gap-3 border-t pt-4">
+      <div className="grid gap-0.5">
+        <span className="text-sm font-medium">{en ? "Agenda rules & automatic reminders" : "Reglas de agenda y recordatorios automáticos"}</span>
+        <span className="text-xs text-muted-foreground">
+          {en ? "Customize buffers, advance notice, self-service cancellation window, and email reminders." : "Configurá pausas entre citas, anticipación, cancelación por enlace y recordatorios por correo."}
+        </span>
+      </div>
+      <div className="grid gap-3 sm:grid-cols-2">
+        <Field label={en ? "Buffer between appointments" : "Descanso entre citas"}>
+          <FormSelect
+            value={String(config.bufferMinutes ?? 0)}
+            onValueChange={(v) => patch({ bufferMinutes: Number(v) })}
+            options={[
+              { value: "0", label: en ? "None (0 min)" : "Sin descanso (0 min)" },
+              { value: "5", label: "5 min" },
+              { value: "10", label: "10 min" },
+              { value: "15", label: "15 min" },
+              { value: "20", label: "20 min" },
+              { value: "30", label: "30 min" },
+              { value: "45", label: "45 min" },
+              { value: "60", label: "60 min" },
+            ]}
+          />
+        </Field>
+        <Field label={en ? "Minimum advance notice" : "Anticipación mínima"}>
+          <FormSelect
+            value={String(config.leadTimeMinutes ?? 60)}
+            onValueChange={(v) => patch({ leadTimeMinutes: Number(v) })}
+            options={[
+              { value: "15", label: "15 min" },
+              { value: "30", label: "30 min" },
+              { value: "60", label: en ? "1 hour" : "1 hora" },
+              { value: "120", label: en ? "2 hours" : "2 horas" },
+              { value: "240", label: en ? "4 hours" : "4 horas" },
+              { value: "720", label: en ? "12 hours" : "12 horas" },
+              { value: "1440", label: en ? "24 hours" : "24 horas" },
+              { value: "2880", label: en ? "48 hours" : "48 horas" },
+            ]}
+          />
+        </Field>
+        <Field label={en ? "Booking window" : "Horizonte de reserva"}>
+          <FormSelect
+            value={String(config.horizonDays ?? 60)}
+            onValueChange={(v) => patch({ horizonDays: Number(v) })}
+            options={[
+              { value: "7", label: en ? "7 days" : "7 días" },
+              { value: "14", label: en ? "14 days" : "14 días" },
+              { value: "30", label: en ? "30 days" : "30 días" },
+              { value: "60", label: en ? "60 days" : "60 días" },
+              { value: "90", label: en ? "90 days" : "90 días" },
+              { value: "180", label: en ? "6 months" : "6 meses" },
+              { value: "365", label: en ? "1 year" : "1 año" },
+            ]}
+          />
+        </Field>
+        <Field label={en ? "Customer cancel / reschedule cutoff" : "Límite para cancelar o reprogramar"}>
+          <FormSelect
+            value={String(config.cancelNoticeHours ?? 2)}
+            onValueChange={(v) => patch({ cancelNoticeHours: Number(v) })}
+            options={[
+              { value: "0", label: en ? "Anytime before start" : "Hasta antes de la cita" },
+              { value: "2", label: en ? "2 hours before" : "2 horas antes" },
+              { value: "4", label: en ? "4 hours before" : "4 horas antes" },
+              { value: "12", label: en ? "12 hours before" : "12 horas antes" },
+              { value: "24", label: en ? "24 hours before" : "24 horas antes" },
+              { value: "48", label: en ? "48 hours before" : "48 horas antes" },
+            ]}
+          />
+        </Field>
+        <Field label={en ? "1st email reminder" : "1.er recordatorio por correo"}>
+          <FormSelect
+            value={String(config.reminderHoursBefore ?? 24)}
+            onValueChange={(v) => patch({ reminderHoursBefore: Number(v) })}
+            options={[
+              { value: "0", label: en ? "Off" : "Desactivado" },
+              { value: "6", label: en ? "6 hours before" : "6 horas antes" },
+              { value: "12", label: en ? "12 hours before" : "12 horas antes" },
+              { value: "24", label: en ? "24 hours before" : "24 horas antes" },
+              { value: "48", label: en ? "48 hours before" : "48 horas antes" },
+            ]}
+          />
+        </Field>
+        <Field label={en ? "2nd email reminder" : "2.º recordatorio por correo"}>
+          <FormSelect
+            value={String(config.reminder2HoursBefore ?? 0)}
+            onValueChange={(v) => patch({ reminder2HoursBefore: Number(v) })}
+            options={[
+              { value: "0", label: en ? "Off" : "Desactivado" },
+              { value: "1", label: en ? "1 hour before" : "1 hora antes" },
+              { value: "2", label: en ? "2 hours before" : "2 horas antes" },
+              { value: "4", label: en ? "4 hours before" : "4 horas antes" },
+            ]}
+          />
+        </Field>
+      </div>
+    </div>
+  );
+}
+
+function slugifyStaff(name: string, existing: StaffMember[]) {
+  const base = name.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "").replace(/[^a-z0-9]+/g, "-").replace(/^-+|-+$/g, "").slice(0, 40) || "especialista";
+  let candidate = base;
+  let n = 2;
+  while (existing.some((m) => m.id === candidate)) {
+    candidate = `${base}-${n++}`;
+  }
+  return candidate;
+}
+
+function StaffEditor({ staff, services, error, onChange }: { staff: StaffMember[]; services: Product[]; error?: string; onChange: (next: StaffMember[]) => void }) {
+  const { locale } = useI18n();
+  const en = locale === "en";
+  const [newName, setNewName] = useState("");
+  const [newRole, setNewRole] = useState("");
+
+  const add = () => {
+    const trimmed = newName.trim();
+    if (!trimmed || staff.length >= 20) return;
+    onChange([...staff, { id: slugifyStaff(trimmed, staff), name: trimmed, role: newRole.trim(), active: true, serviceSlugs: [] }]);
+    setNewName("");
+    setNewRole("");
+  };
+  const update = (id: string, patch: Partial<StaffMember>) => onChange(staff.map((m) => m.id === id ? { ...m, ...patch } : m));
+  const toggleService = (id: string, slug: string) => {
+    const member = staff.find((m) => m.id === id);
+    if (!member) return;
+    const current = member.serviceSlugs ?? [];
+    const next = current.includes(slug) ? current.filter((s) => s !== slug) : [...current, slug];
+    update(id, { serviceSlugs: next });
+  };
+
+  return (
+    <div className="mt-4 grid gap-3 border-t pt-4">
+      <div className="grid gap-0.5">
+        <span className="text-sm font-medium">{en ? "Specialists / Stations" : "Especialistas / Estaciones"}</span>
+        <span className="text-xs text-muted-foreground">
+          {en ? "Optional. Add stylists, barbers, or booths so each has an independent agenda." : "Opcional. Agregá personas o cabinas para llevar agendas independientes por especialista."}
+        </span>
+      </div>
+      <div className="flex flex-wrap items-center gap-2">
+        <Input value={newName} onChange={(e) => setNewName(e.target.value)} placeholder={en ? "Name (e.g. Ana)" : "Nombre (ej. Ana o Silla 1)"} maxLength={80} className="h-9 flex-1 min-w-36" />
+        <Input value={newRole} onChange={(e) => setNewRole(e.target.value)} placeholder={en ? "Role (optional)" : "Rol (opcional)"} maxLength={60} className="h-9 w-40" />
+        <Button type="button" variant="outline" size="sm" className="rounded-full" disabled={!newName.trim() || staff.length >= 20} onClick={add}>
+          <Plus className="size-3.5" /> {en ? "Add" : "Agregar"}
+        </Button>
+      </div>
+      {staff.length > 0 && (
+        <div className="grid gap-2">
+          {staff.map((m) => (
+            <div key={m.id} className="grid gap-2.5 rounded-xl border bg-card p-3">
+              <div className="flex flex-wrap items-center justify-between gap-2">
+                <div className="flex flex-1 flex-wrap items-center gap-2 min-w-0">
+                  <Switch checked={m.active} onCheckedChange={(active) => update(m.id, { active })} aria-label={m.name} />
+                  <Input value={m.name} onChange={(e) => update(m.id, { name: e.target.value })} maxLength={80} className="h-8 w-40 text-sm font-medium" />
+                  <Input value={m.role ?? ""} onChange={(e) => update(m.id, { role: e.target.value })} placeholder={en ? "Role" : "Rol"} maxLength={60} className="h-8 w-36 text-sm" />
+                </div>
+                <Button type="button" variant="ghost" size="icon-xs" className="rounded-full text-muted-foreground hover:text-destructive" onClick={() => onChange(staff.filter((item) => item.id !== m.id))}>
+                  <X className="size-3.5" />
+                </Button>
+              </div>
+              {services.length > 0 && (
+                <div className="grid gap-1">
+                  <span className="text-xs text-muted-foreground">
+                    {m.serviceSlugs?.length
+                      ? (en ? "Assigned services:" : "Servicios asignados:")
+                      : (en ? "Offers all services (click to limit):" : "Atiende todos los servicios (tocá para filtrar):")}
+                  </span>
+                  <div className="flex flex-wrap gap-1.5">
+                    {services.map((svc) => {
+                      const selected = m.serviceSlugs?.includes(svc.slug) ?? false;
+                      return (
+                        <button
+                          key={svc.slug}
+                          type="button"
+                          onClick={() => toggleService(m.id, svc.slug)}
+                          className={cn(
+                            "rounded-full border px-2.5 py-0.5 text-xs transition",
+                            selected ? "border-foreground bg-foreground text-background" : "border-border text-muted-foreground hover:text-foreground",
+                          )}
+                        >
+                          {svc.name}
+                        </button>
+                      );
+                    })}
+                  </div>
+                </div>
+              )}
+            </div>
+          ))}
+        </div>
+      )}
+      {error && <p className="text-sm font-medium text-destructive">{error}</p>}
     </div>
   );
 }
@@ -895,7 +1197,7 @@ function BlockedDatesEditor({ dates, onChange }: { dates: string[]; onChange: (d
         <span className="text-xs text-muted-foreground">{en ? "Holidays or days you won't accept online bookings." : "Feriados o días en los que no recibirás citas en línea."}</span>
       </div>
       <div className="flex flex-wrap items-center gap-2">
-        <Input type="date" value={nextDate} onChange={(e) => setNextDate(e.target.value)} className="h-9 w-44" />
+        <DatePicker value={nextDate} onChange={setNextDate} locale={locale} className="h-9 w-48" />
         <Button type="button" variant="outline" size="sm" className="rounded-full" disabled={!nextDate || dates.length >= 60} onClick={add}>
           <Plus className="size-3.5" /> {en ? "Block date" : "Bloquear fecha"}
         </Button>
@@ -962,7 +1264,7 @@ export function ProfileEditor({ shop }: { shop: PanelShop }) {
           <CommerceFields draft={draft} set={set} />
         </FormSection>
         <FormSection title="Reservas en línea">
-          <HoursEditor draft={draft} set={set} errors={visibleErrors} />
+          <HoursEditor draft={draft} set={set} errors={visibleErrors} services={shop.products.filter((p) => p.kind === "service")} />
         </FormSection>
         <SaveBar dirty={dirty || pending} pending={pending} onDiscard={() => { setDraft(initial); setShowErrors(false); }} />
       </fieldset>

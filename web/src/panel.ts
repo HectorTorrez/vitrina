@@ -8,10 +8,14 @@ export type Profile = Omit<Shop, "slug" | "products" | "origin">;
 export interface Booking {
   id: number;
   serviceSlug: string;
+  staffId?: string;
+  staffName?: string;
   customer: string;
   phone: string;
+  email?: string;
   notes?: string;
   source: "panel" | "web";
+  manageToken?: string;
   startsAt: string;
   endsAt: string;
   cancelled: boolean;

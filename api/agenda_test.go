@@ -27,17 +27,17 @@ func TestBookingConcurrency(t *testing.T) {
 	results := make(chan error, 2)
 	gate := make(chan struct{})
 	for _, id := range []string{"gel", "clasica"} {
-		go func() { <-gate; _, err := saveBooking(db, slug, id, start, "Prueba", "", 0); results <- err }()
+		go func() { <-gate; _, err := saveBooking(db, slug, id, start, "Prueba", "", "", 0); results <- err }()
 	}
 	close(gate)
 	a, b := <-results, <-results
 	if !(a == nil && errors.Is(b, errOccupied) || b == nil && errors.Is(a, errOccupied)) {
 		t.Fatalf("concurrent results: %v, %v", a, b)
 	}
-	if _, err := saveBooking(db, slug, "gel", start.Add(15*time.Minute), "Prueba", "", 0); !errors.Is(err, errOccupied) {
+	if _, err := saveBooking(db, slug, "gel", start.Add(15*time.Minute), "Prueba", "", "", 0); !errors.Is(err, errOccupied) {
 		t.Fatalf("overlap: %v", err)
 	}
-	if _, err := saveBooking(db, slug, "gel", start.Add(45*time.Minute), "Prueba", "", 0); err != nil {
+	if _, err := saveBooking(db, slug, "gel", start.Add(45*time.Minute), "Prueba", "", "", 0); err != nil {
 		t.Fatalf("adjacent: %v", err)
 	}
 }
