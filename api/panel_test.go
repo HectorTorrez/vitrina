@@ -107,6 +107,14 @@ func TestPanelShopPermissionsAndManagement(t *testing.T) {
 	edit.Profile.BackgroundURL = "invalid"
 	request(ownerToken, &edit, 400)
 	edit.Profile.LogoURL, edit.Profile.BackgroundURL = "", ""
+	edit.Profile.Policies = shopPolicies{
+		Shipping:     "  Envíos en 24-48h hábiles. ",
+		Returns:      "Cambios dentro de 7 días.",
+		Cancellation: "Avisá con 2 horas de anticipación.",
+	}
+	edit.Profile.FAQs = []shopFAQ{
+		{Question: " ¿Hacen envíos al interior? ", Answer: " Sí, a todo el país. "},
+	}
 	request(ownerToken, &edit, 204)
 	cleared := load(ownerToken).Shops[0]
 	if cleared.AccentColor != "" {
@@ -115,6 +123,12 @@ func TestPanelShopPermissionsAndManagement(t *testing.T) {
 	if cleared.LogoURL != "" || cleared.BackgroundURL != "" {
 		t.Fatal("shop images were not removed")
 	}
+	if cleared.Policies.Shipping != "Envíos en 24-48h hábiles." || cleared.Policies.Returns != "Cambios dentro de 7 días." || len(cleared.FAQs) != 1 || cleared.FAQs[0].Question != "¿Hacen envíos al interior?" {
+		t.Fatalf("policies or faqs not saved: %+v %+v", cleared.Policies, cleared.FAQs)
+	}
+	badFaq := edit
+	badFaq.Profile.FAQs = []shopFAQ{{Question: "Sin respuesta", Answer: ""}}
+	request(ownerToken, &badFaq, 400)
 
 	item := product{Slug: "gel", Name: "Uñas en gel", Kind: "service", DurationMinutes: 45, Available: true,
 		PriceCents: 2400, Position: 2, ImageURL: "https://example.com/image.png",

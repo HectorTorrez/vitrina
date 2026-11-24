@@ -4,7 +4,7 @@ import { createContext, useContext, useEffect, useRef, useState, type ReactEleme
 import { Tooltip } from "radix-ui";
 import QRCode from "qrcode";
 import {
-  ArrowRight, ArrowUpRight, CalendarDays, Check, Copy, Download, LayoutGrid, LogOut, Menu, MessageCircle, Package, Palette, PanelLeftClose, PanelLeftOpen, Plus, QrCode, ShoppingBag, Store,
+  ArrowRight, ArrowUpRight, CalendarDays, Check, Copy, Download, LayoutGrid, LogOut, Menu, MessageCircle, Package, Palette, PanelLeftClose, PanelLeftOpen, Plus, QrCode, ShoppingBag, Sparkles, Store,
   type LucideIcon,
 } from "lucide-react";
 import { getPanel, type PanelShop } from "../panel";
@@ -13,6 +13,7 @@ import { PanelCatalog } from "../PanelCatalog";
 import { SectionHead } from "../PanelForm";
 import { PanelOrders } from "../PanelOrders";
 import { CreateShopWizard, ProfileEditor } from "../PanelProfile";
+import { StoryCardSheet } from "../StoryCardSheet";
 import { formatLocal, shopToday } from "../booking";
 import { acceptsBookings, price, shopQuery } from "../catalog";
 import { LanguageSwitcher, useI18n } from "../i18n";
@@ -298,7 +299,7 @@ function Overview({ shop, go }: { shop: PanelShop; go: (section: Section) => voi
           <p className="font-mono text-xs font-medium tracking-[0.1em] text-brand-ink uppercase">{t("panel.overview.eyebrow")}</p>
           <h1 className="font-display text-4xl leading-[0.95] font-bold tracking-[-0.04em] break-words sm:text-5xl">{shop.name}</h1>
         </div>
-        <ShareLink slug={shop.slug} />
+        <ShareLink shop={shop} />
       </div>
 
       <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
@@ -427,9 +428,11 @@ function QuickLink({ icon: Icon, title, text, onClick }: { icon: LucideIcon; tit
   );
 }
 
-function ShareLink({ slug }: { slug: string }) {
+function ShareLink({ shop }: { shop: PanelShop }) {
+  const slug = shop.slug;
   const [copied, copy] = useCopied();
   const [qrOpen, setQrOpen] = useState(false);
+  const [storyOpen, setStoryOpen] = useState(false);
   const [qrPng, setQrPng] = useState("");
   const [qrSvg, setQrSvg] = useState("");
   const { locale, t } = useI18n();
@@ -458,6 +461,9 @@ function ShareLink({ slug }: { slug: string }) {
       </Button>
       <Button type="button" variant="ghost" size="sm" className="rounded-full" onClick={() => setQrOpen(true)} aria-label="QR Code">
         <QrCode /> QR
+      </Button>
+      <Button type="button" variant="ghost" size="sm" className="rounded-full" onClick={() => setStoryOpen(true)}>
+        <Sparkles /> {en ? "Story" : "Historia"}
       </Button>
       <Button asChild size="sm" className="rounded-full">
         <a href={path} target="_blank" rel="noreferrer">{t("common.open")} <ArrowUpRight /></a>
@@ -489,8 +495,15 @@ function ShareLink({ slug }: { slug: string }) {
               <Download /> SVG
             </Button>
           </div>
+          <Button
+            type="button" variant="secondary" className="rounded-full"
+            onClick={() => { setQrOpen(false); setStoryOpen(true); }}
+          >
+            <Sparkles /> {en ? "Download Story card (9:16)" : "Descargar tarjeta para historia (9:16)"}
+          </Button>
         </SheetContent>
       </Sheet>
+      <StoryCardSheet shop={shop} open={storyOpen} onOpenChange={setStoryOpen} />
     </div>
   );
 }

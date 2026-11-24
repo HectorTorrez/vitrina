@@ -1,8 +1,9 @@
-import type { ReactNode } from "react";
-import { CalendarCheck, Clock, CreditCard, Globe, ImageIcon, MapPin, Store, Truck } from "lucide-react";
+import { useEffect, useState, type ReactNode } from "react";
+import { Link } from "@tanstack/react-router";
+import { CalendarCheck, CalendarX2, Check, ChevronDown, Clock, CreditCard, Globe, HelpCircle, ImageIcon, MapPin, Plus, RotateCcw, Store, Truck } from "lucide-react";
 import { hasSurcharges, isProductAvailable, paymentMethodLabel, price, productImage, type Product, type Shop, type ShopStyle } from "../catalog";
 import { useI18n, type Locale } from "../i18n";
-import { cardAspectClass, cardRadiusClass, getTheme, isDarkColor, themeStyle } from "../themes";
+import { buttonRadiusClass, cardAspectClass, cardRadiusClass, getTheme, isDarkColor, themeStyle } from "../themes";
 import { cn } from "@/lib/utils";
 
 /** Themed, container-query driven wrapper; the panel preview renders the same tree in a small box. */
@@ -216,25 +217,70 @@ export function badgeLabel(badge: Product["badge"], locale: Locale = "es") {
   return "";
 }
 
-export function ProductCard({ product, style, currency }: { product: Product; style?: ShopStyle; currency?: string }) {
+export function ProductCard({
+  product,
+  style,
+  currency,
+  link,
+  onQuickAdd,
+  inCartQty = 0,
+  atStockLimit = false,
+}: {
+  product: Product;
+  style?: ShopStyle;
+  currency?: string;
+  link?: { shop: string; product: string };
+  onQuickAdd?: () => void;
+  inCartQty?: number;
+  atStockLimit?: boolean;
+}) {
   const { locale, t } = useI18n();
+  const en = locale === "en";
+  const [justAdded, setJustAdded] = useState(false);
+  useEffect(() => {
+    if (!justAdded) return;
+    const timer = window.setTimeout(() => setJustAdded(false), 1100);
+    return () => window.clearTimeout(timer);
+  }, [justAdded]);
+
   const service = product.kind === "service";
   const radius = cardRadiusClass(style?.radius);
+  const btnRadius = buttonRadiusClass(style?.radius);
   const aspect = cardAspectClass(style?.cardAspect);
   const tag = badgeLabel(product.badge, locale);
   const avail = isProductAvailable(product);
   const soldOut = product.available && product.stock != null && product.stock <= 0;
   const lowStock = lowStockLabel(product, locale);
   const hasCompare = avail && Boolean(product.compareAtCents && product.compareAtCents > product.priceCents);
+  const canQuickAdd = Boolean(onQuickAdd) && !service && avail && product.options.length === 0;
+
+  const handleQuickAdd = () => {
+    if (!onQuickAdd || atStockLimit) return;
+    onQuickAdd();
+    setJustAdded(true);
+  };
+
+  const titleNode = link ? (
+    <Link
+      to="/tienda/$shop/$product"
+      params={link}
+      className="outline-none after:absolute after:inset-0 after:content-[''] focus-visible:underline"
+    >
+      {product.name}
+    </Link>
+  ) : (
+    product.name
+  );
+
   if (style?.catalogLayout === "list") {
     return (
-      <article className={cn("group flex items-center gap-4 border border-store-rule bg-store-surface/70 p-3 transition hover:border-store-ink", radius)}>
+      <article className={cn("group relative flex items-center gap-4 border border-store-rule bg-store-surface/70 p-3 transition hover:border-store-ink", radius)}>
         <div className={cn("relative size-20 shrink-0 overflow-hidden bg-store-soft sm:size-24", radius)}>
           <ProductImage product={product} className="transition duration-500 group-hover:scale-[1.04]" />
         </div>
         <div className="grid min-w-0 flex-1 gap-1">
           <div className="flex flex-wrap items-center gap-2">
-            <h3 className="truncate leading-snug font-semibold group-hover:underline group-hover:underline-offset-4">{product.name}</h3>
+            <h3 className="truncate leading-snug font-semibold group-hover:underline group-hover:underline-offset-4">{titleNode}</h3>
             {tag && <span className="rounded-full bg-store-accent px-2 py-0.5 text-[11px] font-semibold text-store-accent-ink">{tag}</span>}
             {lowStock && <span className="rounded-full bg-amber-500/15 px-2 py-0.5 text-[11px] font-semibold text-amber-700 dark:text-amber-300">{lowStock}</span>}
             {service && (
@@ -249,11 +295,28 @@ export function ProductCard({ product, style, currency }: { product: Product; st
             {hasCompare && <span className="font-mono text-xs text-store-muted line-through">{price(product.compareAtCents!, locale, currency)}</span>}
           </div>
         </div>
+        {canQuickAdd && (
+          <button
+            type="button"
+            disabled={atStockLimit}
+            onClick={handleQuickAdd}
+            aria-label={en ? `Add ${product.name} to bag` : `Agregar ${product.name} al carrito`}
+            className={cn(
+              "relative z-10 inline-flex h-9 shrink-0 items-center gap-1 border border-store-rule bg-store-surface px-3 text-xs font-semibold text-store-ink shadow-xs transition hover:border-store-accent hover:bg-store-accent hover:text-store-accent-ink disabled:opacity-40",
+              btnRadius,
+              justAdded && "border-store-accent bg-store-accent text-store-accent-ink",
+            )}
+          >
+            {justAdded ? <Check className="size-3.5" strokeWidth={2.75} /> : <Plus className="size-3.5" strokeWidth={2.5} />}
+            <span className="hidden @sm:inline">{justAdded ? (en ? "Added" : "Agregado") : (en ? "Add" : "Agregar")}</span>
+            {inCartQty > 0 && !justAdded && <span className="font-mono text-[11px] opacity-80">({inCartQty})</span>}
+          </button>
+        )}
       </article>
     );
   }
   return (
-    <article className="group grid gap-3">
+    <article className="group relative grid gap-3">
       <div className={cn("relative overflow-hidden bg-store-soft", aspect, radius)}>
         <ProductImage product={product} className="transition duration-500 group-hover:scale-[1.03]" />
         {service && (
@@ -275,15 +338,100 @@ export function ProductCard({ product, style, currency }: { product: Product; st
             {lowStock}
           </span>
         ) : null}
+        {canQuickAdd && (
+          <button
+            type="button"
+            disabled={atStockLimit}
+            onClick={handleQuickAdd}
+            aria-label={en ? `Add ${product.name} to bag` : `Agregar ${product.name} al carrito`}
+            title={atStockLimit ? (en ? "Max stock in bag" : "Máximo disponible en tu carrito") : (en ? "Quick add" : "Agregar al carrito")}
+            className={cn(
+              "absolute right-3 bottom-3 z-10 inline-flex h-9 items-center gap-1 border border-store-rule/70 bg-store-surface/95 px-2.5 text-xs font-semibold text-store-ink shadow-sm backdrop-blur transition hover:border-store-accent hover:bg-store-accent hover:text-store-accent-ink disabled:opacity-45",
+              btnRadius,
+              justAdded && "border-store-accent bg-store-accent text-store-accent-ink",
+            )}
+          >
+            {justAdded ? <Check className="size-4" strokeWidth={2.75} /> : <Plus className="size-4" strokeWidth={2.5} />}
+            {inCartQty > 0 && <span className="font-mono text-[11px]">{inCartQty}</span>}
+          </button>
+        )}
       </div>
       <div className="grid gap-0.5 px-0.5">
-        <h3 className="leading-snug font-semibold group-hover:underline group-hover:underline-offset-4">{product.name}</h3>
+        <h3 className="leading-snug font-semibold group-hover:underline group-hover:underline-offset-4">{titleNode}</h3>
         <div className="flex flex-wrap items-baseline gap-2">
           <p className={cn("text-sm", avail ? "font-mono" : "text-store-muted")}>{productPrice(product, locale, currency)}</p>
           {hasCompare && <span className="font-mono text-xs text-store-muted line-through">{price(product.compareAtCents!, locale, currency)}</span>}
         </div>
       </div>
     </article>
+  );
+}
+
+export function StorePoliciesAndFaqs({ shop }: { shop: Pick<Shop, "policies" | "faqs" | "style"> }) {
+  const { locale } = useI18n();
+  const en = locale === "en";
+  const radius = cardRadiusClass(shop.style?.radius);
+  const policies = [
+    shop.policies?.shipping?.trim()
+      ? { key: "shipping", icon: Truck, title: en ? "Shipping & delivery" : "Envíos y entregas", text: shop.policies.shipping.trim() }
+      : null,
+    shop.policies?.returns?.trim()
+      ? { key: "returns", icon: RotateCcw, title: en ? "Returns & exchanges" : "Cambios y devoluciones", text: shop.policies.returns.trim() }
+      : null,
+    shop.policies?.cancellation?.trim()
+      ? { key: "cancellation", icon: CalendarX2, title: en ? "Booking cancellation" : "Cancelación de citas", text: shop.policies.cancellation.trim() }
+      : null,
+  ].filter((item): item is { key: string; icon: typeof Truck; title: string; text: string } => Boolean(item));
+  const faqs = (shop.faqs ?? []).filter((f) => f.question.trim() && f.answer.trim());
+
+  if (policies.length === 0 && faqs.length === 0) return null;
+
+  return (
+    <section className="mt-14 grid gap-8 border-t border-store-rule pt-10">
+      {policies.length > 0 && (
+        <div className="grid gap-4">
+          <h2 className="font-store text-2xl font-medium tracking-tight">
+            {en ? "Store policies" : "Políticas de la tienda"}
+          </h2>
+          <div className={cn("grid gap-3", policies.length === 2 ? "@2xl:grid-cols-2" : policies.length >= 3 ? "@2xl:grid-cols-3" : "")}>
+            {policies.map(({ key, icon: Icon, title, text }) => (
+              <div key={key} className={cn("grid content-start gap-2 border border-store-rule bg-store-surface/70 p-4", radius)}>
+                <div className="flex items-center gap-2 text-sm font-semibold">
+                  <span className="grid size-7 shrink-0 place-items-center rounded-full bg-store-soft text-store-ink">
+                    <Icon className="size-3.5" />
+                  </span>
+                  {title}
+                </div>
+                <p className="text-sm leading-relaxed whitespace-pre-line text-store-muted">{text}</p>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {faqs.length > 0 && (
+        <div className="grid gap-4">
+          <h2 className="flex items-center gap-2 font-store text-2xl font-medium tracking-tight">
+            <HelpCircle className="size-5 text-store-muted" />
+            {en ? "Frequently asked questions" : "Preguntas frecuentes"}
+          </h2>
+          <div className="grid gap-2">
+            {faqs.map((faq, idx) => (
+              <details
+                key={idx}
+                className={cn("group border border-store-rule bg-store-surface/70 px-4 py-3.5 transition open:border-store-ink/40", radius)}
+              >
+                <summary className="flex cursor-pointer list-none items-center justify-between gap-3 text-sm font-semibold [&::-webkit-details-marker]:hidden">
+                  <span>{faq.question}</span>
+                  <ChevronDown className="size-4 shrink-0 text-store-muted transition-transform group-open:rotate-180" />
+                </summary>
+                <p className="mt-2.5 text-sm leading-relaxed whitespace-pre-line text-store-muted">{faq.answer}</p>
+              </details>
+            ))}
+          </div>
+        </div>
+      )}
+    </section>
   );
 }
 

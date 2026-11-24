@@ -138,6 +138,19 @@ type deliveryConfig struct {
 	DeliveryNote     string `json:"deliveryNote,omitempty"`
 }
 
+// shopPolicies holds optional storefront policies (shipping, returns, booking cancellation).
+type shopPolicies struct {
+	Shipping     string `json:"shipping,omitempty"`
+	Returns      string `json:"returns,omitempty"`
+	Cancellation string `json:"cancellation,omitempty"`
+}
+
+// shopFAQ is a single frequently asked question displayed on the storefront.
+type shopFAQ struct {
+	Question string `json:"question"`
+	Answer   string `json:"answer"`
+}
+
 type shop struct {
 	Slug           string         `json:"slug" gorm:"primaryKey"`
 	Name           string         `json:"name"`
@@ -150,6 +163,8 @@ type shop struct {
 	Style          shopStyle      `json:"style" gorm:"serializer:json;type:jsonb;not null;default:'{}'"`
 	Delivery       deliveryConfig `json:"delivery" gorm:"serializer:json;type:jsonb;not null;default:'{}'"`
 	PaymentMethods []string       `json:"paymentMethods" gorm:"serializer:json;type:jsonb;not null;default:'[]'"`
+	Policies       shopPolicies   `json:"policies" gorm:"serializer:json;type:jsonb;not null;default:'{}'"`
+	FAQs           []shopFAQ      `json:"faqs" gorm:"serializer:json;type:jsonb;not null;default:'[]'"`
 	LogoURL        string         `json:"logoUrl"`
 	BackgroundURL  string         `json:"backgroundUrl"`
 	Instagram      string         `json:"instagram"`
@@ -245,6 +260,9 @@ func (s *shop) AfterFind(*gorm.DB) error {
 	}
 	if s.PaymentMethods == nil {
 		s.PaymentMethods = []string{}
+	}
+	if s.FAQs == nil {
+		s.FAQs = []shopFAQ{}
 	}
 	if s.Products == nil {
 		s.Products = []product{}

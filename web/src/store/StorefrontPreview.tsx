@@ -2,7 +2,7 @@ import { useLayoutEffect, useRef, useState, type ReactNode } from "react";
 import { Monitor, Smartphone } from "lucide-react";
 import { acceptsBookings, type Product, type Shop } from "../catalog";
 import { useI18n } from "../i18n";
-import { AnnouncementBar, ProductCard, ShopHero, StoreBrand, StoreFrame, StoreHeader, WhatsAppIcon } from "./StoreParts";
+import { AnnouncementBar, ProductCard, ShopHero, StoreBrand, StoreFrame, StoreHeader, StorePoliciesAndFaqs, WhatsAppIcon } from "./StoreParts";
 import { buttonRadiusClass, primaryButtonClass, themeStyle } from "../themes";
 import { cn } from "@/lib/utils";
 
@@ -14,7 +14,7 @@ const samples: Product[] = [
 ];
 
 export function StorefrontPreview({ shop, slug, className }: {
-  shop: Pick<Shop, "logoUrl" | "backgroundUrl" | "name" | "description" | "theme" | "accentColor" | "style" | "delivery" | "paymentMethods" | "currency" | "instagram" | "tiktok" | "facebook" | "website" | "address" | "mapUrl" | "whatsapp" | "hours" | "products">;
+  shop: Pick<Shop, "logoUrl" | "backgroundUrl" | "name" | "description" | "theme" | "accentColor" | "style" | "delivery" | "paymentMethods" | "policies" | "faqs" | "currency" | "instagram" | "tiktok" | "facebook" | "website" | "address" | "mapUrl" | "whatsapp" | "hours" | "products">;
   slug: string;
   className?: string;
 }) {
@@ -65,7 +65,7 @@ export function StorefrontPreview({ shop, slug, className }: {
 }
 
 function StorePage({ shop, products, bookable }: {
-  shop: Pick<Shop, "logoUrl" | "backgroundUrl" | "name" | "description" | "theme" | "accentColor" | "style" | "delivery" | "paymentMethods" | "currency" | "instagram" | "tiktok" | "facebook" | "website" | "address" | "mapUrl" | "whatsapp">;
+  shop: Pick<Shop, "logoUrl" | "backgroundUrl" | "name" | "description" | "theme" | "accentColor" | "style" | "delivery" | "paymentMethods" | "policies" | "faqs" | "currency" | "instagram" | "tiktok" | "facebook" | "website" | "address" | "mapUrl" | "whatsapp">;
   products: Product[];
   bookable: boolean;
 }) {
@@ -85,6 +85,7 @@ function StorePage({ shop, products, bookable }: {
         <div className={isList ? "grid gap-3" : "grid grid-cols-2 gap-x-4 gap-y-6 @3xl:grid-cols-3"}>
           {products.map((product) => <ProductCard key={product.slug} product={product} style={shop.style} currency={shop.currency} />)}
         </div>
+        <StorePoliciesAndFaqs shop={shop} />
       </div>
     </StoreFrame>
   );
