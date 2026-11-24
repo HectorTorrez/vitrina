@@ -1,6 +1,6 @@
 import type { ReactNode } from "react";
-import { CalendarCheck, Clock, Globe, ImageIcon, MapPin } from "lucide-react";
-import { hasSurcharges, price, productImage, type Product, type Shop, type ShopStyle } from "../catalog";
+import { CalendarCheck, Clock, CreditCard, Globe, ImageIcon, MapPin, Store, Truck } from "lucide-react";
+import { hasSurcharges, isProductAvailable, paymentMethodLabel, price, productImage, type Product, type Shop, type ShopStyle } from "../catalog";
 import { useI18n, type Locale } from "../i18n";
 import { cardAspectClass, cardRadiusClass, getTheme, isDarkColor, themeStyle } from "../themes";
 import { cn } from "@/lib/utils";
@@ -116,11 +116,23 @@ export function SocialLinks({ shop, className, onWhatsAppClick }: { shop: Pick<S
   );
 }
 
-export function ShopHero({ shop, bookable, onWhatsAppClick }: { shop: Pick<Shop, "name" | "description" | "logoUrl" | "instagram" | "tiktok" | "facebook" | "website" | "address" | "mapUrl" | "whatsapp" | "style">; bookable: boolean; onWhatsAppClick?: () => void }) {
-  const { t } = useI18n();
+export function ShopHero({ shop, bookable, onWhatsAppClick }: { shop: Pick<Shop, "name" | "description" | "logoUrl" | "instagram" | "tiktok" | "facebook" | "website" | "address" | "mapUrl" | "whatsapp" | "style" | "delivery" | "paymentMethods" | "currency">; bookable: boolean; onWhatsAppClick?: () => void }) {
+  const { locale, t } = useI18n();
+  const en = locale === "en";
   const layout = shop.style?.heroLayout || "left";
   const centered = layout === "center";
   const compact = layout === "compact";
+  const delivery = shop.delivery;
+  const paymentMethods = shop.paymentMethods ?? [];
+  const hasCommerceInfo = Boolean(delivery?.pickupEnabled || delivery?.deliveryEnabled || paymentMethods.length > 0);
+  const deliveryLabel = delivery?.deliveryEnabled
+    ? delivery.deliveryFeeMode === "free"
+      ? (en ? "Free delivery" : "Envío gratis")
+      : delivery.deliveryFeeMode === "fixed" && delivery.deliveryFeeCents
+        ? `${en ? "Delivery" : "Envío"} · ${price(delivery.deliveryFeeCents, locale, shop.currency)}`
+        : (en ? "Home delivery" : "Envío a domicilio")
+    : "";
+
   return (
     <section className={cn(
       "grid gap-5",
@@ -147,6 +159,26 @@ export function ShopHero({ shop, bookable, onWhatsAppClick }: { shop: Pick<Shop,
         )}
         <SocialLinks shop={shop} onWhatsAppClick={onWhatsAppClick} />
       </div>
+      {hasCommerceInfo && (
+        <div className={cn("flex flex-wrap items-center gap-2 text-xs text-store-muted", centered && "justify-center")}>
+          {delivery?.pickupEnabled && (
+            <span className="inline-flex items-center gap-1.5 rounded-full bg-store-soft/80 px-3 py-1.5 font-medium text-store-ink">
+              <Store className="size-3.5 shrink-0" /> {en ? "Store pickup" : "Retiro en local"}
+            </span>
+          )}
+          {delivery?.deliveryEnabled && (
+            <span className="inline-flex items-center gap-1.5 rounded-full bg-store-soft/80 px-3 py-1.5 font-medium text-store-ink">
+              <Truck className="size-3.5 shrink-0" /> {deliveryLabel}
+            </span>
+          )}
+          {paymentMethods.length > 0 && (
+            <span className="inline-flex items-center gap-1.5 rounded-full border border-store-rule bg-store-surface/60 px-3 py-1.5 text-store-muted">
+              <CreditCard className="size-3.5 shrink-0" />
+              {paymentMethods.map((m) => paymentMethodLabel(m, locale)).join(" · ")}
+            </span>
+          )}
+        </div>
+      )}
     </section>
   );
 }
@@ -165,9 +197,16 @@ export function ProductImage({ product, className }: { product: Product; classNa
     );
 }
 
-export function productPrice(product: Product, locale: Locale = "es") {
+export function productPrice(product: Product, locale: Locale = "es", currency?: string) {
   if (!product.available) return locale === "en" ? "Unavailable" : "No disponible";
-  return (hasSurcharges(product) ? (locale === "en" ? "From " : "Desde ") : "") + price(product.priceCents, locale);
+  if (product.stock != null && product.stock <= 0) return locale === "en" ? "Sold out" : "Agotado";
+  return (hasSurcharges(product) ? (locale === "en" ? "From " : "Desde ") : "") + price(product.priceCents, locale, currency);
+}
+
+export function lowStockLabel(product: Pick<Product, "available" | "stock">, locale: Locale = "es") {
+  if (!product.available || product.stock == null || product.stock <= 0 || product.stock > 5) return "";
+  if (product.stock === 1) return locale === "en" ? "Last one" : "Última unidad";
+  return locale === "en" ? `Only ${product.stock} left` : `Quedan ${product.stock}`;
 }
 
 export function badgeLabel(badge: Product["badge"], locale: Locale = "es") {
@@ -177,13 +216,16 @@ export function badgeLabel(badge: Product["badge"], locale: Locale = "es") {
   return "";
 }
 
-export function ProductCard({ product, style }: { product: Product; style?: ShopStyle }) {
+export function ProductCard({ product, style, currency }: { product: Product; style?: ShopStyle; currency?: string }) {
   const { locale, t } = useI18n();
   const service = product.kind === "service";
   const radius = cardRadiusClass(style?.radius);
   const aspect = cardAspectClass(style?.cardAspect);
   const tag = badgeLabel(product.badge, locale);
-  const hasCompare = product.available && Boolean(product.compareAtCents && product.compareAtCents > product.priceCents);
+  const avail = isProductAvailable(product);
+  const soldOut = product.available && product.stock != null && product.stock <= 0;
+  const lowStock = lowStockLabel(product, locale);
+  const hasCompare = avail && Boolean(product.compareAtCents && product.compareAtCents > product.priceCents);
   if (style?.catalogLayout === "list") {
     return (
       <article className={cn("group flex items-center gap-4 border border-store-rule bg-store-surface/70 p-3 transition hover:border-store-ink", radius)}>
@@ -194,6 +236,7 @@ export function ProductCard({ product, style }: { product: Product; style?: Shop
           <div className="flex flex-wrap items-center gap-2">
             <h3 className="truncate leading-snug font-semibold group-hover:underline group-hover:underline-offset-4">{product.name}</h3>
             {tag && <span className="rounded-full bg-store-accent px-2 py-0.5 text-[11px] font-semibold text-store-accent-ink">{tag}</span>}
+            {lowStock && <span className="rounded-full bg-amber-500/15 px-2 py-0.5 text-[11px] font-semibold text-amber-700 dark:text-amber-300">{lowStock}</span>}
             {service && (
               <span className="inline-flex items-center gap-1 rounded-full bg-store-soft px-2 py-0.5 text-xs font-medium text-store-ink">
                 <Clock className="size-3" /> {product.durationMinutes} min
@@ -202,8 +245,8 @@ export function ProductCard({ product, style }: { product: Product; style?: Shop
           </div>
           {product.description && <p className="line-clamp-2 text-sm text-store-muted">{product.description}</p>}
           <div className="flex items-baseline gap-2">
-            <p className={cn("text-sm", product.available ? "font-mono font-medium" : "text-store-muted")}>{productPrice(product, locale)}</p>
-            {hasCompare && <span className="font-mono text-xs text-store-muted line-through">{price(product.compareAtCents!, locale)}</span>}
+            <p className={cn("text-sm", avail ? "font-mono font-medium" : "text-store-muted")}>{productPrice(product, locale, currency)}</p>
+            {hasCompare && <span className="font-mono text-xs text-store-muted line-through">{price(product.compareAtCents!, locale, currency)}</span>}
           </div>
         </div>
       </article>
@@ -223,17 +266,21 @@ export function ProductCard({ product, style }: { product: Product; style?: Shop
             {tag}
           </span>
         )}
-        {!product.available && (
+        {!avail ? (
           <span className="absolute inset-x-3 bottom-3 rounded-full bg-store-ink/85 px-3 py-1.5 text-center text-xs font-medium text-store-bg">
-            {t("store.unavailableNow")}
+            {soldOut ? (locale === "en" ? "Sold out" : "Agotado") : t("store.unavailableNow")}
           </span>
-        )}
+        ) : lowStock ? (
+          <span className="absolute bottom-3 left-3 rounded-full bg-store-surface/90 px-2.5 py-1 text-xs font-semibold text-store-ink backdrop-blur">
+            {lowStock}
+          </span>
+        ) : null}
       </div>
       <div className="grid gap-0.5 px-0.5">
         <h3 className="leading-snug font-semibold group-hover:underline group-hover:underline-offset-4">{product.name}</h3>
         <div className="flex flex-wrap items-baseline gap-2">
-          <p className={cn("text-sm", product.available ? "font-mono" : "text-store-muted")}>{productPrice(product, locale)}</p>
-          {hasCompare && <span className="font-mono text-xs text-store-muted line-through">{price(product.compareAtCents!, locale)}</span>}
+          <p className={cn("text-sm", avail ? "font-mono" : "text-store-muted")}>{productPrice(product, locale, currency)}</p>
+          {hasCompare && <span className="font-mono text-xs text-store-muted line-through">{price(product.compareAtCents!, locale, currency)}</span>}
         </div>
       </div>
     </article>

@@ -3,16 +3,17 @@ import { createContext, useContext, useEffect, useState, type ReactElement } fro
 import { Tooltip } from "radix-ui";
 import QRCode from "qrcode";
 import {
-  ArrowRight, ArrowUpRight, CalendarDays, Check, Copy, Download, LayoutGrid, LogOut, Menu, MessageCircle, Package, Palette, PanelLeftClose, PanelLeftOpen, Plus, QrCode, Store,
+  ArrowRight, ArrowUpRight, CalendarDays, Check, Copy, Download, LayoutGrid, LogOut, Menu, MessageCircle, Package, Palette, PanelLeftClose, PanelLeftOpen, Plus, QrCode, ShoppingBag, Store,
   type LucideIcon,
 } from "lucide-react";
 import { getPanel, type PanelShop } from "../panel";
 import { PanelAgenda } from "../PanelAgenda";
 import { PanelCatalog } from "../PanelCatalog";
 import { SectionHead } from "../PanelForm";
+import { PanelOrders } from "../PanelOrders";
 import { CreateShopWizard, ProfileEditor } from "../PanelProfile";
-import { formatLocal } from "../booking";
-import { acceptsBookings } from "../catalog";
+import { formatLocal, shopToday } from "../booking";
+import { acceptsBookings, price } from "../catalog";
 import { LanguageSwitcher, useI18n } from "../i18n";
 import { useCopied } from "@/lib/useCopied";
 import { Button } from "@/components/ui/button";
@@ -21,8 +22,8 @@ import { Sheet, SheetContent, SheetTitle, SheetTrigger } from "@/components/ui/s
 import { Toaster } from "@/components/ui/sonner";
 import { cn } from "@/lib/utils";
 
-type Section = "inicio" | "catalogo" | "agenda" | "tienda" | "alta";
-const sections: Section[] = ["inicio", "catalogo", "agenda", "tienda", "alta"];
+type Section = "inicio" | "catalogo" | "pedidos" | "agenda" | "tienda" | "alta";
+const sections: Section[] = ["inicio", "catalogo", "pedidos", "agenda", "tienda", "alta"];
 
 export const Route = createFileRoute("/panel")({
   validateSearch: (search: Record<string, unknown>): { seccion?: Section; tienda?: string } => ({
@@ -62,7 +63,7 @@ function Panel() {
   const { panel } = Route.useRouteContext();
   const search = Route.useSearch();
   const navigate = Route.useNavigate();
-  const { t } = useI18n();
+  const { locale, t } = useI18n();
   const [menuOpen, setMenuOpen] = useState(false);
   const [collapsed, setCollapsed] = useState(false);
   const shop = panel.shops.find((s) => s.slug === search.tienda) ?? panel.shops[0];
@@ -80,11 +81,13 @@ function Panel() {
   const localizedNav: { value: Section; label: string; icon: LucideIcon }[] = [
     { value: "inicio", label: t("panel.nav.home"), icon: LayoutGrid },
     { value: "catalogo", label: t("panel.nav.catalog"), icon: Package },
+    { value: "pedidos", label: locale === "en" ? "Orders" : "Pedidos", icon: ShoppingBag },
     { value: "agenda", label: t("panel.nav.agenda"), icon: CalendarDays },
     { value: "tienda", label: t("panel.nav.shop"), icon: Palette },
   ];
   const items = [...(shop ? localizedNav : []), ...(panel.operator ? [{ value: "alta" as const, label: t("panel.nav.create"), icon: Plus }] : [])];
   const upcoming = shop?.bookings.filter((booking) => booking.editable).length ?? 0;
+  const newOrders = shop?.orders?.filter((order) => order.status === "new").length ?? 0;
   const current = items.find((item) => item.value === section);
 
   const sidebar = (
@@ -129,6 +132,7 @@ function Panel() {
             >
               <Icon className={cn("size-4.5", section === value && "text-brand")} />
               <span className="min-w-0 flex-1 truncate text-left group-data-[compact]/sidebar:sr-only">{label}</span>
+              {value === "pedidos" && newOrders > 0 && <span className="group-data-[compact]/sidebar:sr-only rounded-full bg-brand px-1.5 text-xs leading-5 font-semibold text-ink-dark">{newOrders}</span>}
               {value === "agenda" && upcoming > 0 && <span className="group-data-[compact]/sidebar:sr-only rounded-full bg-brand px-1.5 text-xs leading-5 font-semibold text-ink-dark">{upcoming}</span>}
               {value === "catalogo" && shop && <span className="group-data-[compact]/sidebar:sr-only text-xs text-neutral-500">{shop.products.length}</span>}
             </button>
@@ -199,6 +203,7 @@ function Panel() {
       <main className="mx-auto w-[min(100%-32px,1120px)] pt-8 pb-24 sm:pt-10">
         {section === "inicio" && shop && <Overview shop={shop} go={go} />}
         {section === "catalogo" && shop && <PanelCatalog key={shop.slug} shop={shop} />}
+        {section === "pedidos" && shop && <PanelOrders key={shop.slug} shop={shop} />}
         {section === "agenda" && shop && <PanelAgenda key={shop.slug} shop={shop} />}
         {section === "tienda" && shop && (
           <div className="grid gap-6">
@@ -257,6 +262,10 @@ function Overview({ shop, go }: { shop: PanelShop; go: (section: Section) => voi
   const products = shop.products;
   const published = products.filter((item) => !item.hidden);
   const upcoming = shop.bookings.filter((booking) => booking.editable);
+  const currentMonth = shopToday(0, shop.timezone).slice(0, 7);
+  const monthOrders = (shop.orders ?? []).filter((o) => o.localMonth === currentMonth && o.status !== "cancelled");
+  const monthTotal = monthOrders.reduce((sum, o) => sum + o.totalCents, 0);
+  const newOrderCount = (shop.orders ?? []).filter((o) => o.status === "new").length;
   const hasServices = products.some((item) => item.kind === "service");
   const tasks: { done: boolean; title: string; text: string; section: Section; cta: string }[] = [
     { done: published.length > 0, title: t("panel.overview.task1.title"), text: t("panel.overview.task1.text"), section: "catalogo", cta: t("panel.overview.task1.cta") },
@@ -276,8 +285,17 @@ function Overview({ shop, go }: { shop: PanelShop; go: (section: Section) => voi
         <ShareLink slug={shop.slug} />
       </div>
 
-      <div className="grid gap-4 sm:grid-cols-3">
+      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
         <Stat icon={Package} label={t("panel.overview.published")} value={published.length} hint={products.length - published.length ? (products.length - published.length) + " " + t("panel.overview.hiddenCount") : undefined} onClick={() => go("catalogo")} />
+        <Stat
+          icon={ShoppingBag}
+          label={locale === "en" ? "Orders (month)" : "Pedidos del mes"}
+          value={monthOrders.length}
+          hint={newOrderCount > 0
+            ? `${newOrderCount} ${locale === "en" ? "new" : "nuevos"} · ${price(monthTotal, locale, shop.currency)}`
+            : price(monthTotal, locale, shop.currency)}
+          onClick={() => go("pedidos")}
+        />
         <Stat icon={CalendarDays} label={t("panel.overview.upcoming")} value={upcoming.length} hint={upcoming[0] ? t("panel.overview.next") + " " + formatLocal(upcoming[0].startsAt, true, locale) : undefined} onClick={() => go("agenda")} />
         <Stat icon={MessageCircle} label="WhatsApp" value={shop.whatsapp ? t("panel.overview.connected") : t("panel.overview.noNumber")} hint={shop.whatsapp ? "+" + shop.whatsapp : t("panel.overview.addInShop")} onClick={() => go("tienda")} />
       </div>

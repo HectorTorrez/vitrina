@@ -24,6 +24,8 @@ type shopMembership struct {
 type panelShop struct {
 	shop
 	Bookings  []panelBooking `json:"bookings"`
+	Orders    []panelOrder   `json:"orders"`
+	Coupons   []shopCoupon   `json:"coupons"`
 	Analytics shopAnalytics  `json:"analytics"`
 }
 
@@ -34,13 +36,16 @@ type panelAccess struct {
 }
 
 type panelInput struct {
-	Booking  panelBooking
-	Item     product
-	Order    []string
-	Action   string
-	ShopSlug string
-	Email    string
-	Profile  shop
+	Booking     panelBooking
+	Item        product
+	Order       []string
+	OrderID     uint
+	OrderStatus string
+	Coupon      shopCoupon
+	Action      string
+	ShopSlug    string
+	Email       string
+	Profile     shop
 }
 
 var (
@@ -92,17 +97,39 @@ func loadPanel(db *gorm.DB, account seller) (panelAccess, error) {
 	if err != nil {
 		return result, err
 	}
+	orders, err := loadPanelOrders(db, account.Email, zones)
+	if err != nil {
+		return result, err
+	}
+	coupons, err := loadPanelCoupons(db, account.Email)
+	if err != nil {
+		return result, err
+	}
 	analytics := loadPanelAnalytics(db, account.Email)
 	for _, s := range shops {
 		shopBookings := bookings[s.Slug]
 		if shopBookings == nil {
 			shopBookings = []panelBooking{}
 		}
+		shopOrders := orders[s.Slug]
+		if shopOrders == nil {
+			shopOrders = []panelOrder{}
+		}
+		shopCoupons := coupons[s.Slug]
+		if shopCoupons == nil {
+			shopCoupons = []shopCoupon{}
+		}
 		stat := analytics[s.Slug]
 		if stat.TopItems == nil {
 			stat.TopItems = []topItemStat{}
 		}
-		result.Shops = append(result.Shops, panelShop{shop: s, Bookings: shopBookings, Analytics: stat})
+		result.Shops = append(result.Shops, panelShop{
+			shop:      s,
+			Bookings:  shopBookings,
+			Orders:    shopOrders,
+			Coupons:   shopCoupons,
+			Analytics: stat,
+		})
 	}
 	return result, nil
 }
@@ -140,7 +167,7 @@ func changePanel(db *gorm.DB, account seller, input panelInput) error {
 			return err
 		}
 		return db.Model(&shop{}).Where("slug = ?", input.ShopSlug).
-			Select("name", "description", "theme", "accent_color", "locale", "timezone", "currency", "blocked_dates", "style", "logo_url", "background_url", "instagram", "tiktok", "facebook", "website", "address", "map_url", "whatsapp", "hours").Updates(&profile).Error
+			Select("name", "description", "theme", "accent_color", "locale", "timezone", "currency", "blocked_dates", "style", "delivery", "payment_methods", "logo_url", "background_url", "instagram", "tiktok", "facebook", "website", "address", "map_url", "whatsapp", "hours").Updates(&profile).Error
 	case "crear-item", "editar-item":
 		return savePanelItem(db, input.ShopSlug, input.Item, input.Action == "crear-item")
 	case "eliminar-item":
@@ -149,6 +176,12 @@ func changePanel(db *gorm.DB, account seller, input panelInput) error {
 		return reorderPanelItems(db, input.ShopSlug, input.Order)
 	case "agendar", "reprogramar", "cancelar":
 		return changePanelBooking(db, input)
+	case "estado-pedido":
+		return updateOrderStatus(db, input.ShopSlug, input.OrderID, input.OrderStatus)
+	case "crear-cupon", "editar-cupon":
+		return savePanelCoupon(db, input.ShopSlug, input.Coupon, input.Action == "crear-cupon")
+	case "eliminar-cupon":
+		return deletePanelCoupon(db, input.ShopSlug, input.Coupon.ID)
 	default:
 		return validationError("Acción inválida")
 	}
@@ -244,23 +277,33 @@ func validatedProfile(input shop) (shop, error) {
 	if err != nil {
 		return shop{}, err
 	}
+	delivery, err := validatedDelivery(input.Delivery)
+	if err != nil {
+		return shop{}, err
+	}
+	paymentMethods, err := validatedPaymentMethods(input.PaymentMethods)
+	if err != nil {
+		return shop{}, err
+	}
 	profile := shop{
-		Name:          strings.TrimSpace(input.Name),
-		Description:   strings.TrimSpace(input.Description),
-		Theme:         input.Theme,
-		AccentColor:   strings.ToLower(input.AccentColor),
-		Locale:        strings.ToLower(strings.TrimSpace(input.Locale)),
-		Timezone:      strings.TrimSpace(input.Timezone),
-		Currency:      strings.ToUpper(strings.TrimSpace(input.Currency)),
-		Style:         style,
-		LogoURL:       input.LogoURL,
-		BackgroundURL: input.BackgroundURL,
-		Instagram:     strings.TrimPrefix(strings.TrimSpace(input.Instagram), "@"),
-		TikTok:        strings.TrimPrefix(strings.TrimSpace(input.TikTok), "@"),
-		Facebook:      strings.TrimPrefix(strings.TrimSpace(input.Facebook), "@"),
-		Website:       strings.TrimSpace(input.Website),
-		Address:       strings.TrimSpace(input.Address),
-		MapURL:        strings.TrimSpace(input.MapURL),
+		Name:           strings.TrimSpace(input.Name),
+		Description:    strings.TrimSpace(input.Description),
+		Theme:          input.Theme,
+		AccentColor:    strings.ToLower(input.AccentColor),
+		Locale:         strings.ToLower(strings.TrimSpace(input.Locale)),
+		Timezone:       strings.TrimSpace(input.Timezone),
+		Currency:       strings.ToUpper(strings.TrimSpace(input.Currency)),
+		Style:          style,
+		Delivery:       delivery,
+		PaymentMethods: paymentMethods,
+		LogoURL:        input.LogoURL,
+		BackgroundURL:  input.BackgroundURL,
+		Instagram:      strings.TrimPrefix(strings.TrimSpace(input.Instagram), "@"),
+		TikTok:         strings.TrimPrefix(strings.TrimSpace(input.TikTok), "@"),
+		Facebook:       strings.TrimPrefix(strings.TrimSpace(input.Facebook), "@"),
+		Website:        strings.TrimSpace(input.Website),
+		Address:        strings.TrimSpace(input.Address),
+		MapURL:         strings.TrimSpace(input.MapURL),
 	}
 	if profile.Timezone == "" {
 		profile.Timezone = "America/El_Salvador"

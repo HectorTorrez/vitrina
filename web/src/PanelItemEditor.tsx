@@ -40,6 +40,8 @@ export interface ItemDraft {
   gallery: string[];
   groups: GroupDraft[];
   available: boolean;
+  trackStock: boolean;
+  stock: string;
   hidden: boolean;
   position: number;
 }
@@ -75,6 +77,8 @@ function toDraft(item: Product | undefined, nextPosition: number): ItemDraft {
       })),
     })),
     available: item?.available ?? true,
+    trackStock: item?.stock != null,
+    stock: item?.stock != null ? String(item.stock) : "10",
     hidden: item?.hidden ?? false,
     position: item?.position ?? nextPosition,
   };
@@ -104,6 +108,7 @@ function fromDraft(draft: ItemDraft) {
     })),
     position: draft.position,
     available: draft.available,
+    stock: draft.kind === "product" && draft.trackStock ? Math.max(0, Math.min(999999, Math.floor(Number(draft.stock || 0)))) : null,
     hidden: draft.hidden,
   };
 }
@@ -724,6 +729,34 @@ function PublishStep({ draft, set, shop }: Omit<StepProps, "errors"> & { shop: P
           title="Disponible" checked={draft.available} onChange={(available) => set({ available })}
           text={draft.available ? "Los clientes pueden pedirla o reservarla." : "Se muestra en el catálogo como “No disponible”."}
         />
+        {draft.kind === "product" && (
+          <div className="grid gap-3 rounded-xl border bg-card p-4">
+            <label className="flex cursor-pointer items-start justify-between gap-4">
+              <span className="grid gap-0.5">
+                <span className="font-medium">Controlar stock</span>
+                <span className="text-sm text-muted-foreground">
+                  {draft.trackStock
+                    ? "Muestra avisos de pocas unidades y descuenta al confirmar pedidos."
+                    : "Sin límite de unidades. Activá esta opción si tenés stock limitado."}
+                </span>
+              </span>
+              <Switch checked={draft.trackStock} onCheckedChange={(trackStock) => set({ trackStock })} />
+            </label>
+            {draft.trackStock && (
+              <Field label="Unidades disponibles" hint="Al llegar a 0 se muestra como agotado automáticamente.">
+                <Input
+                  type="number"
+                  min={0}
+                  max={999999}
+                  step={1}
+                  value={draft.stock}
+                  onChange={(e) => set({ stock: e.target.value.replace(/\D/g, "").slice(0, 6) })}
+                  className="h-10 max-w-36 font-mono"
+                />
+              </Field>
+            )}
+          </div>
+        )}
         <ToggleRow
           title="Visible en la tienda" checked={!draft.hidden} onChange={(visible) => set({ hidden: !visible })}
           text={draft.hidden ? "Oculta: no aparece en el catálogo y su enlace no abre." : "Aparece en el catálogo y se puede compartir."}
@@ -732,7 +765,12 @@ function PublishStep({ draft, set, shop }: Omit<StepProps, "errors"> & { shop: P
           <p className="font-medium">Resumen</p>
           <dl className="grid grid-cols-[auto_1fr] gap-x-4 gap-y-1 text-muted-foreground [&_dd]:text-right [&_dd]:text-foreground">
             <dt>Tipo</dt><dd>{draft.kind === "service" ? "Servicio · " + draft.duration + " min" : "Producto"}</dd>
-            <dt>Precio</dt><dd className="font-mono">{price(toCents(draft.price))}</dd>
+            <dt>Precio</dt><dd className="font-mono">{price(toCents(draft.price), "es", shop.currency)}</dd>
+            {draft.kind === "product" && (
+              <>
+                <dt>Stock</dt><dd className="font-mono">{draft.trackStock ? `${Number(draft.stock || 0)} u.` : "Sin límite"}</dd>
+              </>
+            )}
             <dt>Fotos</dt><dd>{(draft.imageUrl ? 1 : 0) + draft.gallery.length || "Ninguna"}</dd>
             <dt>Variantes</dt><dd>{draft.groups.length ? draft.groups.map((group) => group.name || "—").join(", ") : "Ninguna"}</dd>
             <dt>Enlace</dt><dd className="truncate font-mono">/{draft.slug}</dd>

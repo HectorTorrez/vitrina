@@ -2,6 +2,7 @@ import { createServerFn } from "@tanstack/react-start";
 import { getRequest, setResponseHeader } from "@tanstack/react-start/server";
 import { apiFetch } from "./api";
 import type { Shop } from "./catalog";
+import type { PanelOrder, ShopCoupon } from "./orders";
 
 export type Profile = Omit<Shop, "slug" | "products" | "origin">;
 export interface Booking {
@@ -24,7 +25,12 @@ export interface ShopAnalytics {
   topItems: { slug: string; views: number }[];
 }
 
-export type PanelShop = Omit<Shop, "origin"> & { bookings: Booking[]; analytics?: ShopAnalytics };
+export type PanelShop = Omit<Shop, "origin"> & {
+  bookings: Booking[];
+  orders?: PanelOrder[];
+  coupons?: ShopCoupon[];
+  analytics?: ShopAnalytics;
+};
 export interface PanelAccess {
   email: string;
   operator: boolean;

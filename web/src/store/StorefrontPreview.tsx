@@ -14,7 +14,7 @@ const samples: Product[] = [
 ];
 
 export function StorefrontPreview({ shop, slug, className }: {
-  shop: Pick<Shop, "logoUrl" | "backgroundUrl" | "name" | "description" | "theme" | "accentColor" | "style" | "instagram" | "tiktok" | "facebook" | "website" | "address" | "mapUrl" | "whatsapp" | "hours" | "products">;
+  shop: Pick<Shop, "logoUrl" | "backgroundUrl" | "name" | "description" | "theme" | "accentColor" | "style" | "delivery" | "paymentMethods" | "currency" | "instagram" | "tiktok" | "facebook" | "website" | "address" | "mapUrl" | "whatsapp" | "hours" | "products">;
   slug: string;
   className?: string;
 }) {
@@ -65,7 +65,7 @@ export function StorefrontPreview({ shop, slug, className }: {
 }
 
 function StorePage({ shop, products, bookable }: {
-  shop: Pick<Shop, "logoUrl" | "backgroundUrl" | "name" | "description" | "theme" | "accentColor" | "style" | "instagram" | "tiktok" | "facebook" | "website" | "address" | "mapUrl" | "whatsapp">;
+  shop: Pick<Shop, "logoUrl" | "backgroundUrl" | "name" | "description" | "theme" | "accentColor" | "style" | "delivery" | "paymentMethods" | "currency" | "instagram" | "tiktok" | "facebook" | "website" | "address" | "mapUrl" | "whatsapp">;
   products: Product[];
   bookable: boolean;
 }) {
@@ -83,7 +83,7 @@ function StorePage({ shop, products, bookable }: {
       <div className="mx-auto w-[min(100%-32px,1120px)]">
         <ShopHero shop={shop} bookable={bookable} />
         <div className={isList ? "grid gap-3" : "grid grid-cols-2 gap-x-4 gap-y-6 @3xl:grid-cols-3"}>
-          {products.map((product) => <ProductCard key={product.slug} product={product} style={shop.style} />)}
+          {products.map((product) => <ProductCard key={product.slug} product={product} style={shop.style} currency={shop.currency} />)}
         </div>
       </div>
     </StoreFrame>

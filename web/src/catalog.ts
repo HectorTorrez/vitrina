@@ -15,6 +15,7 @@ export interface Product {
   priceCents: number;
   compareAtCents?: number;
   available: boolean;
+  stock?: number | null;
   artwork: string;
   imageUrl?: string;
   /** Extra photos shown after imageUrl on the product page. */
@@ -37,6 +38,15 @@ export interface ShopStyle {
   announcement?: string;
 }
 
+export interface DeliveryConfig {
+  pickupEnabled?: boolean;
+  pickupNote?: string;
+  deliveryEnabled?: boolean;
+  deliveryFeeMode?: "" | "free" | "fixed" | "coordinate";
+  deliveryFeeCents?: number;
+  deliveryNote?: string;
+}
+
 export interface Shop {
   slug: string;
   name: string;
@@ -47,6 +57,8 @@ export interface Shop {
   timezone?: string;
   currency?: string;
   style?: ShopStyle;
+  delivery?: DeliveryConfig;
+  paymentMethods?: string[];
   logoUrl?: string;
   backgroundUrl?: string;
   instagram: string;
@@ -95,6 +107,24 @@ export const shopQuery = (slug: string) =>
 
 export function acceptsBookings(shop: Pick<Shop, "hours">) {
   return shop.hours.some((day) => day.open);
+}
+
+export function isProductAvailable(product: Pick<Product, "available" | "stock">) {
+  return product.available && (product.stock == null || product.stock > 0);
+}
+
+export const PAYMENT_METHOD_PRESETS = [
+  { key: "cash", es: "Efectivo", en: "Cash" },
+  { key: "transfer", es: "Transferencia bancaria", en: "Bank transfer" },
+  { key: "card", es: "Tarjeta", en: "Card" },
+  { key: "payment_link", es: "Link de pago", en: "Payment link" },
+  { key: "paypal", es: "PayPal", en: "PayPal" },
+  { key: "crypto", es: "Bitcoin / Cripto", en: "Bitcoin / Crypto" },
+] as const;
+
+export function paymentMethodLabel(method: string, locale: "es" | "en" = "es") {
+  const preset = PAYMENT_METHOD_PRESETS.find((p) => p.key === method);
+  return preset ? preset[locale] : method;
 }
 
 const formatters = new Map<string, Intl.NumberFormat>();
