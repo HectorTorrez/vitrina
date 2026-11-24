@@ -12,6 +12,7 @@ import { Route as rootRouteImport } from './routes/__root'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as AuthRouteImport } from './routes/auth'
 import { Route as ConfirmarAccesoRouteImport } from './routes/confirmar-acceso'
+import { Route as EnRouteImport } from './routes/en'
 import { Route as GestionRouteImport } from './routes/gestion'
 import { Route as IngresarRouteImport } from './routes/ingresar'
 import { Route as LlmsDottxtRouteImport } from './routes/llms[.]txt'
@@ -37,6 +38,11 @@ const AuthRoute = AuthRouteImport.update({
 const ConfirmarAccesoRoute = ConfirmarAccesoRouteImport.update({
   id: '/confirmar-acceso',
   path: '/confirmar-acceso',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const EnRoute = EnRouteImport.update({
+  id: '/en',
+  path: '/en',
   getParentRoute: () => rootRouteImport,
 } as any)
 const GestionRoute = GestionRouteImport.update({
@@ -99,6 +105,7 @@ export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/auth': typeof AuthRoute
   '/confirmar-acceso': typeof ConfirmarAccesoRoute
+  '/en': typeof EnRoute
   '/gestion': typeof GestionRoute
   '/ingresar': typeof IngresarRoute
   '/llms.txt': typeof LlmsDottxtRoute
@@ -115,6 +122,7 @@ export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/auth': typeof AuthRoute
   '/confirmar-acceso': typeof ConfirmarAccesoRoute
+  '/en': typeof EnRoute
   '/gestion': typeof GestionRoute
   '/ingresar': typeof IngresarRoute
   '/llms.txt': typeof LlmsDottxtRoute
@@ -132,6 +140,7 @@ export interface FileRoutesById {
   '/': typeof IndexRoute
   '/auth': typeof AuthRoute
   '/confirmar-acceso': typeof ConfirmarAccesoRoute
+  '/en': typeof EnRoute
   '/gestion': typeof GestionRoute
   '/ingresar': typeof IngresarRoute
   '/llms.txt': typeof LlmsDottxtRoute
@@ -150,6 +159,7 @@ export interface FileRouteTypes {
     | '/'
     | '/auth'
     | '/confirmar-acceso'
+    | '/en'
     | '/gestion'
     | '/ingresar'
     | '/llms.txt'
@@ -166,6 +176,7 @@ export interface FileRouteTypes {
     | '/'
     | '/auth'
     | '/confirmar-acceso'
+    | '/en'
     | '/gestion'
     | '/ingresar'
     | '/llms.txt'
@@ -182,6 +193,7 @@ export interface FileRouteTypes {
     | '/'
     | '/auth'
     | '/confirmar-acceso'
+    | '/en'
     | '/gestion'
     | '/ingresar'
     | '/llms.txt'
@@ -199,6 +211,7 @@ export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   AuthRoute: typeof AuthRoute
   ConfirmarAccesoRoute: typeof ConfirmarAccesoRoute
+  EnRoute: typeof EnRoute
   GestionRoute: typeof GestionRoute
   IngresarRoute: typeof IngresarRoute
   LlmsDottxtRoute: typeof LlmsDottxtRoute
@@ -233,6 +246,13 @@ declare module '@tanstack/react-router' {
       path: '/confirmar-acceso'
       fullPath: '/confirmar-acceso'
       preLoaderRoute: typeof ConfirmarAccesoRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/en': {
+      id: '/en'
+      path: '/en'
+      fullPath: '/en'
+      preLoaderRoute: typeof EnRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/gestion': {
@@ -319,6 +339,7 @@ const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   AuthRoute: AuthRoute,
   ConfirmarAccesoRoute: ConfirmarAccesoRoute,
+  EnRoute: EnRoute,
   GestionRoute: GestionRoute,
   IngresarRoute: IngresarRoute,
   LlmsDottxtRoute: LlmsDottxtRoute,

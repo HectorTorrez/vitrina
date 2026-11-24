@@ -5,7 +5,7 @@ import { ArrowLeft, Check, ChevronLeft, ChevronRight, Clock, Share2, ShoppingBag
 import { trackEvent } from "../analytics";
 import { acceptsBookings, shopQuery, price, productImage, productImages, totalPrice, type Product } from "../catalog";
 import { useI18n } from "../i18n";
-import { pageHead, siteLanguage } from "../seo";
+import { htmlLang, pageHead, resolveShopLocale, shopLocalBusinessSchema } from "../seo";
 import { PublicBooking } from "../PublicBooking";
 import { useCart } from "../store/CartContext";
 import { StoreLayout } from "../store/StoreLayout";
@@ -23,6 +23,8 @@ export const Route = createFileRoute("/tienda/$shop/$product")({
     const p = loaderData?.products.find((item) => item.slug === params.product);
     if (!loaderData || !p) return {};
     const { name, origin } = loaderData;
+    const shopLocale = resolveShopLocale(loaderData.locale);
+    const currency = (loaderData.currency || "USD").toUpperCase();
     const shopUrl = origin + "/tienda/" + params.shop;
     const url = shopUrl + "/" + p.slug;
     const path = productImage(p);
@@ -30,14 +32,20 @@ export const Route = createFileRoute("/tienda/$shop/$product")({
     const images = productImages(p).map((src) => new URL(src, origin).href);
     const service = p.kind === "service";
     const displayedPrice = totalPrice(p);
+    const kindLabel = shopLocale === "en"
+      ? (service ? "Service by " : "Product by ")
+      : (service ? "Servicio de " : "Producto de ");
+    const unavailableLabel = shopLocale === "en" ? "Unavailable" : "No disponible";
     const summary = [
-      p.name + " · " + (service ? "Servicio" : "Producto") + " de " + name,
+      p.name + " · " + kindLabel + name,
       ...(service ? [p.durationMinutes + " min"] : []),
-      p.available ? price(displayedPrice) : "No disponible",
+      p.available ? price(displayedPrice, shopLocale, currency) : unavailableLabel,
     ].join(" · ");
     const description = p.description ? summary + ". " + p.description : summary;
+    const shopDesc = loaderData.description.trim() || description;
     const offer = p.available ? {
-      "@type": "Offer", url, price: (displayedPrice / 100).toFixed(2), priceCurrency: "USD",
+      "@type": "Offer", url, price: (displayedPrice / 100).toFixed(2), priceCurrency: currency,
+      seller: { "@id": shopUrl + "#negocio" },
       ...(!service ? { availability: "https://schema.org/InStock" } : {}),
     } : undefined;
     return pageHead({
@@ -45,10 +53,12 @@ export const Route = createFileRoute("/tienda/$shop/$product")({
       description,
       url,
       image,
+      locale: shopLocale,
       structuredData: {
         "@graph": [
+          shopLocalBusinessSchema(loaderData, shopUrl, shopDesc),
           {
-            "@type": "WebPage", url, name: p.name, description, inLanguage: siteLanguage,
+            "@type": "WebPage", url, name: p.name, description, inLanguage: htmlLang(shopLocale),
             mainEntity: { "@id": url + "#ficha" },
             breadcrumb: { "@id": url + "#ruta" },
           },
@@ -60,7 +70,7 @@ export const Route = createFileRoute("/tienda/$shop/$product")({
             description: p.description || summary,
             image: images.length > 1 ? images : image,
             offers: offer,
-            ...(service ? { provider: { "@type": "Organization", name, url: shopUrl } } : {}),
+            ...(service ? { provider: { "@id": shopUrl + "#negocio" } } : {}),
           },
           {
             "@type": "BreadcrumbList",
