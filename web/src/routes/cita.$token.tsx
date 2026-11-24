@@ -50,6 +50,7 @@ function ManageBookingPage() {
   const [date, setDate] = useState(() => booking.startsAt.slice(0, 10));
   const [staffId, setStaffId] = useState(booking.staffId ?? "");
   const [slots, setSlots] = useState<string[] | null>(null);
+  const [loadingSlots, setLoadingSlots] = useState(false);
   const [slotError, setSlotError] = useState("");
   const [selectedTime, setSelectedTime] = useState("");
   const [busy, setBusy] = useState(false);
@@ -78,7 +79,7 @@ function ManageBookingPage() {
   useEffect(() => {
     if (!rescheduling) return;
     let active = true;
-    setSlots(null);
+    setLoadingSlots(true);
     setSelectedTime("");
     setSlotError("");
     getSlots({
@@ -95,7 +96,8 @@ function ManageBookingPage() {
         setSlots(res.slots);
         setSlotError(res.error ?? "");
       })
-      .catch(() => active && setSlotError(en ? "Could not load available times" : "No se pudieron consultar los horarios"));
+      .catch(() => active && setSlotError(en ? "Could not load available times" : "No se pudieron consultar los horarios"))
+      .finally(() => active && setLoadingSlots(false));
     return () => { active = false; };
   }, [rescheduling, booking.shopSlug, booking.serviceSlug, booking.token, date, staffId, en]);
 
@@ -391,32 +393,37 @@ function ManageBookingPage() {
                 })}
               </div>
 
-              {slots === null && !slotError && (
-                <div className="grid grid-cols-4 gap-2">
-                  {Array.from({ length: 8 }, (_, i) => <span key={i} className="h-9 animate-pulse rounded-xl bg-muted" />)}
-                </div>
-              )}
-              {slotError && <p className="text-sm text-destructive">{slotError}</p>}
-              {slots?.length === 0 && !slotError && (
-                <p className="rounded-xl bg-muted/60 px-3.5 py-2.5 text-sm text-muted-foreground">
-                  {en ? "No open slots on this day. Try another date." : "No hay horarios libres ese día. Probá otra fecha."}
-                </p>
-              )}
-              {slots && slots.length > 0 && (
-                <div className="grid grid-cols-4 gap-2 sm:grid-cols-5">
-                  {slots.map((slot) => (
-                    <button
-                      key={slot} type="button" onClick={() => setSelectedTime(slot)}
-                      className={cn(
-                        "h-9 rounded-xl border font-mono text-sm transition",
-                        selectedTime === slot ? "border-foreground bg-foreground text-background" : "hover:bg-muted",
-                      )}
-                    >
-                      {slot}
-                    </button>
-                  ))}
-                </div>
-              )}
+              <div className="min-h-24" aria-busy={loadingSlots}>
+                {slots === null && !slotError && (
+                  <div className="grid grid-cols-4 gap-2 sm:grid-cols-5">
+                    {Array.from({ length: 10 }, (_, i) => <span key={i} className="h-9 animate-pulse rounded-xl bg-muted" />)}
+                  </div>
+                )}
+                {slotError && <p className="text-sm text-destructive">{slotError}</p>}
+                {slots !== null && !slotError && (
+                  <div className={cn("transition-opacity duration-150", loadingSlots && "pointer-events-none opacity-45")}>
+                    {slots.length === 0 ? (
+                      <p className="rounded-xl bg-muted/60 px-3.5 py-2.5 text-sm text-muted-foreground">
+                        {en ? "No open slots on this day. Try another date." : "No hay horarios libres ese día. Probá otra fecha."}
+                      </p>
+                    ) : (
+                      <div className="grid grid-cols-4 gap-2 sm:grid-cols-5">
+                        {slots.map((slot) => (
+                          <button
+                            key={slot} type="button" onClick={() => setSelectedTime(slot)}
+                            className={cn(
+                              "h-9 rounded-xl border font-mono text-sm transition",
+                              selectedTime === slot ? "border-foreground bg-foreground text-background" : "hover:bg-muted",
+                            )}
+                          >
+                            {slot}
+                          </button>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                )}
+              </div>
 
               {selectedTime && (
                 <Button type="button" disabled={busy} className="rounded-full" onClick={() => void handleReschedule()}>

@@ -52,6 +52,7 @@ export function PublicBooking({
   const [staffId, setStaffId] = useState("");
   const [date, setDate] = useState(() => shopToday(0, timeZone));
   const [slots, setSlots] = useState<string[] | null>(null);
+  const [loadingSlots, setLoadingSlots] = useState(true);
   const [slotError, setSlotError] = useState("");
   const [time, setTime] = useState("");
   const [pending, setPending] = useState(false);
@@ -88,7 +89,7 @@ export function PublicBooking({
 
   useEffect(() => {
     let current = true;
-    setSlots(null);
+    setLoadingSlots(true);
     setTime("");
     setSlotError("");
     getSlots({ data: { shop, service: service.slug, date, staff: staffId || undefined } })
@@ -97,7 +98,8 @@ export function PublicBooking({
         setSlots(result.slots);
         setSlotError(result.error ?? "");
       })
-      .catch(() => current && setSlotError(t("booking.errLoad")));
+      .catch(() => current && setSlotError(t("booking.errLoad")))
+      .finally(() => current && setLoadingSlots(false));
     return () => { current = false; };
   }, [shop, service.slug, date, staffId]);
 
@@ -303,35 +305,45 @@ export function PublicBooking({
         })}
       </div>
 
-      <div className="grid gap-3" aria-live="polite">
-        <p className="text-sm font-medium capitalize">{formatLocal(date, false, locale)}</p>
+      <div className="grid min-h-36 content-start gap-3" aria-live="polite" aria-busy={loadingSlots}>
+        <div className="flex items-center justify-between gap-2">
+          <p className="text-sm font-medium capitalize">{formatLocal(date, false, locale)}</p>
+          {loadingSlots && slots !== null && (
+            <Loader2 className="size-3.5 animate-spin text-store-muted" aria-hidden="true" />
+          )}
+        </div>
         {slots === null && !slotError && (
-          <div className="grid grid-cols-4 gap-2">
-            {Array.from({ length: 8 }, (_, i) => <span key={i} className="h-10 animate-pulse rounded-xl bg-store-soft" />)}
+          <div className="grid grid-cols-4 gap-2 @lg:grid-cols-5">
+            {Array.from({ length: 10 }, (_, i) => <span key={i} className="h-10 animate-pulse rounded-xl bg-store-soft" />)}
           </div>
         )}
         {slotError && <p role="alert" className="rounded-xl bg-red-50 px-3 py-2 text-sm text-red-700">{slotError}</p>}
-        {slots?.length === 0 && !slotError && (
-          <p className="rounded-xl bg-store-soft px-4 py-3 text-sm">{t("booking.noSlots")}</p>
-        )}
-        {slots && groupSlots(slots, t).map((group) => (
-          <div key={group.label} className="grid gap-2">
-            <p className="text-xs font-medium tracking-wide text-store-muted uppercase">{group.label}</p>
-            <div className="grid grid-cols-4 gap-2 @lg:grid-cols-5">
-              {group.items.map((slot) => (
-                <button
-                  key={slot} type="button" aria-pressed={time === slot} onClick={() => setTime(slot)}
-                  className={cn(
-                    "h-10 rounded-xl border font-mono text-sm transition",
-                    time === slot ? "border-store-ink bg-store-ink text-store-bg" : "border-store-rule hover:border-store-ink",
-                  )}
-                >
-                  {slot}
-                </button>
-              ))}
-            </div>
+        {slots !== null && !slotError && (
+          <div className={cn("grid gap-3 transition-opacity duration-150", loadingSlots && "pointer-events-none opacity-45")}>
+            {slots.length === 0 ? (
+              <p className="rounded-xl bg-store-soft px-4 py-3 text-sm">{t("booking.noSlots")}</p>
+            ) : (
+              groupSlots(slots, t).map((group) => (
+                <div key={group.label} className="grid gap-2">
+                  <p className="text-xs font-medium tracking-wide text-store-muted uppercase">{group.label}</p>
+                  <div className="grid grid-cols-4 gap-2 @lg:grid-cols-5">
+                    {group.items.map((slot) => (
+                      <button
+                        key={slot} type="button" aria-pressed={time === slot} onClick={() => setTime(slot)}
+                        className={cn(
+                          "h-10 rounded-xl border font-mono text-sm transition",
+                          time === slot ? "border-store-ink bg-store-ink text-store-bg" : "border-store-rule hover:border-store-ink",
+                        )}
+                      >
+                        {slot}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              ))
+            )}
           </div>
-        ))}
+        )}
       </div>
 
       {time && (
