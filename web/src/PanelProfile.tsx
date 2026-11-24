@@ -15,6 +15,7 @@ import { emailError } from "./AuthLayout";
 import { PanelImageUpload } from "./PanelImageUpload";
 import { contrastRatio, fontChoices, getTheme, themes } from "./themes";
 import { Button } from "@/components/ui/button";
+import { DatePicker } from "@/components/ui/date-picker";
 import { Input } from "@/components/ui/input";
 import { Switch } from "@/components/ui/switch";
 import { Textarea } from "@/components/ui/textarea";
@@ -1196,7 +1197,7 @@ function BlockedDatesEditor({ dates, onChange }: { dates: string[]; onChange: (d
         <span className="text-xs text-muted-foreground">{en ? "Holidays or days you won't accept online bookings." : "Feriados o días en los que no recibirás citas en línea."}</span>
       </div>
       <div className="flex flex-wrap items-center gap-2">
-        <Input type="date" value={nextDate} onChange={(e) => setNextDate(e.target.value)} className="h-9 w-44" />
+        <DatePicker value={nextDate} onChange={setNextDate} locale={locale} className="h-9 w-48" />
         <Button type="button" variant="outline" size="sm" className="rounded-full" disabled={!nextDate || dates.length >= 60} onClick={add}>
           <Plus className="size-3.5" /> {en ? "Block date" : "Bloquear fecha"}
         </Button>

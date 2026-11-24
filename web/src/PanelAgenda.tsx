@@ -15,6 +15,7 @@ import {
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
+import { DatePicker, DateTimePicker } from "@/components/ui/date-picker";
 import { Sheet, SheetContent, SheetDescription, SheetTitle } from "@/components/ui/sheet";
 import { Input } from "@/components/ui/input";
 import { cn } from "@/lib/utils";
@@ -354,7 +355,7 @@ function DayCalendarView({
           <span className="ml-2 text-sm font-semibold capitalize">{formatLocal(date, false, locale)}</span>
           {blocked && <Badge variant="secondary">{en ? "Blocked" : "Bloqueado"}</Badge>}
         </div>
-        <Input type="date" value={date} onChange={(e) => e.target.value && onDateChange(e.target.value)} className="h-8 w-40 text-xs" />
+        <DatePicker value={date} onChange={(d) => d && onDateChange(d)} locale={locale} align="end" className="h-8 w-44 text-xs" />
       </div>
 
       <div className="overflow-x-auto">
@@ -638,6 +639,7 @@ function BookingForm({ shopSlug, services, staff = [], booking, defaultStartsAt,
   defaultStaffId?: string;
   onSaved?: () => void;
 }) {
+  const { locale } = useI18n();
   const options = services
     .filter((item) => item.slug === booking?.serviceSlug || (item.available && !item.hidden))
     .map((item) => ({ value: item.slug, label: item.name }));
@@ -675,7 +677,9 @@ function BookingForm({ shopSlug, services, staff = [], booking, defaultStartsAt,
         <Field label="Teléfono (opcional)">
           <Input name="phone" type="tel" defaultValue={booking?.phone ? "+" + booking.phone : ""} placeholder="+50370000000" maxLength={24} />
         </Field>
-        <Field label="Fecha y hora"><Input name="startsAt" type="datetime-local" defaultValue={booking?.startsAt ?? defaultStartsAt} required /></Field>
+        <Field label="Fecha y hora">
+          <DateTimePicker name="startsAt" defaultValue={booking?.startsAt ?? defaultStartsAt} locale={locale} required />
+        </Field>
         {staff.length > 0 && (
           <Field label="Especialista (opcional)">
             <FormSelect

@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useState } from "react";
 import { createFileRoute, Link, notFound } from "@tanstack/react-router";
 import {
   ArrowLeft, CalendarCheck, CalendarClock, CalendarDays, CalendarPlus, CalendarX2,
@@ -17,6 +17,7 @@ import {
   AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
 import { Button } from "@/components/ui/button";
+import { DatePicker } from "@/components/ui/date-picker";
 
 export const Route = createFileRoute("/cita/$token")({
   loader: async ({ params }) => {
@@ -56,22 +57,6 @@ function ManageBookingPage() {
   const [busy, setBusy] = useState(false);
   const [actionError, setActionError] = useState("");
   const [feedback, setFeedback] = useState("");
-  const dateInputRef = useRef<HTMLInputElement>(null);
-
-  function openDatePicker() {
-    const input = dateInputRef.current;
-    if (!input) return;
-    try {
-      if (typeof input.showPicker === "function") {
-        input.showPicker();
-        return;
-      }
-    } catch {
-      // Fallback for browsers that restrict showPicker
-    }
-    input.focus();
-    input.click();
-  }
 
   const horizon = booking.horizonDays || 60;
   const days = Array.from({ length: Math.min(14, horizon + 1) }, (_, i) => shopToday(i, booking.shopTimezone));
@@ -326,23 +311,23 @@ function ManageBookingPage() {
             <div className="grid gap-4 border-t pt-5">
               <div className="flex items-center justify-between gap-2">
                 <h2 className="font-semibold">{en ? "Choose a new time" : "Elegí un nuevo horario"}</h2>
-                <div className="relative inline-flex">
-                  <button
-                    type="button"
-                    onClick={openDatePicker}
-                    className="inline-flex h-8 cursor-pointer items-center gap-1.5 rounded-full border px-3 text-xs font-medium transition hover:bg-muted"
-                  >
-                    <CalendarDays className="size-3.5" /> {en ? "Other date" : "Otra fecha"}
-                  </button>
-                  <input
-                    ref={dateInputRef}
-                    type="date" value={date} min={shopToday(0, booking.shopTimezone)} max={shopToday(horizon, booking.shopTimezone)}
-                    tabIndex={-1}
-                    aria-label={en ? "Other date" : "Otra fecha"}
-                    className="pointer-events-none absolute inset-0 size-full opacity-0"
-                    onChange={(e) => e.target.value && setDate(e.target.value)}
-                  />
-                </div>
+                <DatePicker
+                  value={date}
+                  onChange={(d) => d && setDate(d)}
+                  min={shopToday(0, booking.shopTimezone)}
+                  max={shopToday(horizon, booking.shopTimezone)}
+                  locale={locale}
+                  align="end"
+                  trigger={
+                    <button
+                      type="button"
+                      aria-label={en ? "Other date" : "Otra fecha"}
+                      className="inline-flex h-8 cursor-pointer items-center gap-1.5 rounded-full border px-3 text-xs font-medium transition hover:bg-muted"
+                    >
+                      <CalendarDays className="size-3.5" /> {en ? "Other date" : "Otra fecha"}
+                    </button>
+                  }
+                />
               </div>
 
               {booking.eligibleStaff.length > 0 && (

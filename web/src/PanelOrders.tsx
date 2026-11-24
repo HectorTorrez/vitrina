@@ -9,6 +9,7 @@ import { shopToday } from "./booking";
 import { WhatsAppIcon } from "./store/StoreParts";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { DatePicker } from "@/components/ui/date-picker";
 import { Input } from "@/components/ui/input";
 import { Switch } from "@/components/ui/switch";
 import { cn } from "@/lib/utils";
@@ -411,7 +412,14 @@ function CouponsSection({ shop, coupons }: { shop: PanelShop; coupons: ShopCoupo
               />
             </Field>
             <Field label={en ? "Expiration date" : "Fecha de vencimiento"} optional>
-              <Input type="date" value={expiresDate} onChange={(e) => setExpiresDate(e.target.value)} className="h-10" />
+              <DatePicker
+                value={expiresDate}
+                onChange={setExpiresDate}
+                locale={locale}
+                clearable
+                placeholder={en ? "No expiration" : "Sin vencimiento"}
+                className="h-10 w-full"
+              />
             </Field>
           </div>
           <div>
