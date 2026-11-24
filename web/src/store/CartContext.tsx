@@ -26,7 +26,7 @@ interface CartContextValue {
   totalCents: number;
   open: boolean;
   setOpen: (open: boolean) => void;
-  addProduct: (product: Product, choices: Record<string, string>) => void;
+  addProduct: (product: Product, choices: Record<string, string>, opts?: { openDrawer?: boolean }) => void;
   updateQty: (key: string, delta: number) => void;
   removeItem: (key: string) => void;
   clear: () => void;
@@ -87,7 +87,7 @@ export function CartProvider({ shop, slug, children }: { shop: Shop; slug: strin
       totalCents,
       open,
       setOpen,
-      addProduct: (product, rawChoices) => {
+      addProduct: (product, rawChoices, opts) => {
         if (!isProductAvailable(product)) return;
         const choices: Record<string, string> = {};
         for (const opt of product.options) {
@@ -106,7 +106,7 @@ export function CartProvider({ shop, slug, children }: { shop: Shop; slug: strin
           }
           return [...current, { key, slug: product.slug, name: product.name, imageUrl, unitPriceCents, quantity: 1, choices }];
         });
-        setOpen(true);
+        if (opts?.openDrawer !== false) setOpen(true);
       },
       updateQty: (key, delta) => {
         setItems((current) =>

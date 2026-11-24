@@ -5,7 +5,7 @@ import { PhoneCountrySelect } from "./PhoneCountrySelect";
 import phoneLabelsEs from "react-phone-number-input/locale/es";
 import phoneLabelsEn from "react-phone-number-input/locale/en";
 import "react-phone-number-input/style.css";
-import { acceptsBookings, PAYMENT_METHOD_PRESETS, type BookingConfig, type DeliveryConfig, type Product, type ShopStyle, type StaffMember, type TimeBlock } from "./catalog";
+import { acceptsBookings, PAYMENT_METHOD_PRESETS, type BookingConfig, type DeliveryConfig, type Product, type ShopFAQ, type ShopPolicies, type ShopStyle, type StaffMember, type TimeBlock } from "./catalog";
 import { useI18n } from "./i18n";
 import type { PanelShop, Profile } from "./panel";
 import { AffixInput, Field, FormSection, FormSelect, SaveBar, Stepper, usePanelAction } from "./PanelForm";
@@ -76,6 +76,8 @@ interface ProfileDraft {
     deliveryNote: string;
   };
   paymentMethods: string[];
+  policies: Required<ShopPolicies>;
+  faqs: ShopFAQ[];
   logoUrl: string;
   backgroundUrl: string;
   instagram: string;
@@ -91,7 +93,7 @@ interface ProfileDraft {
   bookingConfig: BookingConfig;
   staff: StaffMember[];
 }
-type ProfileErrors = Partial<Record<"name" | "description" | "instagram" | "tiktok" | "whatsapp" | "hours" | "staff", string>> & { days?: Record<number, string> };
+type ProfileErrors = Partial<Record<"name" | "description" | "instagram" | "tiktok" | "whatsapp" | "hours" | "staff" | "faqs", string>> & { days?: Record<number, string> };
 
 function toDraft(profile?: Profile): ProfileDraft {
   const hours = profile?.hours ?? [];
@@ -126,6 +128,12 @@ function toDraft(profile?: Profile): ProfileDraft {
       deliveryNote: profile?.delivery?.deliveryNote ?? "",
     },
     paymentMethods: profile?.paymentMethods ?? [],
+    policies: {
+      shipping: profile?.policies?.shipping ?? "",
+      returns: profile?.policies?.returns ?? "",
+      cancellation: profile?.policies?.cancellation ?? "",
+    },
+    faqs: (profile?.faqs ?? []).map((f) => ({ question: f.question, answer: f.answer })),
     theme: profile?.theme || "costa",
     instagram: profile?.instagram ?? "",
     tiktok: profile?.tiktok ?? "",
@@ -196,6 +204,14 @@ function fromDraft(draft: ProfileDraft): Profile {
     },
     delivery,
     paymentMethods: draft.paymentMethods,
+    policies: {
+      shipping: draft.policies.shipping.trim(),
+      returns: draft.policies.returns.trim(),
+      cancellation: draft.policies.cancellation.trim(),
+    },
+    faqs: draft.faqs
+      .map((f) => ({ question: f.question.trim(), answer: f.answer.trim() }))
+      .filter((f) => f.question || f.answer),
     logoUrl: draft.logoUrl,
     backgroundUrl: draft.backgroundUrl,
     instagram: cleanHandle(draft.instagram),
@@ -272,6 +288,9 @@ function validateProfile(draft: ProfileDraft): ProfileErrors {
   }
   if (draft.staff.some((m) => !m.name.trim() || !m.id.trim())) {
     errors.staff = "Cada especialista necesita un nombre.";
+  }
+  if (draft.faqs.some((f) => Boolean(f.question.trim()) !== Boolean(f.answer.trim()))) {
+    errors.faqs = "Completá tanto la pregunta como la respuesta, o eliminá la fila vacía.";
   }
   return errors;
 }
@@ -1218,6 +1237,121 @@ function BlockedDatesEditor({ dates, onChange }: { dates: string[]; onChange: (d
   );
 }
 
+function PoliciesAndFaqsFields({ draft, set, errors }: { draft: ProfileDraft; set: SetDraft; errors: ProfileErrors }) {
+  const { locale } = useI18n();
+  const en = locale === "en";
+  const setPolicy = (patch: Partial<ProfileDraft["policies"]>) =>
+    set({ policies: { ...draft.policies, ...patch } });
+
+  const updateFaq = (index: number, patch: Partial<ShopFAQ>) =>
+    set({ faqs: draft.faqs.map((item, i) => (i === index ? { ...item, ...patch } : item)) });
+
+  const addFaq = () => {
+    if (draft.faqs.length >= 15) return;
+    set({ faqs: [...draft.faqs, { question: "", answer: "" }] });
+  };
+
+  const removeFaq = (index: number) =>
+    set({ faqs: draft.faqs.filter((_, i) => i !== index) });
+
+  return (
+    <div className="grid gap-5">
+      <Field
+        label={en ? "Shipping & delivery times" : "Envíos y tiempos de entrega"}
+        optional
+        counter={{ value: draft.policies.shipping.length, max: 600 }}
+      >
+        <Textarea
+          value={draft.policies.shipping}
+          onChange={(e) => setPolicy({ shipping: e.target.value })}
+          maxLength={600}
+          rows={2}
+          placeholder={en ? "e.g. Orders ship within 24–48 business hours nationwide." : "Ej. Envíos en 24 a 48 horas hábiles a todo el país."}
+        />
+      </Field>
+      <Field
+        label={en ? "Returns & exchanges" : "Cambios y devoluciones"}
+        optional
+        counter={{ value: draft.policies.returns.length, max: 600 }}
+      >
+        <Textarea
+          value={draft.policies.returns}
+          onChange={(e) => setPolicy({ returns: e.target.value })}
+          maxLength={600}
+          rows={2}
+          placeholder={en ? "e.g. Exchanges accepted within 7 days with original packaging." : "Ej. Aceptamos cambios dentro de los 7 días con empaque original."}
+        />
+      </Field>
+      <Field
+        label={en ? "Booking cancellation policy" : "Política de cancelación de citas"}
+        optional
+        counter={{ value: draft.policies.cancellation.length, max: 600 }}
+      >
+        <Textarea
+          value={draft.policies.cancellation}
+          onChange={(e) => setPolicy({ cancellation: e.target.value })}
+          maxLength={600}
+          rows={2}
+          placeholder={en ? "e.g. Please reschedule or cancel at least 2 hours in advance." : "Ej. Por favor reprogramá o cancelá con al menos 2 horas de anticipación."}
+        />
+      </Field>
+
+      <div className="grid gap-3 border-t pt-4">
+        <div className="flex flex-wrap items-center justify-between gap-2">
+          <div className="grid gap-0.5">
+            <span className="text-sm font-medium">{en ? "Frequently asked questions (FAQs)" : "Preguntas frecuentes (FAQs)"}</span>
+            <span className="text-xs text-muted-foreground">
+              {en ? "Answer common buyer questions right on your storefront." : "Respondé las dudas más comunes directamente en tu tienda."}
+            </span>
+          </div>
+          <Button type="button" variant="outline" size="sm" className="rounded-full" disabled={draft.faqs.length >= 15} onClick={addFaq}>
+            <Plus className="size-3.5" /> {en ? "Add question" : "Agregar pregunta"}
+          </Button>
+        </div>
+
+        {draft.faqs.length > 0 && (
+          <div className="grid gap-3">
+            {draft.faqs.map((faq, idx) => (
+              <div key={idx} className="grid gap-2 rounded-xl border bg-muted/20 p-3">
+                <div className="flex items-center gap-2">
+                  <Input
+                    value={faq.question}
+                    maxLength={160}
+                    aria-invalid={Boolean(errors.faqs && Boolean(faq.question.trim()) !== Boolean(faq.answer.trim()))}
+                    onChange={(e) => updateFaq(idx, { question: e.target.value })}
+                    placeholder={en ? "Question (e.g. Do you accept custom orders?)" : "Pregunta (ej. ¿Hacen pedidos personalizados?)"}
+                    className="h-9 flex-1 bg-card"
+                  />
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="icon-sm"
+                    aria-label={en ? "Remove question" : "Eliminar pregunta"}
+                    onClick={() => removeFaq(idx)}
+                    className="shrink-0 rounded-full text-muted-foreground hover:text-destructive"
+                  >
+                    <X className="size-4" />
+                  </Button>
+                </div>
+                <Textarea
+                  value={faq.answer}
+                  maxLength={600}
+                  rows={2}
+                  aria-invalid={Boolean(errors.faqs && Boolean(faq.question.trim()) !== Boolean(faq.answer.trim()))}
+                  onChange={(e) => updateFaq(idx, { answer: e.target.value })}
+                  placeholder={en ? "Answer" : "Respuesta"}
+                  className="bg-card"
+                />
+              </div>
+            ))}
+          </div>
+        )}
+        {errors.faqs && <p className="text-sm font-medium text-destructive">{errors.faqs}</p>}
+      </div>
+    </div>
+  );
+}
+
 function previewShop(draft: ProfileDraft, products: Product[]) {
   return { ...fromDraft(draft), products };
 }
@@ -1262,6 +1396,9 @@ export function ProfileEditor({ shop }: { shop: PanelShop }) {
         </FormSection>
         <FormSection title="Entregas y métodos de pago" text="Definí cómo entregás tus pedidos y qué formas de pago aceptás.">
           <CommerceFields draft={draft} set={set} />
+        </FormSection>
+        <FormSection title="Políticas y preguntas frecuentes" text="Se muestran al final de tu catálogo para dar confianza antes de comprar o reservar.">
+          <PoliciesAndFaqsFields draft={draft} set={set} errors={visibleErrors} />
         </FormSection>
         <FormSection title="Reservas en línea">
           <HoursEditor draft={draft} set={set} errors={visibleErrors} services={shop.products.filter((p) => p.kind === "service")} />

@@ -47,6 +47,17 @@ export interface DeliveryConfig {
   deliveryNote?: string;
 }
 
+export interface ShopPolicies {
+  shipping?: string;
+  returns?: string;
+  cancellation?: string;
+}
+
+export interface ShopFAQ {
+  question: string;
+  answer: string;
+}
+
 export interface TimeBlock {
   open: string;
   close: string;
@@ -88,6 +99,8 @@ export interface Shop {
   style?: ShopStyle;
   delivery?: DeliveryConfig;
   paymentMethods?: string[];
+  policies?: ShopPolicies;
+  faqs?: ShopFAQ[];
   logoUrl?: string;
   backgroundUrl?: string;
   instagram: string;

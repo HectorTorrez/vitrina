@@ -69,7 +69,7 @@ func panelRoutes(mux *http.ServeMux, db *gorm.DB) {
 	}))
 	mux.HandleFunc("POST /api/panel", authenticated(db, func(w http.ResponseWriter, r *http.Request, q *gorm.DB, account seller) {
 		var input panelInput
-		if !readJSON(w, r, &input, 32*1024) {
+		if !readJSON(w, r, &input, 64*1024) {
 			return
 		}
 		if err := changePanel(q, account, input); err != nil {
@@ -183,7 +183,7 @@ func changePanel(db *gorm.DB, account seller, input panelInput) error {
 			return err
 		}
 		return db.Model(&shop{}).Where("slug = ?", input.ShopSlug).
-			Select("name", "description", "theme", "accent_color", "locale", "timezone", "currency", "blocked_dates", "booking_config", "staff", "style", "delivery", "payment_methods", "logo_url", "background_url", "instagram", "tiktok", "facebook", "website", "address", "map_url", "whatsapp", "hours").Updates(&profile).Error
+			Select("name", "description", "theme", "accent_color", "locale", "timezone", "currency", "blocked_dates", "booking_config", "staff", "style", "delivery", "payment_methods", "policies", "faqs", "logo_url", "background_url", "instagram", "tiktok", "facebook", "website", "address", "map_url", "whatsapp", "hours").Updates(&profile).Error
 	case "crear-item", "editar-item":
 		return savePanelItem(db, input.ShopSlug, input.Item, input.Action == "crear-item")
 	case "eliminar-item":
@@ -301,6 +301,14 @@ func validatedProfile(input shop) (shop, error) {
 	if err != nil {
 		return shop{}, err
 	}
+	policies, err := validatedPolicies(input.Policies)
+	if err != nil {
+		return shop{}, err
+	}
+	faqs, err := validatedFAQs(input.FAQs)
+	if err != nil {
+		return shop{}, err
+	}
 	profile := shop{
 		Name:           strings.TrimSpace(input.Name),
 		Description:    strings.TrimSpace(input.Description),
@@ -312,6 +320,8 @@ func validatedProfile(input shop) (shop, error) {
 		Style:          style,
 		Delivery:       delivery,
 		PaymentMethods: paymentMethods,
+		Policies:       policies,
+		FAQs:           faqs,
 		LogoURL:        input.LogoURL,
 		BackgroundURL:  input.BackgroundURL,
 		Instagram:      strings.TrimPrefix(strings.TrimSpace(input.Instagram), "@"),
@@ -489,6 +499,48 @@ func validatedStaff(input []staffMember) ([]staffMember, error) {
 			ServiceSlugs: services,
 			Hours:        hours,
 		})
+	}
+	return out, nil
+}
+
+func validatedPolicies(input shopPolicies) (shopPolicies, error) {
+	p := shopPolicies{
+		Shipping:     strings.TrimSpace(input.Shipping),
+		Returns:      strings.TrimSpace(input.Returns),
+		Cancellation: strings.TrimSpace(input.Cancellation),
+	}
+	for _, text := range []string{p.Shipping, p.Returns, p.Cancellation} {
+		if utf8.RuneCountInString(text) > 600 {
+			return shopPolicies{}, validationError("Cada política puede tener hasta 600 caracteres")
+		}
+	}
+	return p, nil
+}
+
+func validatedFAQs(input []shopFAQ) ([]shopFAQ, error) {
+	if len(input) == 0 {
+		return []shopFAQ{}, nil
+	}
+	out := make([]shopFAQ, 0, len(input))
+	for _, item := range input {
+		q := strings.TrimSpace(item.Question)
+		a := strings.TrimSpace(item.Answer)
+		if q == "" && a == "" {
+			continue
+		}
+		if q == "" || a == "" {
+			return nil, validationError("Cada pregunta frecuente necesita pregunta y respuesta")
+		}
+		if utf8.RuneCountInString(q) > 160 {
+			return nil, validationError("Cada pregunta puede tener hasta 160 caracteres")
+		}
+		if utf8.RuneCountInString(a) > 600 {
+			return nil, validationError("Cada respuesta puede tener hasta 600 caracteres")
+		}
+		out = append(out, shopFAQ{Question: q, Answer: a})
+	}
+	if len(out) > 15 {
+		return nil, validationError("Podés agregar hasta 15 preguntas frecuentes")
 	}
 	return out, nil
 }

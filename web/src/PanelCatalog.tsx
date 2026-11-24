@@ -1,13 +1,14 @@
 import { useState } from "react";
 import {
   ArrowDown, ArrowUp, Clock, CopyPlus, ExternalLink, Eye, EyeOff, GripVertical, ImageIcon, Layers, MoreHorizontal, Package,
-  Pencil, Plus, Search, Trash2,
+  Pencil, Plus, Search, Sparkles, Trash2,
 } from "lucide-react";
 import { hasSurcharges, price, type Product } from "./catalog";
 import { useI18n } from "./i18n";
 import type { PanelShop } from "./panel";
 import { SectionHead, usePanelAction } from "./PanelForm";
 import { ItemEditor, nextPosition } from "./PanelItemEditor";
+import { StoryCardSheet } from "./StoryCardSheet";
 import { uniqueSlug } from "./slug";
 import {
   AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription,
@@ -29,6 +30,7 @@ export function PanelCatalog({ shop }: { shop: PanelShop }) {
   const [creating, setCreating] = useState(false);
   const [editing, setEditing] = useState<string | null>(null);
   const [deleting, setDeleting] = useState<Product | null>(null);
+  const [storyItem, setStoryItem] = useState<Product | null>(null);
   const [query, setQuery] = useState("");
   const [filter, setFilter] = useState<Filter>("all");
   const [draggingSlug, setDraggingSlug] = useState<string | null>(null);
@@ -201,7 +203,12 @@ export function PanelCatalog({ shop }: { shop: PanelShop }) {
                     <DropdownMenuItem onSelect={() => setEditing(item.slug)}><Pencil /> Editar</DropdownMenuItem>
                     {!item.hidden && (
                       <DropdownMenuItem asChild>
-                        <a href={"/tienda/" + shop.slug + "/" + item.slug} target="_blank" rel="noreferrer"><ExternalLink /> Ver en la tienda</a>
+                        <a href={"/tienda/" + shop.slug + "/" + item.slug} target="_blank" rel="noreferrer"><ExternalLink /> {locale === "en" ? "View in shop" : "Ver en la tienda"}</a>
+                      </DropdownMenuItem>
+                    )}
+                    {!item.hidden && (
+                      <DropdownMenuItem onSelect={() => setStoryItem(item)}>
+                        <Sparkles /> {locale === "en" ? "Story card (9:16)" : "Tarjeta para historia"}
                       </DropdownMenuItem>
                     )}
                     <DropdownMenuItem onSelect={() => void run(
@@ -230,6 +237,9 @@ export function PanelCatalog({ shop }: { shop: PanelShop }) {
       <ItemEditor shop={shop} open={creating} onOpenChange={setCreating} />
       {editingItem && (
         <ItemEditor key={editingItem.slug} shop={shop} item={editingItem} open onOpenChange={(open) => !open && setEditing(null)} />
+      )}
+      {storyItem && (
+        <StoryCardSheet shop={shop} product={storyItem} open onOpenChange={(open) => !open && setStoryItem(null)} />
       )}
 
       <AlertDialog open={Boolean(deleting)} onOpenChange={(open) => !open && setDeleting(null)}>
