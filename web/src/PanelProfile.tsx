@@ -25,6 +25,37 @@ const weekdaysByLocale = {
   en: ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"],
 };
 
+const timezoneOptions = [
+  { value: "America/El_Salvador", label: "El Salvador (CST)" },
+  { value: "America/Guatemala", label: "Guatemala (CST)" },
+  { value: "America/Mexico_City", label: "Ciudad de México (CST)" },
+  { value: "America/Costa_Rica", label: "Costa Rica (CST)" },
+  { value: "America/Bogota", label: "Bogotá / Lima (COT)" },
+  { value: "America/New_York", label: "New York (EST/EDT)" },
+  { value: "America/Chicago", label: "Chicago (CST/CDT)" },
+  { value: "America/Los_Angeles", label: "Los Angeles (PST/PDT)" },
+  { value: "America/Argentina/Buenos_Aires", label: "Buenos Aires (ART)" },
+  { value: "America/Santiago", label: "Santiago (CLT)" },
+  { value: "Europe/Madrid", label: "Madrid (CET)" },
+  { value: "Europe/London", label: "London (GMT/BST)" },
+];
+
+const currencyOptions = [
+  { value: "USD", label: "USD ($)" },
+  { value: "EUR", label: "EUR (€)" },
+  { value: "MXN", label: "MXN ($)" },
+  { value: "GTQ", label: "GTQ (Q)" },
+  { value: "HNL", label: "HNL (L)" },
+  { value: "NIO", label: "NIO (C$)" },
+  { value: "CRC", label: "CRC (₡)" },
+  { value: "COP", label: "COP ($)" },
+  { value: "ARS", label: "ARS ($)" },
+  { value: "PEN", label: "PEN (S/)" },
+  { value: "CLP", label: "CLP ($)" },
+  { value: "GBP", label: "GBP (£)" },
+  { value: "CAD", label: "CAD ($)" },
+];
+
 interface Day { open: boolean; from: string; to: string }
 interface ProfileDraft {
   name: string;
@@ -32,6 +63,8 @@ interface ProfileDraft {
   theme: string;
   accentColor: string;
   locale: "" | "es" | "en";
+  timezone: string;
+  currency: string;
   style: ShopStyle;
   logoUrl: string;
   backgroundUrl: string;
@@ -40,6 +73,7 @@ interface ProfileDraft {
   whatsapp: string;
   booking: boolean;
   days: Day[];
+  blockedDates: string[];
 }
 type ProfileErrors = Partial<Record<"name" | "description" | "instagram" | "tiktok" | "whatsapp" | "hours", string>> & { days?: Record<number, string> };
 
@@ -52,6 +86,8 @@ function toDraft(profile?: Profile): ProfileDraft {
     backgroundUrl: profile?.backgroundUrl ?? "",
     accentColor: profile?.accentColor ?? "",
     locale: profile?.locale ?? "",
+    timezone: profile?.timezone || "America/El_Salvador",
+    currency: profile?.currency || "USD",
     style: {
       font: profile?.style?.font ?? "",
       bgColor: profile?.style?.bgColor ?? "",
@@ -78,6 +114,7 @@ function toDraft(profile?: Profile): ProfileDraft {
         to: day?.close || "18:00",
       };
     }),
+    blockedDates: profile?.blockedDates ?? [],
   };
 }
 
@@ -95,6 +132,8 @@ function fromDraft(draft: ProfileDraft): Profile {
     theme: draft.theme,
     accentColor: draft.accentColor,
     locale: draft.locale,
+    timezone: draft.timezone,
+    currency: draft.currency,
     style: {
       ...draft.style,
       announcement: (draft.style.announcement ?? "").trim(),
@@ -105,6 +144,7 @@ function fromDraft(draft: ProfileDraft): Profile {
     tiktok: cleanHandle(draft.tiktok),
     whatsapp: draft.whatsapp.replace(/^\+/, ""),
     hours: draft.booking ? draft.days.map((day) => day.open ? { open: day.from, close: day.to } : { open: "", close: "" }) : [],
+    blockedDates: draft.blockedDates,
   };
 }
 
@@ -148,17 +188,33 @@ function IdentityFields({ draft, set, errors }: { draft: ProfileDraft; set: SetD
       >
         <Textarea value={draft.description} onChange={(e) => set({ description: e.target.value })} maxLength={500} rows={3} placeholder="Manicura y cuidado de uñas con cita previa en San Salvador." />
       </Field>
-      <Field label={t("profile.storeLocale")} hint={t("profile.storeLocaleHint")}>
-        <FormSelect
-          value={draft.locale || "auto"}
-          onValueChange={(value) => set({ locale: value === "auto" ? "" : (value as "es" | "en") })}
-          options={[
-            { value: "auto", label: t("profile.localeAuto") },
-            { value: "es", label: t("profile.localeEs") },
-            { value: "en", label: t("profile.localeEn") },
-          ]}
-        />
-      </Field>
+      <div className="grid gap-5 sm:grid-cols-3">
+        <Field label={t("profile.storeLocale")} hint={t("profile.storeLocaleHint")}>
+          <FormSelect
+            value={draft.locale || "auto"}
+            onValueChange={(value) => set({ locale: value === "auto" ? "" : (value as "es" | "en") })}
+            options={[
+              { value: "auto", label: t("profile.localeAuto") },
+              { value: "es", label: t("profile.localeEs") },
+              { value: "en", label: t("profile.localeEn") },
+            ]}
+          />
+        </Field>
+        <Field label={t("common.language") === "Language" ? "Currency" : "Moneda"}>
+          <FormSelect
+            value={draft.currency}
+            onValueChange={(currency) => set({ currency })}
+            options={currencyOptions}
+          />
+        </Field>
+        <Field label={t("common.language") === "Language" ? "Time zone" : "Zona horaria"}>
+          <FormSelect
+            value={draft.timezone}
+            onValueChange={(timezone) => set({ timezone })}
+            options={timezoneOptions}
+          />
+        </Field>
+      </div>
     </div>
   );
 }
@@ -578,6 +634,44 @@ function HoursEditor({ draft, set, errors }: { draft: ProfileDraft; set: SetDraf
             </div>
           ))}
           {errors.hours && <p className="text-sm font-medium text-destructive">{errors.hours}</p>}
+          <BlockedDatesEditor dates={draft.blockedDates} onChange={(blockedDates) => set({ blockedDates })} />
+        </div>
+      )}
+    </div>
+  );
+}
+
+function BlockedDatesEditor({ dates, onChange }: { dates: string[]; onChange: (dates: string[]) => void }) {
+  const { locale } = useI18n();
+  const en = locale === "en";
+  const [nextDate, setNextDate] = useState("");
+  const add = () => {
+    if (!nextDate || dates.includes(nextDate) || dates.length >= 60) return;
+    onChange([...dates, nextDate].sort());
+    setNextDate("");
+  };
+  return (
+    <div className="mt-4 grid gap-3 border-t pt-4">
+      <div className="grid gap-0.5">
+        <span className="text-sm font-medium">{en ? "Blocked dates / Days off" : "Días libres / Fechas bloqueadas"}</span>
+        <span className="text-xs text-muted-foreground">{en ? "Holidays or days you won't accept online bookings." : "Feriados o días en los que no recibirás citas en línea."}</span>
+      </div>
+      <div className="flex flex-wrap items-center gap-2">
+        <Input type="date" value={nextDate} onChange={(e) => setNextDate(e.target.value)} className="h-9 w-44" />
+        <Button type="button" variant="outline" size="sm" className="rounded-full" disabled={!nextDate || dates.length >= 60} onClick={add}>
+          <Plus className="size-3.5" /> {en ? "Block date" : "Bloquear fecha"}
+        </Button>
+      </div>
+      {dates.length > 0 && (
+        <div className="flex flex-wrap gap-1.5">
+          {dates.map((d) => (
+            <span key={d} className="inline-flex items-center gap-1.5 rounded-full border bg-card px-3 py-1 font-mono text-xs">
+              {d}
+              <button type="button" onClick={() => onChange(dates.filter((item) => item !== d))} aria-label={d} className="rounded-full p-0.5 text-muted-foreground hover:text-destructive">
+                <X className="size-3" />
+              </button>
+            </span>
+          ))}
         </div>
       )}
     </div>

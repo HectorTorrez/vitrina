@@ -99,7 +99,7 @@ function Details() {
           <ProductGallery key={p.slug} product={p} />
         </div>
         <Order key={p.slug} product={p} phone={data.whatsapp}
-          booking={bookable ? <PublicBooking shop={params.shop} service={p} /> : null} />
+          booking={bookable ? <PublicBooking shop={params.shop} shopName={data.name} timeZone={data.timezone} service={p} /> : null} />
       </div>
 
       {others.length > 0 && (
