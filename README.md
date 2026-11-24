@@ -20,6 +20,12 @@ pnpm dev
 
 Compose levanta PostgreSQL 17 en 127.0.0.1:55448 y espera a que acepte conexiones. Luego se inicializan las tablas y arranca la API junto a Vite. Ctrl+C detiene ambos procesos. Usá `docker compose stop db` para pausar PostgreSQL. El volumen `postgres_data` conserva los datos entre arranques.
 
+Para ejecutar solo las migraciones de la base de datos:
+
+```sh
+pnpm migrate
+```
+
 La contraseña predeterminada es para desarrollo local. Podés exportar VITRINA_DB_PASSWORD antes de crear el volumen para elegir otra. Para usar una base externa, configurá DATABASE_URL y ejecutá dev:api y dev:web por separado.
 
 Para importar el catálogo SQLite previo en un volumen vacío, ejecutá `docker compose up -d --wait db` y `sh scripts/dev-api.sh init vitrina.db` antes del primer `pnpm dev`.
