@@ -149,11 +149,20 @@ export function productPrice(product: Product, locale: Locale = "es") {
   return (hasSurcharges(product) ? (locale === "en" ? "From " : "Desde ") : "") + price(product.priceCents, locale);
 }
 
+export function badgeLabel(badge: Product["badge"], locale: Locale = "es") {
+  if (badge === "new") return locale === "en" ? "New" : "Nuevo";
+  if (badge === "popular") return "Popular";
+  if (badge === "sale") return locale === "en" ? "Sale" : "Oferta";
+  return "";
+}
+
 export function ProductCard({ product, style }: { product: Product; style?: ShopStyle }) {
   const { locale, t } = useI18n();
   const service = product.kind === "service";
   const radius = cardRadiusClass(style?.radius);
   const aspect = cardAspectClass(style?.cardAspect);
+  const tag = badgeLabel(product.badge, locale);
+  const hasCompare = product.available && Boolean(product.compareAtCents && product.compareAtCents > product.priceCents);
   if (style?.catalogLayout === "list") {
     return (
       <article className={cn("group flex items-center gap-4 border border-store-rule bg-store-surface/70 p-3 transition hover:border-store-ink", radius)}>
@@ -163,6 +172,7 @@ export function ProductCard({ product, style }: { product: Product; style?: Shop
         <div className="grid min-w-0 flex-1 gap-1">
           <div className="flex flex-wrap items-center gap-2">
             <h3 className="truncate leading-snug font-semibold group-hover:underline group-hover:underline-offset-4">{product.name}</h3>
+            {tag && <span className="rounded-full bg-store-accent px-2 py-0.5 text-[11px] font-semibold text-store-accent-ink">{tag}</span>}
             {service && (
               <span className="inline-flex items-center gap-1 rounded-full bg-store-soft px-2 py-0.5 text-xs font-medium text-store-ink">
                 <Clock className="size-3" /> {product.durationMinutes} min
@@ -170,7 +180,10 @@ export function ProductCard({ product, style }: { product: Product; style?: Shop
             )}
           </div>
           {product.description && <p className="line-clamp-2 text-sm text-store-muted">{product.description}</p>}
-          <p className={cn("text-sm", product.available ? "font-mono font-medium" : "text-store-muted")}>{productPrice(product, locale)}</p>
+          <div className="flex items-baseline gap-2">
+            <p className={cn("text-sm", product.available ? "font-mono font-medium" : "text-store-muted")}>{productPrice(product, locale)}</p>
+            {hasCompare && <span className="font-mono text-xs text-store-muted line-through">{price(product.compareAtCents!, locale)}</span>}
+          </div>
         </div>
       </article>
     );
@@ -184,6 +197,11 @@ export function ProductCard({ product, style }: { product: Product; style?: Shop
             <Clock className="size-3.5" /> {product.durationMinutes} min
           </span>
         )}
+        {tag && (
+          <span className="absolute top-3 right-3 rounded-full bg-store-accent px-2.5 py-1 text-xs font-semibold text-store-accent-ink shadow-xs">
+            {tag}
+          </span>
+        )}
         {!product.available && (
           <span className="absolute inset-x-3 bottom-3 rounded-full bg-store-ink/85 px-3 py-1.5 text-center text-xs font-medium text-store-bg">
             {t("store.unavailableNow")}
@@ -192,7 +210,10 @@ export function ProductCard({ product, style }: { product: Product; style?: Shop
       </div>
       <div className="grid gap-0.5 px-0.5">
         <h3 className="leading-snug font-semibold group-hover:underline group-hover:underline-offset-4">{product.name}</h3>
-        <p className={cn("text-sm", product.available ? "font-mono" : "text-store-muted")}>{productPrice(product, locale)}</p>
+        <div className="flex flex-wrap items-baseline gap-2">
+          <p className={cn("text-sm", product.available ? "font-mono" : "text-store-muted")}>{productPrice(product, locale)}</p>
+          {hasCompare && <span className="font-mono text-xs text-store-muted line-through">{price(product.compareAtCents!, locale)}</span>}
+        </div>
       </div>
     </article>
   );

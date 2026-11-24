@@ -10,7 +10,10 @@ export interface Product {
   slug: string;
   name: string;
   description?: string;
+  category?: string;
+  badge?: "" | "new" | "popular" | "sale";
   priceCents: number;
+  compareAtCents?: number;
   available: boolean;
   artwork: string;
   imageUrl?: string;

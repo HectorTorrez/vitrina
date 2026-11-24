@@ -31,7 +31,10 @@ type product struct {
 	Slug        string   `json:"slug" gorm:"primaryKey"`
 	Name        string   `json:"name"`
 	Description string   `json:"description" gorm:"not null;default:''"`
+	Category    string   `json:"category" gorm:"not null;default:''"`
+	Badge       string   `json:"badge" gorm:"not null;default:''"`
 	PriceCents  int      `json:"priceCents" gorm:"check:price_cents >= 0"`
+	CompareAtCents int   `json:"compareAtCents" gorm:"not null;default:0;check:compare_at_cents >= 0"`
 	Available   bool     `json:"available"`
 	Artwork     string   `json:"artwork"`
 	Options     []option `json:"options" gorm:"serializer:json;type:jsonb"`

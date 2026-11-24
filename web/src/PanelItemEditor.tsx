@@ -6,6 +6,7 @@ import {
   Package, Plus, Sparkles, Star, Trash2, X,
 } from "lucide-react";
 import { price, type Product } from "./catalog";
+import { useI18n } from "./i18n";
 import type { PanelShop } from "./panel";
 import { AffixInput, Field, FieldError, FormSection, Stepper, usePanelAction } from "./PanelForm";
 import { cleanSlugInput, slugError, slugify, uniqueSlug } from "./slug";
@@ -28,9 +29,12 @@ export interface ItemDraft {
   kind: Product["kind"];
   name: string;
   description: string;
+  category: string;
+  badge: "" | "new" | "popular" | "sale";
   slug: string;
   slugEdited: boolean;
   price: string;
+  compareAt: string;
   duration: string;
   imageUrl: string;
   gallery: string[];
@@ -54,9 +58,12 @@ function toDraft(item: Product | undefined, nextPosition: number): ItemDraft {
     kind: item?.kind ?? "product",
     name: item?.name ?? "",
     description: item?.description ?? "",
+    category: item?.category ?? "",
+    badge: item?.badge ?? "",
     slug: item?.slug ?? "",
     slugEdited: Boolean(item),
     price: item ? money(item.priceCents) : "",
+    compareAt: item?.compareAtCents ? money(item.compareAtCents) : "",
     duration: item?.durationMinutes ? String(item.durationMinutes) : "60",
     imageUrl: item?.imageUrl ?? "",
     gallery: item?.gallery ?? [],
@@ -82,9 +89,12 @@ function fromDraft(draft: ItemDraft) {
     slug: draft.slug,
     name: draft.name.trim(),
     description: draft.description.trim(),
+    category: draft.category.trim(),
+    badge: draft.badge,
     kind: draft.kind,
     durationMinutes: draft.kind === "service" ? Number(draft.duration) : 0,
     priceCents: toCents(draft.price),
+    compareAtCents: draft.compareAt.trim() ? toCents(draft.compareAt) : 0,
     imageUrl: draft.imageUrl.trim(),
     gallery: draft.gallery,
     options: draft.groups.map((group) => ({
@@ -291,7 +301,10 @@ type StepProps = { draft: ItemDraft; set: (patch: Partial<ItemDraft>) => void; e
 const durations = [15, 30, 45, 60, 90, 120];
 
 function BasicsStep({ draft, set, errors, creating, shop, taken }: StepProps & { creating: boolean; shop: PanelShop; taken: Set<string> }) {
+  const { locale } = useI18n();
+  const en = locale === "en";
   const suggested = uniqueSlug(slugify(draft.name), taken);
+  const existingCategories = Array.from(new Set(shop.products.map((p) => p.category?.trim()).filter((c): c is string => Boolean(c))));
   return (
     <div className="grid gap-6">
       {creating && (
@@ -367,18 +380,59 @@ function BasicsStep({ draft, set, errors, creating, shop, taken }: StepProps & {
       )}
 
       <div className="grid gap-5 sm:grid-cols-2">
+        <Field label={en ? "Category" : "Categoría"} optional hint={en ? "Groups items in your storefront." : "Agrupa fichas en tu tienda."}>
+          <Input
+            value={draft.category} maxLength={40} list="shop-categories" className="h-10"
+            placeholder={en ? "e.g. Manicure, Combos" : "Ej. Manicura, Promos"}
+            onChange={(e) => set({ category: e.target.value })}
+          />
+        </Field>
+        <div className="grid content-start gap-2">
+          <span className="text-sm font-medium">{en ? "Badge" : "Etiqueta"} <span className="font-normal text-muted-foreground">({en ? "optional" : "opcional"})</span></span>
+          <div className="flex flex-wrap gap-1.5" role="radiogroup" aria-label={en ? "Badge" : "Etiqueta"}>
+            {([
+              ["", en ? "None" : "Ninguna"],
+              ["new", en ? "New" : "Nuevo"],
+              ["popular", "Popular"],
+              ["sale", en ? "Sale" : "Oferta"],
+            ] as const).map(([val, lbl]) => (
+              <button
+                key={val || "_none"} type="button" role="radio" aria-checked={draft.badge === val}
+                onClick={() => set({ badge: val })}
+                className={cn(
+                  "h-9 rounded-full border px-3 text-xs font-medium transition",
+                  draft.badge === val ? "border-primary bg-primary text-primary-foreground" : "border-border bg-card hover:border-foreground/30",
+                )}
+              >
+                {lbl}
+              </button>
+            ))}
+          </div>
+        </div>
+      </div>
+      <datalist id="shop-categories">
+        {existingCategories.map((cat) => <option key={cat} value={cat} />)}
+      </datalist>
+
+      <div className="grid gap-5 sm:grid-cols-2">
         <Field label={draft.kind === "service" ? "Precio" : "Precio base"} error={errors.price} hint={draft.groups.length ? "Las variantes pueden sumar recargos." : undefined}>
           <AffixInput prefix="$" suffix="USD" value={draft.price} inputMode="decimal" placeholder="0.00" inputClassName="font-mono"
             onChange={(e) => set({ price: e.target.value.replace(/[^\d.,]/g, "") })}
             onBlur={() => validMoney(draft.price) && set({ price: money(toCents(draft.price)) })}
           />
         </Field>
-        {draft.kind === "service" && (
-          <Field label="Duración" error={errors.duration}>
-            <AffixInput suffix="min" value={draft.duration} inputMode="numeric" inputClassName="font-mono" onChange={(e) => set({ duration: e.target.value.replace(/\D/g, "").slice(0, 4) })} />
-          </Field>
-        )}
+        <Field label={en ? "Compare-at price" : "Precio anterior"} optional hint={en ? "Shown crossed out to highlight a discount." : "Se muestra tachado para destacar un descuento."}>
+          <AffixInput prefix="$" suffix="USD" value={draft.compareAt} inputMode="decimal" placeholder="0.00" inputClassName="font-mono"
+            onChange={(e) => set({ compareAt: e.target.value.replace(/[^\d.,]/g, "") })}
+            onBlur={() => draft.compareAt.trim() && validMoney(draft.compareAt) && set({ compareAt: money(toCents(draft.compareAt)) })}
+          />
+        </Field>
       </div>
+      {draft.kind === "service" && (
+        <Field label="Duración" error={errors.duration}>
+          <AffixInput suffix="min" value={draft.duration} inputMode="numeric" inputClassName="font-mono" onChange={(e) => set({ duration: e.target.value.replace(/\D/g, "").slice(0, 4) })} />
+        </Field>
+      )}
       {draft.kind === "service" && (
         <div className="-mt-3 flex flex-wrap gap-1.5">
           {durations.map((minutes) => (
