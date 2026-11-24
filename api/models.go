@@ -85,6 +85,8 @@ type shop struct {
 	Theme         string    `json:"theme"`
 	AccentColor   string    `json:"accentColor"`
 	Locale        string    `json:"locale" gorm:"not null;default:''"`
+	Timezone      string    `json:"timezone" gorm:"not null;default:'America/El_Salvador'"`
+	Currency      string    `json:"currency" gorm:"not null;default:'USD'"`
 	Style         shopStyle `json:"style" gorm:"serializer:json;type:jsonb;not null;default:'{}'"`
 	LogoURL       string    `json:"logoUrl"`
 	BackgroundURL string `json:"backgroundUrl"`
@@ -92,16 +94,35 @@ type shop struct {
 	TikTok        string `json:"tiktok" gorm:"column:tiktok"`
 	Whatsapp      string `json:"whatsapp"`
 	// Hours holds seven entries indexed by time.Weekday (Sunday first). Empty disables online booking.
-	Hours    []dayHours `json:"hours" gorm:"serializer:json;type:jsonb;not null;default:'[]'"`
-	Products []product  `json:"products" gorm:"foreignKey:ShopSlug;references:Slug"`
+	Hours        []dayHours `json:"hours" gorm:"serializer:json;type:jsonb;not null;default:'[]'"`
+	BlockedDates []string   `json:"blockedDates" gorm:"serializer:json;type:jsonb;not null;default:'[]'"`
+	Products     []product  `json:"products" gorm:"foreignKey:ShopSlug;references:Slug"`
+}
+
+func (s shop) location() *time.Location {
+	if s.Timezone != "" {
+		if loc, err := time.LoadLocation(s.Timezone); err == nil {
+			return loc
+		}
+	}
+	return shopZone
 }
 
 func (s *shop) AfterFind(*gorm.DB) error {
 	if s.Hours == nil {
 		s.Hours = []dayHours{}
 	}
+	if s.BlockedDates == nil {
+		s.BlockedDates = []string{}
+	}
 	if s.Products == nil {
 		s.Products = []product{}
+	}
+	if s.Timezone == "" {
+		s.Timezone = "America/El_Salvador"
+	}
+	if s.Currency == "" {
+		s.Currency = "USD"
 	}
 	return nil
 }
@@ -113,6 +134,7 @@ type reservation struct {
 	Service     product `gorm:"foreignKey:ShopSlug,ServiceSlug;references:ShopSlug,Slug"`
 	Customer    string  `gorm:"not null"`
 	Phone       string  `gorm:"not null;default:''"`
+	Notes       string  `gorm:"not null;default:''"`
 	Source      string  `gorm:"not null;default:'panel'"`
 	CreatedAt   time.Time
 	StartsAt    time.Time `gorm:"index:agenda,priority:2;not null"`

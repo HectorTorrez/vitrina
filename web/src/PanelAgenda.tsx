@@ -74,6 +74,12 @@ export function PanelAgenda({ shop }: { shop: PanelShop }) {
                   {booking.source === "web" && <Badge className="bg-accent text-accent-foreground">{t("agenda.online")}</Badge>}
                 </>
               }>
+                {booking.notes && (
+                  <p className="rounded-xl border bg-card px-3.5 py-2.5 text-sm text-muted-foreground">
+                    <span className="font-medium text-foreground">{locale === "en" ? "Notes: " : "Notas: "}</span>
+                    {booking.notes}
+                  </p>
+                )}
                 {booking.phone && (
                   <Button asChild variant="outline" size="sm" className="justify-self-start rounded-full">
                     <a href={"https://wa.me/" + booking.phone + "?text=" + encodeURIComponent(

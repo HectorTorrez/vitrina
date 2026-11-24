@@ -44,6 +44,8 @@ export interface Shop {
   theme: string;
   accentColor?: string;
   locale?: "" | "es" | "en";
+  timezone?: string;
+  currency?: string;
   style?: ShopStyle;
   logoUrl?: string;
   backgroundUrl?: string;
@@ -52,6 +54,7 @@ export interface Shop {
   whatsapp: string;
   /** Seven entries, Sunday first; empty when online booking is off. */
   hours: { open: string; close: string }[];
+  blockedDates?: string[];
   products: Product[];
   /** Public origin of the site, added by the web server for absolute share links. */
   origin: string;
@@ -90,15 +93,21 @@ export function acceptsBookings(shop: Pick<Shop, "hours">) {
   return shop.hours.some((day) => day.open);
 }
 
-const usdEs = new Intl.NumberFormat("es-SV", {
-  style: "currency",
-  currency: "USD",
-});
-const usdEn = new Intl.NumberFormat("en-US", {
-  style: "currency",
-  currency: "USD",
-});
-export const price = (cents: number, locale: "es" | "en" = "es") => (locale === "en" ? usdEn : usdEs).format(cents / 100);
+const formatters = new Map<string, Intl.NumberFormat>();
+export const price = (cents: number, locale: "es" | "en" = "es", currency = "USD") => {
+  const code = currency || "USD";
+  const key = `${locale}:${code}`;
+  let fmt = formatters.get(key);
+  if (!fmt) {
+    try {
+      fmt = new Intl.NumberFormat(locale === "en" ? "en-US" : "es-SV", { style: "currency", currency: code });
+    } catch {
+      fmt = new Intl.NumberFormat(locale === "en" ? "en-US" : "es-SV", { style: "currency", currency: "USD" });
+    }
+    formatters.set(key, fmt);
+  }
+  return fmt.format(cents / 100);
+};
 
 export function totalPrice(product: Product, choices: Record<string, string> = {}) {
   return product.options.reduce((total, option) => {

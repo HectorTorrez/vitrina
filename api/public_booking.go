@@ -6,9 +6,11 @@ import (
 	"log"
 	"net/http"
 	"regexp"
+	"slices"
 	"strconv"
 	"strings"
 	"time"
+	"unicode/utf8"
 
 	"gorm.io/gorm"
 	"gorm.io/gorm/clause"
@@ -61,12 +63,17 @@ func openSlots(db *gorm.DB, s shop, service product, date time.Time, now time.Ti
 	if len(s.Hours) != 7 {
 		return nil, nil
 	}
+	dateStr := date.Format(localDate)
+	if slices.Contains(s.BlockedDates, dateStr) {
+		return nil, nil
+	}
 	day := s.Hours[date.Weekday()]
 	if day.Open == "" {
 		return nil, nil
 	}
+	loc := s.location()
 	at := func(clock string) time.Time {
-		t, _ := time.ParseInLocation(localMinute, date.Format(localDate)+"T"+clock, shopZone)
+		t, _ := time.ParseInLocation(localMinute, dateStr+"T"+clock, loc)
 		return t
 	}
 	opens, closes := at(day.Open), at(day.Close)
@@ -101,12 +108,16 @@ func openSlots(db *gorm.DB, s shop, service product, date time.Time, now time.Ti
 }
 
 // bookableDate parses a shop-local date inside the booking horizon.
-func bookableDate(input string, now time.Time) (time.Time, error) {
-	date, err := time.ParseInLocation(localDate, input, shopZone)
+func bookableDate(input string, now time.Time, locs ...*time.Location) (time.Time, error) {
+	loc := shopZone
+	if len(locs) > 0 && locs[0] != nil {
+		loc = locs[0]
+	}
+	date, err := time.ParseInLocation(localDate, input, loc)
 	if err != nil {
 		return date, errOutsideHorizon
 	}
-	today, _ := time.ParseInLocation(localDate, now.In(shopZone).Format(localDate), shopZone)
+	today, _ := time.ParseInLocation(localDate, now.In(loc).Format(localDate), loc)
 	if date.Before(today) || date.After(today.AddDate(0, 0, bookingHorizonDays)) {
 		return date, errOutsideHorizon
 	}
@@ -130,6 +141,7 @@ type publicBookingInput struct {
 	StartsAt string `json:"startsAt"`
 	Customer string `json:"customer"`
 	Phone    string `json:"phone"`
+	Notes    string `json:"notes"`
 }
 
 type publicBookingResult struct {
@@ -149,17 +161,22 @@ func bookPublic(db *gorm.DB, shopSlug string, input publicBookingInput, now time
 	if !ok {
 		return r, service, validationError("Indicá un teléfono válido, con código de país")
 	}
-	start, err := time.ParseInLocation(localMinute, input.StartsAt, shopZone)
-	if err != nil {
-		return r, service, validationError("Elegí un horario válido")
-	}
-	if _, err := bookableDate(start.Format(localDate), now); err != nil {
-		return r, service, err
+	notes := strings.TrimSpace(input.Notes)
+	if utf8.RuneCountInString(notes) > 300 {
+		return r, service, validationError("Las notas pueden tener hasta 300 caracteres")
 	}
 	err = withShopAgenda(db, shopSlug, func(tx *gorm.DB) error {
 		var s shop
 		s, service, err = publicService(tx, shopSlug, input.Service)
 		if err != nil {
+			return err
+		}
+		loc := s.location()
+		start, err := time.ParseInLocation(localMinute, input.StartsAt, loc)
+		if err != nil {
+			return validationError("Elegí un horario válido")
+		}
+		if _, err := bookableDate(start.Format(localDate), now, loc); err != nil {
 			return err
 		}
 		var recent, active int64
@@ -186,7 +203,7 @@ func bookPublic(db *gorm.DB, shopSlug string, input publicBookingInput, now time
 		}
 		for _, slot := range slots {
 			if slot.Equal(start) {
-				r = reservation{ShopSlug: shopSlug, ServiceSlug: service.Slug, Customer: customer, Phone: phone,
+				r = reservation{ShopSlug: shopSlug, ServiceSlug: service.Slug, Customer: customer, Phone: phone, Notes: notes,
 					Source: publicBookingSource, StartsAt: start, EndsAt: start.Add(time.Duration(service.DurationMinutes) * time.Minute)}
 				return tx.Create(&r).Error
 			}
@@ -205,7 +222,7 @@ func publicBookingRoutes(mux *http.ServeMux, db *gorm.DB, delivery *resendDelive
 			return
 		}
 		now := time.Now()
-		date, err := bookableDate(r.URL.Query().Get("date"), now)
+		date, err := bookableDate(r.URL.Query().Get("date"), now, s.location())
 		if err != nil {
 			writeError(w, err)
 			return

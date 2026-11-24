@@ -1,6 +1,6 @@
 import { useEffect, useState, type FormEvent } from "react";
-import { CalendarCheck, CalendarDays, Loader2 } from "lucide-react";
-import { createBooking, formatLocal, getMonthShort, getSlots, getWeekdayShort, shopToday } from "./booking";
+import { CalendarCheck, CalendarDays, CalendarPlus, Download, Loader2 } from "lucide-react";
+import { buildIcsContent, createBooking, formatLocal, getMonthShort, getSlots, getWeekdayShort, googleCalendarUrl, shopToday } from "./booking";
 import type { Product } from "./catalog";
 import { useI18n, type Locale } from "./i18n";
 import { cn } from "@/lib/utils";
@@ -22,19 +22,21 @@ function groupSlots(slots: string[], t: (key: "booking.morning" | "booking.after
 
 const fieldClass = "h-12 w-full rounded-xl border border-store-rule bg-store-surface px-4 text-base text-store-ink outline-none transition placeholder:text-store-muted focus:border-store-ink aria-invalid:border-red-500";
 
-export function PublicBooking({ shop, service }: { shop: string; service: Product }) {
+export function PublicBooking({ shop, shopName, timeZone, service }: { shop: string; shopName?: string; timeZone?: string; service: Product }) {
   const { locale, t } = useI18n();
-  const [date, setDate] = useState(() => shopToday());
+  const en = locale === "en";
+  const [date, setDate] = useState(() => shopToday(0, timeZone));
   const [slots, setSlots] = useState<string[] | null>(null);
   const [slotError, setSlotError] = useState("");
   const [time, setTime] = useState("");
   const [pending, setPending] = useState(false);
   const [error, setError] = useState("");
-  const [done, setDone] = useState<string>();
+  const [done, setDone] = useState<{ startsAt: string; endsAt: string }>();
   const [customer, setCustomer] = useState("");
   const [phone, setPhone] = useState("");
+  const [notes, setNotes] = useState("");
   const [showErrors, setShowErrors] = useState(false);
-  const days = Array.from({ length: 14 }, (_, i) => shopToday(i));
+  const days = Array.from({ length: 14 }, (_, i) => shopToday(i, timeZone));
 
   useEffect(() => {
     let current = true;
@@ -65,9 +67,9 @@ export function PublicBooking({ shop, service }: { shop: string; service: Produc
     setError("");
     try {
       const result = await createBooking({
-        data: { shop, service: service.slug, startsAt: date + "T" + time, customer: customer.trim(), phone: phone.trim() },
+        data: { shop, service: service.slug, startsAt: date + "T" + time, customer: customer.trim(), phone: phone.trim(), notes: notes.trim() || undefined },
       });
-      if (result.ok) setDone(result.startsAt);
+      if (result.ok) setDone({ startsAt: result.startsAt, endsAt: result.endsAt });
       else {
         setError(result.error);
         const fresh = await getSlots({ data: { shop, service: service.slug, date } });
@@ -82,12 +84,39 @@ export function PublicBooking({ shop, service }: { shop: string; service: Produc
   }
 
   if (done) {
+    const calTitle = `${service.name}${shopName ? " · " + shopName : ""}`;
+    const calOpts = { title: calTitle, startsAt: done.startsAt, endsAt: done.endsAt, details: notes.trim() || undefined, timeZone };
+    const downloadIcs = () => {
+      const blob = new Blob([buildIcsContent(calOpts)], { type: "text/calendar;charset=utf-8" });
+      const href = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = href;
+      a.download = `${service.slug}.ics`;
+      a.click();
+      URL.revokeObjectURL(href);
+    };
     return (
-      <div className="grid gap-3 rounded-3xl border border-store-rule bg-store-surface p-6" role="status">
+      <div className="grid gap-4 rounded-3xl border border-store-rule bg-store-surface p-6" role="status">
         <span className="grid size-12 place-items-center rounded-full bg-green-100 text-green-700"><CalendarCheck className="size-6" /></span>
-        <h2 className="font-store text-2xl">{t("booking.confirmedTitle")}</h2>
-        <p className="font-semibold">{service.name} · {formatLocal(done, true, locale)} ({service.durationMinutes} min)</p>
-        <p className="text-store-muted">{t("booking.confirmedDesc")}</p>
+        <div className="grid gap-1.5">
+          <h2 className="font-store text-2xl">{t("booking.confirmedTitle")}</h2>
+          <p className="font-semibold">{service.name} · {formatLocal(done.startsAt, true, locale)} ({service.durationMinutes} min)</p>
+          <p className="text-store-muted">{t("booking.confirmedDesc")}</p>
+        </div>
+        <div className="flex flex-wrap gap-2 pt-1">
+          <a
+            href={googleCalendarUrl(calOpts)} target="_blank" rel="noreferrer"
+            className="inline-flex h-10 items-center gap-2 rounded-full border border-store-rule px-4 text-sm font-medium transition hover:border-store-ink"
+          >
+            <CalendarPlus className="size-4" /> Google Calendar
+          </a>
+          <button
+            type="button" onClick={downloadIcs}
+            className="inline-flex h-10 items-center gap-2 rounded-full border border-store-rule px-4 text-sm font-medium transition hover:border-store-ink"
+          >
+            <Download className="size-4" /> {en ? "Download .ics" : "Descargar .ics"}
+          </button>
+        </div>
       </div>
     );
   }
@@ -171,6 +200,16 @@ export function PublicBooking({ shop, service }: { shop: string; service: Produc
             <input id="booking-phone" value={phone} onChange={(e) => setPhone(e.target.value)} type="tel" maxLength={24} autoComplete="tel"
               placeholder="+503 7000 0000" className={fieldClass} aria-invalid={showErrors && phoneError ? true : undefined} />
             {showErrors && phoneError && <p className="text-sm text-red-600">{phoneError}</p>}
+          </div>
+          <div className="grid gap-1.5">
+            <label htmlFor="booking-notes" className="text-sm font-medium">
+              {en ? "Notes" : "Notas"} <span className="font-normal text-store-muted">{t("common.optional")}</span>
+            </label>
+            <textarea
+              id="booking-notes" value={notes} onChange={(e) => setNotes(e.target.value)} maxLength={300} rows={2}
+              placeholder={en ? "Preferences, allergies, or special requests" : "Preferencias, alergias o comentarios"}
+              className="w-full rounded-xl border border-store-rule bg-store-surface px-4 py-3 text-base text-store-ink outline-none transition placeholder:text-store-muted focus:border-store-ink"
+            />
           </div>
           <button type="submit" className="mt-1 flex h-13 items-center justify-center gap-2 rounded-full bg-store-accent px-6 font-semibold text-store-accent-ink transition hover:opacity-90 disabled:opacity-60">
             {pending && <Loader2 className="size-4 animate-spin" />}

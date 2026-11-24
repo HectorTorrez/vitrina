@@ -21,6 +21,7 @@ export interface BookingRequest {
   startsAt: string;
   customer: string;
   phone: string;
+  notes?: string;
 }
 
 export const createBooking = createServerFn({ method: "POST" })
@@ -66,9 +67,45 @@ export function getMonthShort(locale: "es" | "en" = "es") {
 }
 
 /** Today (plus `offsetDays`) in the shop's time zone as YYYY-MM-DD. */
-export function shopToday(offsetDays = 0) {
+export function shopToday(offsetDays = 0, timeZone = zone) {
   const now = new Date(Date.now() + offsetDays * 86400000);
-  return new Intl.DateTimeFormat("en-CA", { timeZone: zone, year: "numeric", month: "2-digit", day: "2-digit" }).format(now);
+  try {
+    return new Intl.DateTimeFormat("en-CA", { timeZone: timeZone || zone, year: "numeric", month: "2-digit", day: "2-digit" }).format(now);
+  } catch {
+    return new Intl.DateTimeFormat("en-CA", { timeZone: zone, year: "numeric", month: "2-digit", day: "2-digit" }).format(now);
+  }
+}
+
+function compactLocal(value: string) {
+  return value.replace(/[-:]/g, "") + "00";
+}
+
+export function googleCalendarUrl(opts: { title: string; startsAt: string; endsAt: string; details?: string; timeZone?: string }) {
+  const params = new URLSearchParams({
+    action: "TEMPLATE",
+    text: opts.title,
+    dates: `${compactLocal(opts.startsAt)}/${compactLocal(opts.endsAt)}`,
+    ctz: opts.timeZone || zone,
+    ...(opts.details ? { details: opts.details } : {}),
+  });
+  return "https://calendar.google.com/calendar/render?" + params.toString();
+}
+
+export function buildIcsContent(opts: { title: string; startsAt: string; endsAt: string; details?: string; timeZone?: string }) {
+  const tz = opts.timeZone || zone;
+  const esc = (s: string) => s.replace(/\\/g, "\\\\").replace(/\n/g, "\\n").replace(/[,;]/g, "\\$&");
+  return [
+    "BEGIN:VCALENDAR",
+    "VERSION:2.0",
+    "PRODID:-//Vitrina//Booking//EN",
+    "BEGIN:VEVENT",
+    `DTSTART;TZID=${tz}:${compactLocal(opts.startsAt)}`,
+    `DTEND;TZID=${tz}:${compactLocal(opts.endsAt)}`,
+    `SUMMARY:${esc(opts.title)}`,
+    ...(opts.details ? [`DESCRIPTION:${esc(opts.details)}`] : []),
+    "END:VEVENT",
+    "END:VCALENDAR",
+  ].join("\r\n");
 }
 
 /** Formats a shop-local "YYYY-MM-DDTHH:MM" for people, e.g. "martes 18 de febrero, 10:00". */

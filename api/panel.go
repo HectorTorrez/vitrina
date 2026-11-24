@@ -6,6 +6,7 @@ import (
 	"regexp"
 	"slices"
 	"strings"
+	"time"
 	"unicode/utf8"
 
 	"gorm.io/gorm"
@@ -127,7 +128,7 @@ func changePanel(db *gorm.DB, account seller, input panelInput) error {
 			return err
 		}
 		return db.Model(&shop{}).Where("slug = ?", input.ShopSlug).
-			Select("name", "description", "theme", "accent_color", "locale", "style", "logo_url", "background_url", "instagram", "tiktok", "whatsapp", "hours").Updates(&profile).Error
+			Select("name", "description", "theme", "accent_color", "locale", "timezone", "currency", "blocked_dates", "style", "logo_url", "background_url", "instagram", "tiktok", "whatsapp", "hours").Updates(&profile).Error
 	case "crear-item", "editar-item":
 		return savePanelItem(db, input.ShopSlug, input.Item, input.Action == "crear-item")
 	case "eliminar-item":
@@ -175,6 +176,7 @@ var (
 	validStyleHeroes    = []string{"", "left", "center", "compact"}
 	validStyleCatalogs  = []string{"", "grid", "list"}
 	validStyleAspects   = []string{"", "4/5", "1/1", "4/3"}
+	validCurrencies     = []string{"USD", "EUR", "MXN", "GTQ", "HNL", "NIO", "CRC", "COP", "ARS", "PEN", "CLP", "GBP", "CAD"}
 )
 
 func validatedStyle(input shopStyle) (shopStyle, error) {
@@ -234,12 +236,43 @@ func validatedProfile(input shop) (shop, error) {
 		Theme:         input.Theme,
 		AccentColor:   strings.ToLower(input.AccentColor),
 		Locale:        strings.ToLower(strings.TrimSpace(input.Locale)),
+		Timezone:      strings.TrimSpace(input.Timezone),
+		Currency:      strings.ToUpper(strings.TrimSpace(input.Currency)),
 		Style:         style,
 		LogoURL:       input.LogoURL,
 		BackgroundURL: input.BackgroundURL,
 		Instagram:     strings.TrimPrefix(strings.TrimSpace(input.Instagram), "@"),
 		TikTok:        strings.TrimPrefix(strings.TrimSpace(input.TikTok), "@"),
 	}
+	if profile.Timezone == "" {
+		profile.Timezone = "America/El_Salvador"
+	}
+	if _, err := time.LoadLocation(profile.Timezone); err != nil {
+		return shop{}, validationError("Elegí una zona horaria válida")
+	}
+	if profile.Currency == "" {
+		profile.Currency = "USD"
+	}
+	if !slices.Contains(validCurrencies, profile.Currency) {
+		return shop{}, validationError("Elegí una moneda válida")
+	}
+	if len(input.BlockedDates) > 60 {
+		return shop{}, validationError("Podés bloquear hasta 60 fechas")
+	}
+	seenDates := make(map[string]bool)
+	blocked := make([]string, 0, len(input.BlockedDates))
+	for _, raw := range input.BlockedDates {
+		d := strings.TrimSpace(raw)
+		if _, err := time.Parse(localDate, d); err != nil {
+			return shop{}, validationError("Usá fechas bloqueadas con formato YYYY-MM-DD")
+		}
+		if !seenDates[d] {
+			seenDates[d] = true
+			blocked = append(blocked, d)
+		}
+	}
+	slices.Sort(blocked)
+	profile.BlockedDates = blocked
 	hours, err := validatedHours(input.Hours)
 	if err != nil {
 		return shop{}, err

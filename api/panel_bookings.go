@@ -12,6 +12,7 @@ type panelBooking struct {
 	ServiceSlug string `json:"serviceSlug"`
 	Customer    string `json:"customer"`
 	Phone       string `json:"phone"`
+	Notes       string `json:"notes"`
 	Source      string `json:"source"`
 	StartsAt    string `json:"startsAt"`
 	EndsAt      string `json:"endsAt"`
@@ -34,6 +35,7 @@ func loadPanelBookings(db *gorm.DB, email string) (map[string][]panelBooking, er
 			ServiceSlug: r.ServiceSlug,
 			Customer:    r.Customer,
 			Phone:       r.Phone,
+			Notes:       r.Notes,
 			Source:      r.Source,
 			StartsAt:    r.StartsAt.In(shopZone).Format(localMinute),
 			EndsAt:      r.EndsAt.In(shopZone).Format(localMinute),
