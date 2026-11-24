@@ -5,7 +5,7 @@ import { PhoneCountrySelect } from "./PhoneCountrySelect";
 import phoneLabelsEs from "react-phone-number-input/locale/es";
 import phoneLabelsEn from "react-phone-number-input/locale/en";
 import "react-phone-number-input/style.css";
-import { acceptsBookings, type Product } from "./catalog";
+import { acceptsBookings, type Product, type ShopStyle } from "./catalog";
 import { useI18n } from "./i18n";
 import type { PanelShop, Profile } from "./panel";
 import { AffixInput, Field, FormSection, FormSelect, SaveBar, Stepper, usePanelAction } from "./PanelForm";
@@ -13,7 +13,7 @@ import { useShopSlugField, type ShopSlugStatus } from "./shopSlug";
 import { StorefrontPreview } from "./store/StorefrontPreview";
 import { emailError } from "./AuthLayout";
 import { PanelImageUpload } from "./PanelImageUpload";
-import { getTheme, themes } from "./themes";
+import { contrastRatio, fontChoices, getTheme, themes } from "./themes";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Switch } from "@/components/ui/switch";
@@ -32,6 +32,7 @@ interface ProfileDraft {
   theme: string;
   accentColor: string;
   locale: "" | "es" | "en";
+  style: ShopStyle;
   logoUrl: string;
   backgroundUrl: string;
   instagram: string;
@@ -51,6 +52,19 @@ function toDraft(profile?: Profile): ProfileDraft {
     backgroundUrl: profile?.backgroundUrl ?? "",
     accentColor: profile?.accentColor ?? "",
     locale: profile?.locale ?? "",
+    style: {
+      font: profile?.style?.font ?? "",
+      bgColor: profile?.style?.bgColor ?? "",
+      surfaceColor: profile?.style?.surfaceColor ?? "",
+      inkColor: profile?.style?.inkColor ?? "",
+      radius: profile?.style?.radius ?? "",
+      buttonStyle: profile?.style?.buttonStyle ?? "",
+      heroLayout: profile?.style?.heroLayout ?? "",
+      catalogLayout: profile?.style?.catalogLayout ?? "",
+      cardAspect: profile?.style?.cardAspect ?? "",
+      veilOpacity: profile?.style?.veilOpacity ?? 0,
+      announcement: profile?.style?.announcement ?? "",
+    },
     theme: profile?.theme || "costa",
     instagram: profile?.instagram ?? "",
     tiktok: profile?.tiktok ?? "",
@@ -81,6 +95,10 @@ function fromDraft(draft: ProfileDraft): Profile {
     theme: draft.theme,
     accentColor: draft.accentColor,
     locale: draft.locale,
+    style: {
+      ...draft.style,
+      announcement: (draft.style.announcement ?? "").trim(),
+    },
     logoUrl: draft.logoUrl,
     backgroundUrl: draft.backgroundUrl,
     instagram: cleanHandle(draft.instagram),
@@ -243,18 +261,213 @@ function AccentPicker({ theme, value, onChange }: { theme: string; value: string
   );
 }
 
+function PillGroup<T extends string>({ value, onChange, options, label }: {
+  value: T;
+  onChange: (value: T) => void;
+  options: { value: T; label: string }[];
+  label: string;
+}) {
+  return (
+    <div className="flex flex-wrap gap-1.5" role="radiogroup" aria-label={label}>
+      {options.map((opt) => {
+        const active = value === opt.value;
+        return (
+          <button
+            key={opt.value || "_default"} type="button" role="radio" aria-checked={active}
+            onClick={() => onChange(opt.value)}
+            className={cn(
+              "h-9 rounded-full border px-3.5 text-xs font-medium transition",
+              active ? "border-primary bg-primary text-primary-foreground" : "border-border bg-card hover:border-foreground/40",
+            )}
+          >
+            {opt.label}
+          </button>
+        );
+      })}
+    </div>
+  );
+}
+
 function AppearanceFields({ draft, set, setUploading }: {
   draft: ProfileDraft; set: SetDraft; setUploading: (busy: boolean) => void;
 }) {
+  const { locale, t } = useI18n();
+  const en = locale === "en";
+  const baseTheme = getTheme(draft.theme);
+  const style = draft.style;
+  const setStyle = (patch: Partial<ShopStyle>) => set({ style: { ...style, ...patch } });
+  const effBg = style.bgColor || baseTheme.colors.bg;
+  const effInk = style.inkColor || baseTheme.colors.ink;
+  const lowContrast = Boolean(style.bgColor || style.inkColor) && contrastRatio(effBg, effInk) < 4.5;
+
   return (
     <div className="grid gap-7">
-      <AppearanceGroup title="Tema" text="Fondo, tipografía y colores base de tu tienda.">
+      <AppearanceGroup title={t("profile.theme")} text={t("profile.themeDesc")}>
         <ThemePicker value={draft.theme} onChange={(theme) => set({ theme })} />
       </AppearanceGroup>
-      <AppearanceGroup title="Color principal" text="Botones, precios destacados y filtros seleccionados.">
+
+      <AppearanceGroup title={t("profile.accent")} text={t("profile.accentDesc")}>
         <AccentPicker theme={draft.theme} value={draft.accentColor} onChange={(accentColor) => set({ accentColor })} />
       </AppearanceGroup>
-      <AppearanceGroup title="Logo e imagen de fondo" text="Opcionales · JPG, PNG, WebP o GIF hasta 5 MB.">
+
+      <AppearanceGroup
+        title={en ? "Typography" : "Tipografía"}
+        text={en ? "Heading font for your shop name and section titles." : "Fuente de títulos para tu nombre y secciones."}
+      >
+        <div className="grid grid-cols-2 gap-2 sm:grid-cols-3" role="radiogroup" aria-label={en ? "Typography" : "Tipografía"}>
+          {fontChoices.map((choice) => {
+            const active = (style.font || "") === choice.value;
+            return (
+              <button
+                key={choice.value || "default"} type="button" role="radio" aria-checked={active}
+                onClick={() => setStyle({ font: choice.value })}
+                className={cn(
+                  "flex items-center justify-between rounded-xl border px-3 py-2.5 text-left text-sm transition",
+                  active ? "border-primary bg-primary/5 font-semibold" : "border-border bg-card hover:border-foreground/30",
+                )}
+              >
+                <span style={choice.family ? { fontFamily: choice.family } : undefined}>
+                  {choice.value === "" ? (en ? "Theme default" : "Del tema") : choice.label}
+                </span>
+                {active && <Check className="size-3.5 text-primary" strokeWidth={3} />}
+              </button>
+            );
+          })}
+        </div>
+      </AppearanceGroup>
+
+      <AppearanceGroup
+        title={en ? "Custom colors" : "Colores personalizados"}
+        text={en ? "Optional overrides on top of the selected theme." : "Ajustes opcionales sobre el tema elegido."}
+      >
+        <div className="grid gap-3 sm:grid-cols-3">
+          {([
+            ["bgColor", en ? "Background" : "Fondo", baseTheme.colors.bg],
+            ["surfaceColor", en ? "Cards" : "Tarjetas", baseTheme.colors.surface],
+            ["inkColor", en ? "Text" : "Texto", baseTheme.colors.ink],
+          ] as const).map(([key, label, fallback]) => {
+            const current = style[key] || "";
+            return (
+              <div key={key} className="flex items-center justify-between gap-2 rounded-xl border bg-card px-3 py-2">
+                <label className="flex cursor-pointer items-center gap-2.5">
+                  <span className="relative size-7 shrink-0 overflow-hidden rounded-full ring-1 ring-black/15" style={{ background: current || fallback }}>
+                    <input
+                      type="color" value={current || fallback} aria-label={label}
+                      onChange={(e) => setStyle({ [key]: e.target.value })}
+                      className="absolute inset-0 cursor-pointer opacity-0"
+                    />
+                  </span>
+                  <span className="grid">
+                    <span className="text-xs font-medium">{label}</span>
+                    <span className="font-mono text-[11px] text-muted-foreground uppercase">{current || (en ? "Theme" : "Tema")}</span>
+                  </span>
+                </label>
+                {current && (
+                  <button type="button" onClick={() => setStyle({ [key]: "" })} aria-label="Reset" className="rounded-full p-1 text-muted-foreground hover:bg-muted hover:text-foreground">
+                    <X className="size-3.5" />
+                  </button>
+                )}
+              </div>
+            );
+          })}
+        </div>
+        {lowContrast && (
+          <p className="rounded-xl border border-amber-300 bg-amber-50 px-3 py-2 text-xs text-amber-900">
+            {en
+              ? "Low contrast between background and text. Consider darkening or lightening one of them for readability."
+              : "Poco contraste entre el fondo y el texto. Considerá oscurecer o aclarar uno para facilitar la lectura."}
+          </p>
+        )}
+      </AppearanceGroup>
+
+      <AppearanceGroup
+        title={en ? "Layout & shape" : "Diseño y forma"}
+        text={en ? "Control how your header, cards, and buttons look." : "Elegí cómo se ven tu portada, tarjetas y botones."}
+      >
+        <div className="grid gap-4 sm:grid-cols-2">
+          <div className="grid gap-1.5">
+            <span className="text-xs font-medium text-muted-foreground">{en ? "Header layout" : "Portada"}</span>
+            <PillGroup
+              label={en ? "Header layout" : "Portada"}
+              value={style.heroLayout || ""}
+              onChange={(heroLayout) => setStyle({ heroLayout })}
+              options={[
+                { value: "", label: en ? "Left" : "Izquierda" },
+                { value: "center", label: en ? "Centered" : "Centrada" },
+                { value: "compact", label: en ? "Compact" : "Compacta" },
+              ]}
+            />
+          </div>
+          <div className="grid gap-1.5">
+            <span className="text-xs font-medium text-muted-foreground">{en ? "Catalog view" : "Catálogo"}</span>
+            <PillGroup
+              label={en ? "Catalog view" : "Catálogo"}
+              value={style.catalogLayout || ""}
+              onChange={(catalogLayout) => setStyle({ catalogLayout })}
+              options={[
+                { value: "", label: en ? "Grid" : "Cuadrícula" },
+                { value: "list", label: en ? "List" : "Lista" },
+              ]}
+            />
+          </div>
+          <div className="grid gap-1.5">
+            <span className="text-xs font-medium text-muted-foreground">{en ? "Corners" : "Bordes"}</span>
+            <PillGroup
+              label={en ? "Corners" : "Bordes"}
+              value={style.radius || ""}
+              onChange={(radius) => setStyle({ radius })}
+              options={[
+                { value: "sharp", label: en ? "Sharp" : "Rectos" },
+                { value: "", label: en ? "Soft" : "Suaves" },
+                { value: "pill", label: en ? "Rounded" : "Redondos" },
+              ]}
+            />
+          </div>
+          <div className="grid gap-1.5">
+            <span className="text-xs font-medium text-muted-foreground">{en ? "Buttons" : "Botones"}</span>
+            <PillGroup
+              label={en ? "Buttons" : "Botones"}
+              value={style.buttonStyle || ""}
+              onChange={(buttonStyle) => setStyle({ buttonStyle })}
+              options={[
+                { value: "", label: en ? "Solid" : "Sólido" },
+                { value: "outline", label: en ? "Outline" : "Contorno" },
+                { value: "soft", label: en ? "Soft" : "Suave" },
+              ]}
+            />
+          </div>
+          {style.catalogLayout !== "list" && (
+            <div className="grid gap-1.5 sm:col-span-2">
+              <span className="text-xs font-medium text-muted-foreground">{en ? "Card image ratio" : "Proporción de fotos"}</span>
+              <PillGroup
+                label={en ? "Card image ratio" : "Proporción de fotos"}
+                value={style.cardAspect || ""}
+                onChange={(cardAspect) => setStyle({ cardAspect })}
+                options={[
+                  { value: "", label: en ? "Portrait (4:5)" : "Vertical (4:5)" },
+                  { value: "1/1", label: en ? "Square (1:1)" : "Cuadrada (1:1)" },
+                  { value: "4/3", label: en ? "Landscape (4:3)" : "Horizontal (4:3)" },
+                ]}
+              />
+            </div>
+          )}
+        </div>
+      </AppearanceGroup>
+
+      <AppearanceGroup
+        title={en ? "Announcement bar" : "Barra de anuncio"}
+        text={en ? "Optional banner at the top of your storefront." : "Franja opcional en la parte superior de tu tienda."}
+      >
+        <Field label={en ? "Message" : "Mensaje"} optional counter={{ value: (style.announcement ?? "").length, max: 140 }}>
+          <Input
+            value={style.announcement ?? ""} maxLength={140} className="h-10"
+            placeholder={en ? "Free shipping on orders over $30" : "Envío gratis en pedidos mayores a $30"}
+            onChange={(e) => setStyle({ announcement: e.target.value })}
+          />
+        </Field>
+      </AppearanceGroup>
+
+      <AppearanceGroup title={t("profile.images")} text={t("profile.imagesDesc")}>
         <div className="grid gap-4 sm:grid-cols-2">
           {shopImages.map(({ key, variant, label, hint }) => (
             <div key={key} className="grid content-start gap-2">
@@ -269,6 +482,19 @@ function AppearanceFields({ draft, set, setUploading }: {
             </div>
           ))}
         </div>
+        {draft.backgroundUrl && (
+          <div className="grid gap-1.5 rounded-xl border bg-card p-3">
+            <div className="flex items-center justify-between text-xs">
+              <span className="font-medium">{en ? "Background overlay opacity" : "Opacidad del velo sobre el fondo"}</span>
+              <span className="font-mono text-muted-foreground">{style.veilOpacity || 82}%</span>
+            </div>
+            <input
+              type="range" min={40} max={95} step={1} value={style.veilOpacity || 82}
+              onChange={(e) => setStyle({ veilOpacity: Number(e.target.value) })}
+              className="w-full accent-primary"
+            />
+          </div>
+        )}
       </AppearanceGroup>
     </div>
   );

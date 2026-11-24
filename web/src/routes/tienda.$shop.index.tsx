@@ -115,10 +115,12 @@ function Catalog() {
       </div>
 
       {visible.length > 0 ? (
-        <div className="mt-8 grid grid-cols-2 gap-x-4 gap-y-8 @3xl:grid-cols-3 @3xl:gap-x-6 @3xl:gap-y-10 @5xl:grid-cols-4">
+        <div className={data.style?.catalogLayout === "list"
+          ? "mt-8 grid gap-3 @3xl:grid-cols-2"
+          : "mt-8 grid grid-cols-2 gap-x-4 gap-y-8 @3xl:grid-cols-3 @3xl:gap-x-6 @3xl:gap-y-10 @5xl:grid-cols-4"}>
           {visible.map((p) => (
             <Link key={p.slug} to="/tienda/$shop/$product" params={{ shop, product: p.slug }} className="rounded-2xl outline-offset-4 focus-visible:outline-2 focus-visible:outline-store-ink">
-              <ProductCard product={p} />
+              <ProductCard product={p} style={data.style} />
             </Link>
           ))}
         </div>

@@ -2,8 +2,8 @@ import { useLayoutEffect, useRef, useState, type ReactNode } from "react";
 import { Monitor, Smartphone } from "lucide-react";
 import { acceptsBookings, type Product, type Shop } from "../catalog";
 import { useI18n } from "../i18n";
-import { ProductCard, ShopHero, StoreBrand, StoreFrame, StoreHeader, WhatsAppIcon } from "./StoreParts";
-import { themeStyle } from "../themes";
+import { AnnouncementBar, ProductCard, ShopHero, StoreBrand, StoreFrame, StoreHeader, WhatsAppIcon } from "./StoreParts";
+import { buttonRadiusClass, primaryButtonClass, themeStyle } from "../themes";
 import { cn } from "@/lib/utils";
 
 const desktopWidth = 960;
@@ -14,7 +14,7 @@ const samples: Product[] = [
 ];
 
 export function StorefrontPreview({ shop, slug, className }: {
-  shop: Pick<Shop, "logoUrl" | "backgroundUrl" | "name" | "description" | "theme" | "accentColor" | "instagram" | "tiktok" | "whatsapp" | "hours" | "products">;
+  shop: Pick<Shop, "logoUrl" | "backgroundUrl" | "name" | "description" | "theme" | "accentColor" | "style" | "instagram" | "tiktok" | "whatsapp" | "hours" | "products">;
   slug: string;
   className?: string;
 }) {
@@ -65,23 +65,25 @@ export function StorefrontPreview({ shop, slug, className }: {
 }
 
 function StorePage({ shop, products, bookable }: {
-  shop: Pick<Shop, "logoUrl" | "backgroundUrl" | "name" | "description" | "theme" | "accentColor" | "instagram" | "tiktok" | "whatsapp">;
+  shop: Pick<Shop, "logoUrl" | "backgroundUrl" | "name" | "description" | "theme" | "accentColor" | "style" | "instagram" | "tiktok" | "whatsapp">;
   products: Product[];
   bookable: boolean;
 }) {
+  const isList = shop.style?.catalogLayout === "list";
   return (
-    <StoreFrame theme={shop.theme} accentColor={shop.accentColor} backgroundUrl={shop.backgroundUrl} className="min-h-full pb-8">
+    <StoreFrame theme={shop.theme} accentColor={shop.accentColor} backgroundUrl={shop.backgroundUrl} style={shop.style} className="min-h-full pb-8">
+      <AnnouncementBar text={shop.style?.announcement} />
       <StoreHeader brand={<div className="flex min-w-0 items-center gap-3"><StoreBrand logoUrl={shop.logoUrl} name={shop.name || "Tu tienda"} /></div>}>
         {shop.whatsapp && (
-          <span className="inline-flex h-9 items-center gap-2 rounded-full bg-store-accent px-3.5 text-sm font-medium text-store-accent-ink">
+          <span className={cn("inline-flex h-9 items-center gap-2 px-3.5 text-sm font-medium", buttonRadiusClass(shop.style?.radius), primaryButtonClass(shop.style?.buttonStyle))}>
             <WhatsAppIcon className="size-4" />
           </span>
         )}
       </StoreHeader>
       <div className="mx-auto w-[min(100%-32px,1120px)]">
         <ShopHero shop={shop} bookable={bookable} />
-        <div className="grid grid-cols-2 gap-x-4 gap-y-6 @3xl:grid-cols-3">
-          {products.map((product) => <ProductCard key={product.slug} product={product} />)}
+        <div className={isList ? "grid gap-3" : "grid grid-cols-2 gap-x-4 gap-y-6 @3xl:grid-cols-3"}>
+          {products.map((product) => <ProductCard key={product.slug} product={product} style={shop.style} />)}
         </div>
       </div>
     </StoreFrame>
