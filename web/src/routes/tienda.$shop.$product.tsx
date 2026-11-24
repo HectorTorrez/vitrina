@@ -1,11 +1,12 @@
 import { useState, type ReactNode } from "react";
 import { createFileRoute, Link, notFound } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
-import { ArrowLeft, Check, ChevronLeft, ChevronRight, Clock, Share2 } from "lucide-react";
+import { ArrowLeft, Check, ChevronLeft, ChevronRight, Clock, Share2, ShoppingBag } from "lucide-react";
 import { acceptsBookings, shopQuery, price, productImage, productImages, totalPrice, type Product } from "../catalog";
 import { useI18n } from "../i18n";
 import { pageHead, siteLanguage } from "../seo";
 import { PublicBooking } from "../PublicBooking";
+import { useCart } from "../store/CartContext";
 import { StoreLayout } from "../store/StoreLayout";
 import { badgeLabel, ProductCard, ProductImage, WhatsAppIcon } from "../store/StoreParts";
 import { cn } from "@/lib/utils";
@@ -174,6 +175,7 @@ function ShareButton({ url, title }: { url: string; title: string }) {
 
 function Order({ product, phone, booking }: { product: Product; phone: string; booking: ReactNode }) {
   const { locale, t } = useI18n();
+  const cart = useCart();
   const [choices, setChoices] = useState<Record<string, string>>({});
   const [showMessage, setShowMessage] = useState(false);
   const service = product.kind === "service";
@@ -247,32 +249,44 @@ function Order({ product, phone, booking }: { product: Product; phone: string; b
       {booking}
 
       {product.available ? (
-        phone ? (
-          <a
-            className={cn(
-              "flex h-13 items-center justify-center gap-2 rounded-full px-6 font-semibold transition",
-              booking ? "border border-store-rule hover:border-store-ink" : "bg-store-accent text-store-accent-ink hover:opacity-90",
-            )}
-            href={"https://wa.me/" + phone + "?text=" + encodeURIComponent(message)} target="_blank" rel="noreferrer"
-          >
-            <WhatsAppIcon className="size-5" />
-            {service
-              ? (booking ? t("store.askWaBooking") : t("store.askWaHours"))
-              : t("store.orderWa") + " · " + price(total, locale)}
-          </a>
-        ) : booking ? null : (
-          <div className="grid gap-3">
-            <button type="button" onClick={() => setShowMessage(true)} className="h-13 rounded-full bg-store-accent px-6 font-semibold text-store-accent-ink transition hover:opacity-90">
-              {service ? t("store.prepareInquiry") : t("store.prepareOrder")}
+        <div className="grid gap-2.5">
+          {!service && cart && (
+            <button
+              type="button"
+              onClick={() => cart.addProduct(product, choices)}
+              className="flex h-13 items-center justify-center gap-2 rounded-full bg-store-accent px-6 font-semibold text-store-accent-ink transition hover:opacity-90"
+            >
+              <ShoppingBag className="size-5" />
+              {locale === "en" ? "Add to bag" : "Agregar al pedido"} · {price(total, locale)}
             </button>
-            {showMessage && (
-              <div role="status" className="grid gap-2 rounded-2xl border border-store-rule bg-store-surface p-4 text-sm">
-                <p className="font-semibold">{t("store.sampleMsg")}</p>
-                <pre className="font-sans whitespace-pre-wrap text-store-muted">{message}</pre>
-              </div>
-            )}
-          </div>
-        )
+          )}
+          {phone ? (
+            <a
+              className={cn(
+                "flex h-13 items-center justify-center gap-2 rounded-full px-6 font-semibold transition",
+                booking || (!service && cart) ? "border border-store-rule hover:border-store-ink" : "bg-store-accent text-store-accent-ink hover:opacity-90",
+              )}
+              href={"https://wa.me/" + phone + "?text=" + encodeURIComponent(message)} target="_blank" rel="noreferrer"
+            >
+              <WhatsAppIcon className="size-5" />
+              {service
+                ? (booking ? t("store.askWaBooking") : t("store.askWaHours"))
+                : t("store.orderWa") + " · " + price(total, locale)}
+            </a>
+          ) : booking ? null : (
+            <div className="grid gap-3">
+              <button type="button" onClick={() => setShowMessage(true)} className={cn("h-13 rounded-full px-6 font-semibold transition", !service && cart ? "border border-store-rule hover:border-store-ink" : "bg-store-accent text-store-accent-ink hover:opacity-90")}>
+                {service ? t("store.prepareInquiry") : t("store.prepareOrder")}
+              </button>
+              {showMessage && (
+                <div role="status" className="grid gap-2 rounded-2xl border border-store-rule bg-store-surface p-4 text-sm">
+                  <p className="font-semibold">{t("store.sampleMsg")}</p>
+                  <pre className="font-sans whitespace-pre-wrap text-store-muted">{message}</pre>
+                </div>
+              )}
+            </div>
+          )}
+        </div>
       ) : (
         <p className="rounded-2xl border border-store-rule bg-store-surface p-4 text-store-muted">
           {t("store.optionUnavailable")}
