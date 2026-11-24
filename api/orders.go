@@ -434,6 +434,7 @@ func orderRoutes(mux *http.ServeMux, db *gorm.DB) {
 			writeError(w, err)
 			return
 		}
+		liveHub.publish(slug, "orders", "shop")
 		writeJSON(w, http.StatusCreated, map[string]any{
 			"id":               created.ID,
 			"code":             created.Code,

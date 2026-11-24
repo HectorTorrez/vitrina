@@ -10,6 +10,7 @@ import {
   type PublicBookingDetail,
 } from "../booking";
 import { useI18n, type Locale } from "../i18n";
+import { useShopRealtime } from "../realtime";
 import { noIndex } from "../seo";
 import { cn } from "@/lib/utils";
 import {
@@ -57,15 +58,25 @@ function ManageBookingPage() {
   const [busy, setBusy] = useState(false);
   const [actionError, setActionError] = useState("");
   const [feedback, setFeedback] = useState("");
+  const [slotTick, setSlotTick] = useState(0);
 
   const horizon = booking.horizonDays || 60;
   const days = Array.from({ length: Math.min(14, horizon + 1) }, (_, i) => shopToday(i, booking.shopTimezone));
+
+  useShopRealtime(booking.shopSlug, (event) => {
+    if (!event.topics.includes("bookings") && !event.topics.includes("shop")) return;
+    void getPublicBooking({ data: booking.token }).then((fresh) => {
+      if (fresh) setBooking(fresh);
+    }).catch(() => {});
+    if (rescheduling) {
+      setSlotTick((n) => n + 1);
+    }
+  });
 
   useEffect(() => {
     if (!rescheduling) return;
     let active = true;
     setLoadingSlots(true);
-    setSelectedTime("");
     setSlotError("");
     getSlots({
       data: {
@@ -79,12 +90,13 @@ function ManageBookingPage() {
       .then((res) => {
         if (!active) return;
         setSlots(res.slots);
+        setSelectedTime((prev) => (prev && res.slots.includes(prev) ? prev : ""));
         setSlotError(res.error ?? "");
       })
       .catch(() => active && setSlotError(en ? "Could not load available times" : "No se pudieron consultar los horarios"))
       .finally(() => active && setLoadingSlots(false));
     return () => { active = false; };
-  }, [rescheduling, booking.shopSlug, booking.serviceSlug, booking.token, date, staffId, en]);
+  }, [rescheduling, booking.shopSlug, booking.serviceSlug, booking.token, date, staffId, en, slotTick]);
 
   async function handleCancel() {
     setBusy(true);

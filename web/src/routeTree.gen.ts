@@ -22,7 +22,9 @@ import { Route as RobotsDottxtRouteImport } from './routes/robots[.]txt'
 import { Route as SitemapDotxmlRouteImport } from './routes/sitemap[.]xml'
 import { Route as SubirRouteImport } from './routes/subir'
 import { Route as CitaTokenRouteImport } from './routes/cita.$token'
+import { Route as EventosPanelRouteImport } from './routes/eventos.panel'
 import { Route as MediaNameRouteImport } from './routes/media.$name'
+import { Route as EventosTiendaShopRouteImport } from './routes/eventos.tienda.$shop'
 import { Route as TiendaShopIndexRouteImport } from './routes/tienda.$shop.index'
 import { Route as TiendaShopProductRouteImport } from './routes/tienda.$shop.$product'
 
@@ -91,9 +93,19 @@ const CitaTokenRoute = CitaTokenRouteImport.update({
   path: '/cita/$token',
   getParentRoute: () => rootRouteImport,
 } as any)
+const EventosPanelRoute = EventosPanelRouteImport.update({
+  id: '/eventos/panel',
+  path: '/eventos/panel',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const MediaNameRoute = MediaNameRouteImport.update({
   id: '/media/$name',
   path: '/media/$name',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const EventosTiendaShopRoute = EventosTiendaShopRouteImport.update({
+  id: '/eventos/tienda/$shop',
+  path: '/eventos/tienda/$shop',
   getParentRoute: () => rootRouteImport,
 } as any)
 const TiendaShopIndexRoute = TiendaShopIndexRouteImport.update({
@@ -121,7 +133,9 @@ export interface FileRoutesByFullPath {
   '/sitemap.xml': typeof SitemapDotxmlRoute
   '/subir': typeof SubirRoute
   '/cita/$token': typeof CitaTokenRoute
+  '/eventos/panel': typeof EventosPanelRoute
   '/media/$name': typeof MediaNameRoute
+  '/eventos/tienda/$shop': typeof EventosTiendaShopRoute
   '/tienda/$shop/$product': typeof TiendaShopProductRoute
   '/tienda/$shop/': typeof TiendaShopIndexRoute
 }
@@ -139,7 +153,9 @@ export interface FileRoutesByTo {
   '/sitemap.xml': typeof SitemapDotxmlRoute
   '/subir': typeof SubirRoute
   '/cita/$token': typeof CitaTokenRoute
+  '/eventos/panel': typeof EventosPanelRoute
   '/media/$name': typeof MediaNameRoute
+  '/eventos/tienda/$shop': typeof EventosTiendaShopRoute
   '/tienda/$shop/$product': typeof TiendaShopProductRoute
   '/tienda/$shop': typeof TiendaShopIndexRoute
 }
@@ -158,7 +174,9 @@ export interface FileRoutesById {
   '/sitemap.xml': typeof SitemapDotxmlRoute
   '/subir': typeof SubirRoute
   '/cita/$token': typeof CitaTokenRoute
+  '/eventos/panel': typeof EventosPanelRoute
   '/media/$name': typeof MediaNameRoute
+  '/eventos/tienda/$shop': typeof EventosTiendaShopRoute
   '/tienda/$shop/$product': typeof TiendaShopProductRoute
   '/tienda/$shop/': typeof TiendaShopIndexRoute
 }
@@ -178,7 +196,9 @@ export interface FileRouteTypes {
     | '/sitemap.xml'
     | '/subir'
     | '/cita/$token'
+    | '/eventos/panel'
     | '/media/$name'
+    | '/eventos/tienda/$shop'
     | '/tienda/$shop/$product'
     | '/tienda/$shop/'
   fileRoutesByTo: FileRoutesByTo
@@ -196,7 +216,9 @@ export interface FileRouteTypes {
     | '/sitemap.xml'
     | '/subir'
     | '/cita/$token'
+    | '/eventos/panel'
     | '/media/$name'
+    | '/eventos/tienda/$shop'
     | '/tienda/$shop/$product'
     | '/tienda/$shop'
   id:
@@ -214,7 +236,9 @@ export interface FileRouteTypes {
     | '/sitemap.xml'
     | '/subir'
     | '/cita/$token'
+    | '/eventos/panel'
     | '/media/$name'
+    | '/eventos/tienda/$shop'
     | '/tienda/$shop/$product'
     | '/tienda/$shop/'
   fileRoutesById: FileRoutesById
@@ -233,7 +257,9 @@ export interface RootRouteChildren {
   SitemapDotxmlRoute: typeof SitemapDotxmlRoute
   SubirRoute: typeof SubirRoute
   CitaTokenRoute: typeof CitaTokenRoute
+  EventosPanelRoute: typeof EventosPanelRoute
   MediaNameRoute: typeof MediaNameRoute
+  EventosTiendaShopRoute: typeof EventosTiendaShopRoute
   TiendaShopProductRoute: typeof TiendaShopProductRoute
   TiendaShopIndexRoute: typeof TiendaShopIndexRoute
 }
@@ -331,11 +357,25 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof CitaTokenRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/eventos/panel': {
+      id: '/eventos/panel'
+      path: '/eventos/panel'
+      fullPath: '/eventos/panel'
+      preLoaderRoute: typeof EventosPanelRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/media/$name': {
       id: '/media/$name'
       path: '/media/$name'
       fullPath: '/media/$name'
       preLoaderRoute: typeof MediaNameRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/eventos/tienda/$shop': {
+      id: '/eventos/tienda/$shop'
+      path: '/eventos/tienda/$shop'
+      fullPath: '/eventos/tienda/$shop'
+      preLoaderRoute: typeof EventosTiendaShopRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/tienda/$shop/': {
@@ -369,7 +409,9 @@ const rootRouteChildren: RootRouteChildren = {
   SitemapDotxmlRoute: SitemapDotxmlRoute,
   SubirRoute: SubirRoute,
   CitaTokenRoute: CitaTokenRoute,
+  EventosPanelRoute: EventosPanelRoute,
   MediaNameRoute: MediaNameRoute,
+  EventosTiendaShopRoute: EventosTiendaShopRoute,
   TiendaShopProductRoute: TiendaShopProductRoute,
   TiendaShopIndexRoute: TiendaShopIndexRoute,
 }

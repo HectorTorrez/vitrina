@@ -76,8 +76,22 @@ func panelRoutes(mux *http.ServeMux, db *gorm.DB) {
 			writeError(w, err)
 			return
 		}
+		publishPanelChange(input)
 		w.WriteHeader(http.StatusNoContent)
 	}))
+}
+
+func publishPanelChange(input panelInput) {
+	switch input.Action {
+	case "editar-tienda", "crear-item", "editar-item", "eliminar-item", "reordenar-items":
+		liveHub.publish(input.ShopSlug, "shop", "bookings")
+	case "agendar", "reprogramar", "cancelar":
+		liveHub.publish(input.ShopSlug, "bookings")
+	case "estado-pedido", "crear-cupon", "editar-cupon", "eliminar-cupon":
+		liveHub.publish(input.ShopSlug, "orders")
+	case "crear-tienda":
+		liveHub.publish(input.ShopSlug, "shop")
+	}
 }
 
 func loadPanel(db *gorm.DB, account seller) (panelAccess, error) {

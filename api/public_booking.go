@@ -721,6 +721,7 @@ func publicBookingRoutes(mux *http.ServeMux, db *gorm.DB, delivery *resendDelive
 			writeError(w, err)
 			return
 		}
+		liveHub.publish(bookedShop.Slug, "bookings")
 		locale := requestLocale(r)
 		sendAsync(fmt.Sprintf("No se pudo avisar la reserva %d", booking.ID), func(ctx context.Context) error {
 			if err := notifyNewBooking(ctx, db, delivery, booking, service, bookedShop, locale); err != nil {
@@ -760,6 +761,7 @@ func publicBookingRoutes(mux *http.ServeMux, db *gorm.DB, delivery *resendDelive
 			writeError(w, err)
 			return
 		}
+		liveHub.publish(bookedShop.Slug, "bookings")
 		locale := requestLocale(r)
 		sendAsync(fmt.Sprintf("No se pudo avisar cancelación %d", booking.ID), func(ctx context.Context) error {
 			_ = notifyBookingChange(ctx, db, delivery, booking, service, bookedShop, locale, "cancelled")
@@ -789,6 +791,7 @@ func publicBookingRoutes(mux *http.ServeMux, db *gorm.DB, delivery *resendDelive
 			writeError(w, err)
 			return
 		}
+		liveHub.publish(bookedShop.Slug, "bookings")
 		locale := requestLocale(r)
 		sendAsync(fmt.Sprintf("No se pudo avisar reprogramación %d", booking.ID), func(ctx context.Context) error {
 			_ = notifyBookingChange(ctx, db, delivery, booking, service, bookedShop, locale, "rescheduled")
