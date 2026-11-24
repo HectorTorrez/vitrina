@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState, type FormEvent } from "react";
+import { useEffect, useMemo, useRef, useState, type FormEvent } from "react";
 import { Link } from "@tanstack/react-router";
 import { CalendarCheck, CalendarDays, CalendarPlus, Check, Copy, Download, ExternalLink, Loader2, UserRound } from "lucide-react";
 import { buildIcsContent, createBooking, formatLocal, getMonthShort, getSlots, getWeekdayShort, googleCalendarUrl, shopToday } from "./booking";
@@ -62,7 +62,23 @@ export function PublicBooking({
   const [email, setEmail] = useState("");
   const [notes, setNotes] = useState("");
   const [showErrors, setShowErrors] = useState(false);
+  const dateInputRef = useRef<HTMLInputElement>(null);
   const days = Array.from({ length: Math.min(14, horizon + 1) }, (_, i) => shopToday(i, timeZone));
+
+  function openDatePicker() {
+    const input = dateInputRef.current;
+    if (!input) return;
+    try {
+      if (typeof input.showPicker === "function") {
+        input.showPicker();
+        return;
+      }
+    } catch {
+      // Fallback for browsers that restrict showPicker
+    }
+    input.focus();
+    input.click();
+  }
 
   useEffect(() => {
     if (staffId && !eligibleStaff.some((m) => m.id === staffId)) {
@@ -210,14 +226,22 @@ export function PublicBooking({
     <form className="grid gap-5 rounded-3xl border border-store-rule bg-store-surface p-5 @3xl:p-6" onSubmit={submit} noValidate>
       <div className="flex items-center justify-between gap-3">
         <h2 className="font-store text-2xl">{t("booking.title")}</h2>
-        <label className="relative inline-flex h-9 cursor-pointer items-center gap-1.5 rounded-full border border-store-rule px-3 text-sm font-medium hover:border-store-ink">
-          <CalendarDays className="size-4" /> {t("booking.otherDate")}
+        <div className="relative inline-flex">
+          <button
+            type="button"
+            onClick={openDatePicker}
+            className="inline-flex h-9 cursor-pointer items-center gap-1.5 rounded-full border border-store-rule px-3 text-sm font-medium transition hover:border-store-ink"
+          >
+            <CalendarDays className="size-4" /> {t("booking.otherDate")}
+          </button>
           <input
+            ref={dateInputRef}
             type="date" value={date} min={shopToday(0, timeZone)} max={shopToday(horizon, timeZone)} aria-label={t("booking.otherDate")}
-            className="absolute inset-0 cursor-pointer opacity-0"
+            tabIndex={-1}
+            className="pointer-events-none absolute inset-0 size-full opacity-0"
             onChange={(event) => event.target.value && setDate(event.target.value)}
           />
-        </label>
+        </div>
       </div>
 
       {eligibleStaff.length > 0 && (
