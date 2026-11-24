@@ -1,6 +1,6 @@
 import { useState } from "react";
 import {
-  ArrowDown, ArrowUp, Clock, CopyPlus, ExternalLink, Eye, EyeOff, ImageIcon, Layers, MoreHorizontal, Package,
+  ArrowDown, ArrowUp, Clock, CopyPlus, ExternalLink, Eye, EyeOff, GripVertical, ImageIcon, Layers, MoreHorizontal, Package,
   Pencil, Plus, Search, Trash2,
 } from "lucide-react";
 import { hasSurcharges, price, type Product } from "./catalog";
@@ -31,7 +31,9 @@ export function PanelCatalog({ shop }: { shop: PanelShop }) {
   const [deleting, setDeleting] = useState<Product | null>(null);
   const [query, setQuery] = useState("");
   const [filter, setFilter] = useState<Filter>("all");
-  const { run, many, pending } = usePanelAction();
+  const [draggingSlug, setDraggingSlug] = useState<string | null>(null);
+  const [dragOverSlug, setDragOverSlug] = useState<string | null>(null);
+  const { run, pending } = usePanelAction();
   const editingItem = products.find((item) => item.slug === editing);
 
   const words = query.trim().toLowerCase();
@@ -45,15 +47,19 @@ export function PanelCatalog({ shop }: { shop: PanelShop }) {
     hidden: products.filter((item) => item.hidden).length,
   };
 
-  function move(index: number, delta: number) {
+  function reorderTo(fromIndex: number, toIndex: number) {
+    if (fromIndex === toIndex || fromIndex < 0 || toIndex < 0 || toIndex >= products.length) return;
     const order = [...products];
-    const [item] = order.splice(index, 1);
-    order.splice(index + delta, 0, item);
-    const updates = order
-      .map((product, position) => ({ product, position: position * 10 }))
-      .filter(({ product, position }) => product.position !== position)
-      .map(({ product, position }) => ({ action: "editar-item", shopSlug: shop.slug, item: { ...product, position } }));
-    void many(updates, "Orden actualizado");
+    const [item] = order.splice(fromIndex, 1);
+    order.splice(toIndex, 0, item);
+    void run(
+      { action: "reordenar-items", shopSlug: shop.slug, order: order.map((p) => p.slug) },
+      locale === "en" ? "Order updated" : "Orden actualizado",
+    );
+  }
+
+  function move(index: number, delta: number) {
+    reorderTo(index, index + delta);
   }
 
   function duplicate(item: Product) {
@@ -112,11 +118,43 @@ export function PanelCatalog({ shop }: { shop: PanelShop }) {
             const index = products.indexOf(item);
             const reorder = filter === "all" && !words;
             return (
-              <li key={item.slug} className={cn("flex items-center gap-3 px-3 py-3 transition-colors hover:bg-muted/40 sm:gap-4 sm:px-4", item.hidden && "bg-muted/30")}>
+              <li
+                key={item.slug}
+                draggable={reorder && !pending}
+                onDragStart={() => setDraggingSlug(item.slug)}
+                onDragOver={(e) => {
+                  if (!reorder || !draggingSlug || draggingSlug === item.slug) return;
+                  e.preventDefault();
+                  setDragOverSlug(item.slug);
+                }}
+                onDragLeave={() => dragOverSlug === item.slug && setDragOverSlug(null)}
+                onDrop={(e) => {
+                  e.preventDefault();
+                  if (reorder && draggingSlug && draggingSlug !== item.slug) {
+                    const from = products.findIndex((p) => p.slug === draggingSlug);
+                    const to = products.findIndex((p) => p.slug === item.slug);
+                    reorderTo(from, to);
+                  }
+                  setDraggingSlug(null);
+                  setDragOverSlug(null);
+                }}
+                onDragEnd={() => { setDraggingSlug(null); setDragOverSlug(null); }}
+                className={cn(
+                  "flex items-center gap-3 px-3 py-3 transition-colors hover:bg-muted/40 sm:gap-4 sm:px-4",
+                  item.hidden && "bg-muted/30",
+                  draggingSlug === item.slug && "opacity-50",
+                  dragOverSlug === item.slug && "bg-accent/60 ring-2 ring-primary/30 ring-inset",
+                )}
+              >
                 {reorder && (
-                  <div className="hidden flex-col sm:flex">
-                    <button type="button" aria-label="Subir" disabled={pending || index === 0} onClick={() => move(index, -1)} className="grid size-6 place-items-center rounded text-muted-foreground hover:bg-muted hover:text-foreground disabled:opacity-30"><ArrowUp className="size-3.5" /></button>
-                    <button type="button" aria-label="Bajar" disabled={pending || index === products.length - 1} onClick={() => move(index, 1)} className="grid size-6 place-items-center rounded text-muted-foreground hover:bg-muted hover:text-foreground disabled:opacity-30"><ArrowDown className="size-3.5" /></button>
+                  <div className="hidden items-center gap-1 sm:flex">
+                    <span className="cursor-grab text-muted-foreground/60 active:cursor-grabbing" aria-hidden="true">
+                      <GripVertical className="size-4" />
+                    </span>
+                    <div className="flex flex-col">
+                      <button type="button" aria-label={t("catalog.moveUp")} disabled={pending || index === 0} onClick={() => move(index, -1)} className="grid size-6 place-items-center rounded text-muted-foreground hover:bg-muted hover:text-foreground disabled:opacity-30"><ArrowUp className="size-3.5" /></button>
+                      <button type="button" aria-label={t("catalog.moveDown")} disabled={pending || index === products.length - 1} onClick={() => move(index, 1)} className="grid size-6 place-items-center rounded text-muted-foreground hover:bg-muted hover:text-foreground disabled:opacity-30"><ArrowDown className="size-3.5" /></button>
+                    </div>
                   </div>
                 )}
                 <button type="button" onClick={() => setEditing(item.slug)} className="flex min-w-0 flex-1 items-center gap-3 text-left sm:gap-4">

@@ -17,7 +17,14 @@ export interface Booking {
   editable: boolean;
 }
 
-export type PanelShop = Omit<Shop, "origin"> & { bookings: Booking[] };
+export interface ShopAnalytics {
+  views30d: number;
+  productViews30d: number;
+  whatsappClicks30d: number;
+  topItems: { slug: string; views: number }[];
+}
+
+export type PanelShop = Omit<Shop, "origin"> & { bookings: Booking[]; analytics?: ShopAnalytics };
 export interface PanelAccess {
   email: string;
   operator: boolean;

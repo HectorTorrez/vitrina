@@ -40,6 +40,7 @@ func main() {
 	panelRoutes(mux, db)
 	publicBookingRoutes(mux, db, delivery)
 	mediaRoutes(mux, db)
+	analyticsRoutes(mux, db)
 	mux.HandleFunc("GET /api/health", func(w http.ResponseWriter, r *http.Request) {
 		ctx, cancel := context.WithTimeout(r.Context(), 2*time.Second)
 		defer cancel()

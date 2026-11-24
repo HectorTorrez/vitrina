@@ -1,7 +1,8 @@
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
 import { Search, X } from "lucide-react";
+import { trackEvent } from "../analytics";
 import { acceptsBookings, shopQuery, productImage, type Product } from "../catalog";
 import { useI18n } from "../i18n";
 import { pageHead, siteLanguage } from "../seo";
@@ -54,6 +55,9 @@ function Catalog() {
   const [filter, setFilter] = useState<Filter>("all");
   const [category, setCategory] = useState<string>("all");
   const [query, setQuery] = useState("");
+  useEffect(() => {
+    trackEvent(shop, "shop_view");
+  }, [shop]);
   const bookable = acceptsBookings(data) && data.products.some((p) => p.kind === "service");
 
   const categories = useMemo(() => {

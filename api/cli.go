@@ -15,7 +15,7 @@ func runCommand(db *gorm.DB, name string, args []string) error {
 		if len(args) > 1 {
 			return errors.New("uso: init [CATALOGO_SQLITE]")
 		}
-		if err := db.AutoMigrate(&shop{}, &product{}, &reservation{}); err != nil {
+		if err := db.AutoMigrate(&shop{}, &product{}, &reservation{}, &shopEvent{}); err != nil {
 			return err
 		}
 		if err := migrateAuth(db); err != nil {

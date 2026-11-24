@@ -282,6 +282,51 @@ function Overview({ shop, go }: { shop: PanelShop; go: (section: Section) => voi
         <Stat icon={MessageCircle} label="WhatsApp" value={shop.whatsapp ? t("panel.overview.connected") : t("panel.overview.noNumber")} hint={shop.whatsapp ? "+" + shop.whatsapp : t("panel.overview.addInShop")} onClick={() => go("tienda")} />
       </div>
 
+      {shop.analytics && (
+        <section className="grid gap-4 rounded-2xl border bg-card p-5 sm:p-6">
+          <div className="flex flex-wrap items-baseline justify-between gap-2">
+            <h2 className="font-display text-lg font-semibold tracking-tight">
+              {locale === "en" ? "Storefront activity" : "Actividad de tu tienda"}
+            </h2>
+            <span className="font-mono text-xs text-muted-foreground">
+              {locale === "en" ? "Last 30 days" : "Últimos 30 días"}
+            </span>
+          </div>
+          <div className="grid grid-cols-3 gap-3">
+            <div className="grid gap-1 rounded-xl bg-muted/50 p-3.5">
+              <span className="text-xs text-muted-foreground">{locale === "en" ? "Shop visits" : "Visitas"}</span>
+              <span className="font-display text-2xl font-bold">{shop.analytics.views30d}</span>
+            </div>
+            <div className="grid gap-1 rounded-xl bg-muted/50 p-3.5">
+              <span className="text-xs text-muted-foreground">{locale === "en" ? "Item views" : "Fichas vistas"}</span>
+              <span className="font-display text-2xl font-bold">{shop.analytics.productViews30d}</span>
+            </div>
+            <div className="grid gap-1 rounded-xl bg-muted/50 p-3.5">
+              <span className="text-xs text-muted-foreground">{locale === "en" ? "WhatsApp clicks" : "Clics a WhatsApp"}</span>
+              <span className="font-display text-2xl font-bold">{shop.analytics.whatsappClicks30d}</span>
+            </div>
+          </div>
+          {shop.analytics.topItems.length > 0 && (
+            <div className="grid gap-2 border-t pt-3">
+              <p className="text-xs font-medium text-muted-foreground">
+                {locale === "en" ? "Most viewed items" : "Fichas más vistas"}
+              </p>
+              <ul className="grid gap-1.5 text-sm">
+                {shop.analytics.topItems.map((entry) => {
+                  const name = products.find((p) => p.slug === entry.slug)?.name ?? entry.slug;
+                  return (
+                    <li key={entry.slug} className="flex items-center justify-between gap-3">
+                      <span className="truncate font-medium">{name}</span>
+                      <span className="shrink-0 font-mono text-xs text-muted-foreground">{entry.views}</span>
+                    </li>
+                  );
+                })}
+              </ul>
+            </div>
+          )}
+        </section>
+      )}
+
       {done < tasks.length && (
         <section className="grid gap-5 rounded-2xl border bg-card p-5 sm:p-6">
           <div className="flex flex-wrap items-center justify-between gap-3">
