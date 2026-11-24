@@ -5,6 +5,7 @@
     "dev": "concurrently --names api,web --kill-others --success first \"pnpm run dev:api\" \"pnpm run dev:web\"",
     "dev:api": "sh scripts/dev-api.sh",
     "dev:web": "pnpm --filter vitrina-web dev --host 127.0.0.1 --strictPort",
+    "migrate": "sh -c 'if [ -z \"${DATABASE_URL:-}\" ]; then docker compose up -d --wait db; fi && sh scripts/dev-api.sh init'",
     "predev": "docker compose up -d --wait db && sh scripts/dev-api.sh init"
   },
   "devDependencies": {

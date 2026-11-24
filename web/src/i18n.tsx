@@ -27,6 +27,11 @@ function readCookie(cookieHeader: string | null, name: string): string | null {
 
 export const getInitialLocale = createServerFn({ method: "GET" }).handler(async (): Promise<Locale> => {
   const req = getRequest();
+  if (req?.url) {
+    const pathname = new URL(req.url).pathname;
+    if (pathname === "/en" || pathname === "/en/") return "en";
+    if (pathname === "/") return "es";
+  }
   const fromCookie = parseLocale(readCookie(req?.headers.get("cookie") ?? null, LOCALE_COOKIE));
   if (fromCookie) return fromCookie;
   const accept = req?.headers.get("accept-language") ?? "";
@@ -684,13 +689,16 @@ export function useI18n() {
   return useContext(I18nContext);
 }
 
-export function LanguageSwitcher({ variant = "dark", className }: { variant?: "dark" | "light" | "store"; className?: string }) {
+export function LanguageSwitcher({ variant = "dark", className, onSelect }: { variant?: "dark" | "light" | "store"; className?: string; onSelect?: (next: Locale) => void }) {
   const { locale, setLocale, t } = useI18n();
   const next: Locale = locale === "es" ? "en" : "es";
   return (
     <button
       type="button"
-      onClick={() => setLocale(next)}
+      onClick={() => {
+        setLocale(next);
+        onSelect?.(next);
+      }}
       aria-label={`${t("common.language")}: ${locale.toUpperCase()} → ${next.toUpperCase()}`}
       title={locale === "es" ? "Switch to English" : "Cambiar a Español"}
       className={cn(

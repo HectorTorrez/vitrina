@@ -5,7 +5,7 @@ import { Search, X } from "lucide-react";
 import { trackEvent } from "../analytics";
 import { acceptsBookings, shopQuery, productImage, type Product } from "../catalog";
 import { useI18n } from "../i18n";
-import { pageHead, siteLanguage } from "../seo";
+import { htmlLang, pageHead, resolveShopLocale, shopLocalBusinessSchema } from "../seo";
 import { foldAccents } from "../slug";
 import { StoreLayout } from "../store/StoreLayout";
 import { ProductCard, ShopHero } from "../store/StoreParts";
@@ -17,27 +17,41 @@ export const Route = createFileRoute("/tienda/$shop/")({
   head: ({ loaderData, params }) => {
     if (!loaderData) return {};
     const { name, origin, products } = loaderData;
+    const shopLocale = resolveShopLocale(loaderData.locale);
     const first = products.map(productImage).find(Boolean);
+    const image = first && new URL(first, origin).href;
     const url = origin + "/tienda/" + params.shop;
-    const description = loaderData.description.trim() || "Explorá el catálogo y los precios de " + name + " en Vitrina.";
+    const description = loaderData.description.trim() || (
+      shopLocale === "en"
+        ? "Explore " + name + "'s catalog and prices on Vitrina."
+        : "Explorá el catálogo y los precios de " + name + " en Vitrina."
+    );
+    const business = shopLocalBusinessSchema(loaderData, url, description, image);
     return pageHead({
-      title: name + " · Catálogo en Vitrina",
+      title: name + (shopLocale === "en" ? " · Catalog on Vitrina" : " · Catálogo en Vitrina"),
       description,
       url,
-      image: first && new URL(first, origin).href,
+      image,
+      locale: shopLocale,
       indexable: products.length > 0,
       structuredData: {
-        "@type": "CollectionPage",
-        name,
-        url,
-        description,
-        inLanguage: siteLanguage,
-        mainEntity: products.length ? {
-          "@type": "ItemList",
-          itemListElement: products.map((product, index) => ({
-            "@type": "ListItem", position: index + 1, name: product.name, url: url + "/" + product.slug,
-          })),
-        } : undefined,
+        "@graph": [
+          business,
+          {
+            "@type": "CollectionPage",
+            name,
+            url,
+            description,
+            inLanguage: htmlLang(shopLocale),
+            about: { "@id": url + "#negocio" },
+            mainEntity: products.length ? {
+              "@type": "ItemList",
+              itemListElement: products.map((product, index) => ({
+                "@type": "ListItem", position: index + 1, name: product.name, url: url + "/" + product.slug,
+              })),
+            } : undefined,
+          },
+        ],
       },
     });
   },
