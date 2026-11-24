@@ -52,8 +52,18 @@ function Catalog() {
   const { data } = useQuery({ ...shopQuery(shop), initialData: Route.useLoaderData() });
   const { t } = useI18n();
   const [filter, setFilter] = useState<Filter>("all");
+  const [category, setCategory] = useState<string>("all");
   const [query, setQuery] = useState("");
   const bookable = acceptsBookings(data) && data.products.some((p) => p.kind === "service");
+
+  const categories = useMemo(() => {
+    const seen = new Map<string, string>();
+    for (const p of data.products) {
+      const cat = p.category?.trim();
+      if (cat && !seen.has(cat.toLowerCase())) seen.set(cat.toLowerCase(), cat);
+    }
+    return Array.from(seen.values());
+  }, [data.products]);
 
   const counts = {
     all: data.products.length,
@@ -62,8 +72,11 @@ function Catalog() {
   };
   const visible = useMemo(() => {
     const words = normalize(query.trim());
-    return data.products.filter((p) => (filter === "all" || p.kind === filter) && (!words || normalize(p.name).includes(words)));
-  }, [data.products, filter, query]);
+    return data.products.filter((p) =>
+      (filter === "all" || p.kind === filter) &&
+      (category === "all" || (p.category?.trim().toLowerCase() === category.toLowerCase())) &&
+      (!words || normalize(p.name).includes(words) || normalize(p.category ?? "").includes(words)));
+  }, [data.products, filter, category, query]);
 
   const filters: { value: Filter; label: string }[] = [
     { value: "all", label: t("store.filterAll") },
@@ -113,6 +126,33 @@ function Catalog() {
           </label>
         )}
       </div>
+
+      {categories.length > 0 && (
+        <div className="mt-4 flex flex-wrap gap-2" role="tablist" aria-label="Categories">
+          <button
+            type="button" role="tab" aria-selected={category === "all"}
+            onClick={() => setCategory("all")}
+            className={cn(
+              "h-8 rounded-full border px-3.5 text-xs font-medium transition",
+              category === "all" ? "border-store-ink bg-store-ink text-store-bg" : "border-store-rule bg-store-surface/60 hover:border-store-ink",
+            )}
+          >
+            {t("store.filterAll")}
+          </button>
+          {categories.map((cat) => (
+            <button
+              key={cat} type="button" role="tab" aria-selected={category === cat}
+              onClick={() => setCategory(cat)}
+              className={cn(
+                "h-8 rounded-full border px-3.5 text-xs font-medium transition",
+                category === cat ? "border-store-ink bg-store-ink text-store-bg" : "border-store-rule bg-store-surface/60 hover:border-store-ink",
+              )}
+            >
+              {cat}
+            </button>
+          ))}
+        </div>
+      )}
 
       {visible.length > 0 ? (
         <div className={data.style?.catalogLayout === "list"

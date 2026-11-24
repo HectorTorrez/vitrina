@@ -23,7 +23,7 @@ func savePanelItem(db *gorm.DB, shopSlug string, item product, create bool) erro
 		return result.Error
 	}
 	result := db.Model(&product{}).Where("shop_slug = ? AND slug = ? AND kind = ?", shopSlug, item.Slug, item.Kind).
-		Select("name", "description", "price_cents", "available", "image_url", "gallery", "options", "position", "hidden", "duration_minutes").Updates(&item)
+		Select("name", "description", "category", "badge", "price_cents", "compare_at_cents", "available", "image_url", "gallery", "options", "position", "hidden", "duration_minutes").Updates(&item)
 	if result.Error == nil && result.RowsAffected == 0 {
 		return gorm.ErrRecordNotFound
 	}
@@ -48,10 +48,18 @@ func validatePanelItem(item *product) error {
 	item.Name = strings.TrimSpace(item.Name)
 	item.ImageURL = strings.TrimSpace(item.ImageURL)
 	item.Description = strings.TrimSpace(item.Description)
+	item.Category = strings.TrimSpace(item.Category)
+	item.Badge = strings.ToLower(strings.TrimSpace(item.Badge))
 	if !validSlug(item.Slug) || item.Name == "" || utf8.RuneCountInString(item.Name) > 120 {
 		return validationError("Indicá un nombre y un enlace válido para la ficha")
 	}
-	if item.PriceCents < 0 || item.PriceCents > 99999999 || item.Position < 0 || item.Position > 999999 {
+	if utf8.RuneCountInString(item.Category) > 40 {
+		return validationError("La categoría puede tener hasta 40 caracteres")
+	}
+	if item.Badge != "" && item.Badge != "new" && item.Badge != "popular" && item.Badge != "sale" {
+		return validationError("Elegí una etiqueta válida")
+	}
+	if item.PriceCents < 0 || item.PriceCents > 99999999 || item.CompareAtCents < 0 || item.CompareAtCents > 99999999 || item.Position < 0 || item.Position > 999999 {
 		return validationError("Revisá el precio y la posición")
 	}
 	switch item.Kind {

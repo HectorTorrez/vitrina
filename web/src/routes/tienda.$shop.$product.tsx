@@ -7,7 +7,7 @@ import { useI18n } from "../i18n";
 import { pageHead, siteLanguage } from "../seo";
 import { PublicBooking } from "../PublicBooking";
 import { StoreLayout } from "../store/StoreLayout";
-import { ProductCard, ProductImage, WhatsAppIcon } from "../store/StoreParts";
+import { badgeLabel, ProductCard, ProductImage, WhatsAppIcon } from "../store/StoreParts";
 import { cn } from "@/lib/utils";
 import { useCopied } from "@/lib/useCopied";
 
@@ -188,10 +188,23 @@ function Order({ product, phone, booking }: { product: Product; phone: string; b
   return (
     <section className="grid content-start gap-7">
       <div className="grid gap-3">
-        <p className="text-sm font-medium tracking-wide text-store-muted uppercase">{service ? t("store.service") : t("store.product")}</p>
+        <div className="flex flex-wrap items-center gap-2">
+          <p className="text-sm font-medium tracking-wide text-store-muted uppercase">
+            {service ? t("store.service") : t("store.product")}
+            {product.category ? ` · ${product.category}` : ""}
+          </p>
+          {badgeLabel(product.badge, locale) && (
+            <span className="rounded-full bg-store-accent px-2.5 py-0.5 text-xs font-semibold text-store-accent-ink">
+              {badgeLabel(product.badge, locale)}
+            </span>
+          )}
+        </div>
         <h1 className="font-store text-[clamp(2.2rem,6cqw,3.75rem)] leading-[1.05] font-medium tracking-[-0.03em]">{product.name}</h1>
         <div className="flex flex-wrap items-center gap-3">
           <p className="font-mono text-2xl font-medium" aria-live="polite">{product.available ? price(total, locale) : t("store.unavailable")}</p>
+          {product.available && product.compareAtCents && product.compareAtCents > product.priceCents && (
+            <span className="font-mono text-base text-store-muted line-through">{price(product.compareAtCents, locale)}</span>
+          )}
           {service && (
             <span className="inline-flex items-center gap-1.5 rounded-full bg-store-soft px-3 py-1 text-sm font-medium">
               <Clock className="size-3.5" /> {product.durationMinutes} min
