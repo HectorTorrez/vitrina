@@ -133,9 +133,10 @@ func authRoutes(mux *http.ServeMux, db *gorm.DB, delivery *resendDelivery) {
 		}
 		if issued {
 			sending = true
+			locale := requestLocale(r)
 			go func() {
 				defer func() { <-sendSlots }()
-				if err := delivery.sendLoginLink(context.Background(), email, token); err != nil {
+				if err := delivery.sendLoginLink(context.Background(), email, token, locale); err != nil {
 					log.Printf("No se pudo enviar el enlace de acceso: %v", err)
 				}
 			}()

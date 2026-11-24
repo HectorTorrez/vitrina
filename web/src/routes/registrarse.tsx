@@ -7,19 +7,20 @@ import {
   authButton, authGhostButton, authInput, EmailField, emailError, MailIcon,
 } from "../AuthLayout";
 import { useShopSlugField, type ShopSlugStatus } from "../shopSlug";
+import { useI18n } from "../i18n";
 import { cn } from "@/lib/utils";
 
 type Status = "enviado" | "ocupado" | "datos" | "servicio";
 
-const errors: Record<Exclude<Status, "enviado">, string> = {
-  ocupado: "Ese enlace ya lo usa otra tienda. Probá con otro.",
-  datos: "Revisá los datos: el nombre, el enlace (solo minúsculas, números y guiones) y el correo.",
-  servicio: "No se pudo procesar la solicitud. Intentá de nuevo en unos minutos.",
+const errorKeys: Record<Exclude<Status, "enviado">, "auth.signup.errTaken" | "auth.signup.errData" | "auth.login.errService"> = {
+  ocupado: "auth.signup.errTaken",
+  datos: "auth.signup.errData",
+  servicio: "auth.login.errService",
 };
 
 export const Route = createFileRoute("/registrarse")({
   validateSearch: (search: Record<string, unknown>): { estado?: Status; nombre?: string; enlace?: string } => ({
-    estado: search.estado === "enviado" || (typeof search.estado === "string" && Object.hasOwn(errors, search.estado))
+    estado: search.estado === "enviado" || (typeof search.estado === "string" && Object.hasOwn(errorKeys, search.estado))
       ? (search.estado as Status)
       : undefined,
     nombre: typeof search.nombre === "string" ? search.nombre.slice(0, 100) : undefined,
@@ -33,10 +34,10 @@ export const Route = createFileRoute("/registrarse")({
   component: Signup,
 });
 
-const steps = ["Tu negocio", "Tu correo"];
-
 function Signup() {
   const { estado, nombre, enlace } = Route.useSearch();
+  const { t } = useI18n();
+  const steps = [t("auth.signup.step1"), t("auth.signup.step2")];
   const [step, setStep] = useState(0);
   const [name, setName] = useState(nombre ?? "");
   const link = useShopSlugField(enlace);
@@ -49,18 +50,16 @@ function Signup() {
     return (
       <AuthLayout>
         <MailIcon />
-        <AuthEyebrow>Último paso</AuthEyebrow>
-        <AuthTitle>Confirmá tu correo</AuthTitle>
-        <AuthLede role="status">
-          Te enviamos un enlace. Al abrirlo se crea tu tienda y entrás directo a tu panel. Revisá también la carpeta de spam.
-        </AuthLede>
-        <AuthNote>El enlace vence en 15 minutos y sirve una sola vez.</AuthNote>
-        <Link to="/registrarse" className={authGhostButton}>Empezar de nuevo</Link>
+        <AuthEyebrow>{t("auth.signup.sentEyebrow")}</AuthEyebrow>
+        <AuthTitle>{t("auth.signup.sentTitle")}</AuthTitle>
+        <AuthLede role="status">{t("auth.signup.sentLede")}</AuthLede>
+        <AuthNote>{t("auth.login.sentNote")}</AuthNote>
+        <Link to="/registrarse" className={authGhostButton}>{t("auth.signup.startOver")}</Link>
       </AuthLayout>
     );
   }
 
-  const nameError = !name.trim() ? "Contanos cómo se llama tu negocio." : null;
+  const nameError = !name.trim() ? t("auth.signup.nameRequired") : null;
   const stepOneValid = !nameError && !link.error;
   const showLinkError = Boolean(link.error) && (showErrors || link.status === "taken");
 
@@ -76,15 +75,11 @@ function Signup() {
 
   return (
     <AuthLayout>
-      <Stepper current={step} />
-      <AuthEyebrow>Paso {step + 1} de 2 · {steps[step]}</AuthEyebrow>
-      <AuthTitle>{step === 0 ? "Tu vitrina, lista hoy" : "¿A dónde te escribimos?"}</AuthTitle>
-      <AuthLede>
-        {step === 0
-          ? "Contanos cómo se llama tu negocio. Después cargás tu catálogo y tu horario desde el panel."
-          : "Te mandamos un enlace para confirmar. Sin contraseñas."}
-      </AuthLede>
-      {estado && <AuthAlert>{errors[estado]}</AuthAlert>}
+      <Stepper current={step} steps={steps} />
+      <AuthEyebrow>{step + 1} / 2 · {steps[step]}</AuthEyebrow>
+      <AuthTitle>{step === 0 ? t("auth.signup.title1") : t("auth.signup.title2")}</AuthTitle>
+      <AuthLede>{step === 0 ? t("auth.signup.lede1") : t("auth.signup.lede2")}</AuthLede>
+      {estado && <AuthAlert>{t(errorKeys[estado])}</AuthAlert>}
       <form
         action="/auth" method="post" className="mt-2 grid gap-5" noValidate={step === 0}
         onSubmit={(event) => {
@@ -103,7 +98,7 @@ function Signup() {
       >
         <input type="hidden" name="action" value="signup" />
         <div className={cn("grid gap-5", step !== 0 && "hidden")}>
-          <AuthField label="Nombre del negocio" htmlFor="shopName" error={showErrors ? nameError : null}>
+          <AuthField label={t("auth.signup.shopName")} htmlFor="shopName" error={showErrors ? nameError : null}>
             <input
               ref={nameRef} id="shopName" name="shopName" required maxLength={100} placeholder="Luna Uñas"
               autoComplete="organization" autoFocus className={authInput} value={name}
@@ -115,7 +110,7 @@ function Signup() {
             />
           </AuthField>
           <AuthField
-            label="Enlace de tu tienda" htmlFor="shopSlug"
+            label={t("auth.signup.shopSlug")} htmlFor="shopSlug"
             error={showLinkError ? link.error : null}
             hint={<SlugHint status={link.status} />}
           >
@@ -136,18 +131,18 @@ function Signup() {
               />
               {link.canSuggest(name) && (
                 <button
-                  type="button" title="Usar el nombre del negocio"
+                  type="button" title={t("common.suggest")}
                   className="mr-2 flex h-8 items-center gap-1 rounded-full bg-neutral-100 px-3 text-xs font-medium hover:bg-neutral-200"
                   onClick={() => link.suggest(name)}
                 >
-                  <Sparkles className="size-3.5" /> Sugerir
+                  <Sparkles className="size-3.5" /> {t("common.suggest")}
                 </button>
               )}
             </div>
           </AuthField>
           {link.status === "taken" && (
             <div className="-mt-3 flex flex-wrap items-center gap-2 text-[13px] text-muted-foreground">
-              Probá con:
+              {t("auth.signup.tryWith")}
               {[link.slug + "-sv", link.slug + "-" + new Date().getFullYear(), link.slug + "-oficial"].filter((option) => option.length <= 64).map((option) => (
                 <button key={option} type="button" onClick={() => link.choose(option)}
                   className="rounded-full bg-neutral-100 px-2.5 py-1 font-mono text-xs text-[#111] hover:bg-neutral-200">
@@ -157,7 +152,7 @@ function Signup() {
             </div>
           )}
           <button type="submit" className={authButton} disabled={link.status === "checking" && !link.error}>
-            Continuar <ArrowRight className="size-4" />
+            {t("common.continue")} <ArrowRight className="size-4" />
           </button>
         </div>
 
@@ -169,34 +164,35 @@ function Signup() {
                 <p className="truncate font-semibold">{name}</p>
                 <p className="truncate font-mono text-sm text-muted-foreground">/tienda/{link.slug}</p>
               </div>
-              <button type="button" onClick={() => setStep(0)} className="text-sm font-medium underline underline-offset-4">Editar</button>
+              <button type="button" onClick={() => setStep(0)} className="text-sm font-medium underline underline-offset-4">{t("common.edit")}</button>
             </div>
-            <EmailField label="Tu correo" autoFocus value={email} onChange={setEmail} />
+            <EmailField label={t("auth.signup.yourEmail")} autoFocus value={email} onChange={setEmail} />
             <div className="grid gap-2">
               <button type="submit" className={authButton} disabled={sending}>
                 {sending && <Loader2 className="size-4 animate-spin" />}
-                {sending ? "Creando…" : "Crear mi tienda"}
+                {sending ? t("auth.signup.creating") : t("auth.signup.create")}
               </button>
               <button type="button" className={authGhostButton} onClick={() => setStep(0)} disabled={sending}>
-                <ArrowLeft className="size-4" /> Atrás
+                <ArrowLeft className="size-4" /> {t("common.back")}
               </button>
             </div>
           </div>
         )}
       </form>
-      <AuthSwitch>¿Ya tenés tienda? <Link to="/ingresar">Ingresá</Link></AuthSwitch>
+      <AuthSwitch>{t("auth.signup.switch")} <Link to="/ingresar">{t("auth.signup.switchLink")}</Link></AuthSwitch>
     </AuthLayout>
   );
 }
 
 function SlugHint({ status }: { status: ShopSlugStatus }) {
-  if (status === "checking") return <span className="flex items-center gap-1.5"><Loader2 className="size-3.5 animate-spin" /> Comprobando disponibilidad…</span>;
-  if (status === "free") return <span className="flex items-center gap-1.5 text-green-700"><Check className="size-3.5" /> ¡Disponible!</span>;
-  if (status === "taken") return <span className="flex items-center gap-1.5 text-red-700"><X className="size-3.5" /> Ocupado</span>;
-  return <span>Solo minúsculas, números y guiones. Es la dirección que compartís con tus clientes.</span>;
+  const { locale } = useI18n();
+  if (status === "checking") return <span className="flex items-center gap-1.5"><Loader2 className="size-3.5 animate-spin" /> {locale === "en" ? "Checking availability…" : "Comprobando disponibilidad…"}</span>;
+  if (status === "free") return <span className="flex items-center gap-1.5 text-green-700"><Check className="size-3.5" /> {locale === "en" ? "Available!" : "¡Disponible!"}</span>;
+  if (status === "taken") return <span className="flex items-center gap-1.5 text-red-700"><X className="size-3.5" /> {locale === "en" ? "Taken" : "Ocupado"}</span>;
+  return <span>{locale === "en" ? "Lowercase letters, numbers, and hyphens only. This is the link you share with customers." : "Solo minúsculas, números y guiones. Es la dirección que compartís con tus clientes."}</span>;
 }
 
-function Stepper({ current }: { current: number }) {
+function Stepper({ current, steps }: { current: number; steps: string[] }) {
   return (
     <ol className="mb-2 flex items-center gap-2" aria-label="Progreso">
       {steps.map((label, index) => (

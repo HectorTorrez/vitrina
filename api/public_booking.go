@@ -234,13 +234,14 @@ func publicBookingRoutes(mux *http.ServeMux, db *gorm.DB, delivery *resendDelive
 			return
 		}
 		if delivery != nil {
+			locale := requestLocale(r)
 			select {
 			case notify <- struct{}{}:
 				go func() {
 					defer func() { <-notify }()
 					ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 					defer cancel()
-					if err := notifyNewBooking(ctx, db, delivery, booking, service); err != nil {
+					if err := notifyNewBooking(ctx, db, delivery, booking, service, locale); err != nil {
 						log.Printf("No se pudo avisar la reserva %d: %v", booking.ID, err)
 					}
 				}()
@@ -256,7 +257,7 @@ func publicBookingRoutes(mux *http.ServeMux, db *gorm.DB, delivery *resendDelive
 	})
 }
 
-func notifyNewBooking(ctx context.Context, db *gorm.DB, delivery *resendDelivery, booking reservation, service product) error {
+func notifyNewBooking(ctx context.Context, db *gorm.DB, delivery *resendDelivery, booking reservation, service product, locale string) error {
 	var emails []string
 	if err := db.WithContext(ctx).Model(&shopMembership{}).Where("shop_slug = ?", booking.ShopSlug).Pluck("seller_email", &emails).Error; err != nil {
 		return err
@@ -264,9 +265,22 @@ func notifyNewBooking(ctx context.Context, db *gorm.DB, delivery *resendDelivery
 	if len(emails) == 0 {
 		return nil
 	}
+	var s shop
+	if err := db.WithContext(ctx).Select("locale").Take(&s, "slug = ?", booking.ShopSlug).Error; err == nil && (s.Locale == "en" || s.Locale == "es") {
+		locale = s.Locale
+	}
 	when := booking.StartsAt.In(shopZone).Format("02/01/2006 15:04")
 	panel := delivery.origin
 	panel.Path = "/panel"
+	if locale == "en" {
+		text := "New booking received from your online store.\n\n" +
+			"Service: " + service.Name + "\n" +
+			"Date: " + when + " (El Salvador time)\n" +
+			"Customer: " + booking.Customer + "\n" +
+			"Phone: +" + booking.Phone + "\n\n" +
+			"Review or cancel it at " + panel.String()
+		return delivery.send(ctx, emails, "New booking: "+service.Name+" · "+when, text, "vitrina-booking/"+booking.ShopSlug+"/"+strconv.FormatUint(uint64(booking.ID), 10))
+	}
 	text := "Nueva cita reservada desde la tienda en línea.\n\n" +
 		"Servicio: " + service.Name + "\n" +
 		"Fecha: " + when + " (hora de El Salvador)\n" +

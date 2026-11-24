@@ -5,18 +5,19 @@ import { getSeller } from "../auth";
 import {
   AuthAlert, AuthEyebrow, AuthLayout, AuthLede, AuthNote, AuthSwitch, AuthTitle, authButton, authGhostButton, EmailField, MailIcon,
 } from "../AuthLayout";
+import { useI18n } from "../i18n";
 
 type Status = "enviado" | "correo" | "enlace" | "servicio";
 
-const errors: Record<Exclude<Status, "enviado">, string> = {
-  correo: "Ingresá un correo electrónico válido.",
-  enlace: "El enlace venció, ya se usó o es inválido. Pedí otro para ingresar.",
-  servicio: "No se pudo procesar la solicitud. Intentá de nuevo en unos minutos.",
+const errorKeys: Record<Exclude<Status, "enviado">, "auth.login.errEmail" | "auth.login.errLink" | "auth.login.errService"> = {
+  correo: "auth.login.errEmail",
+  enlace: "auth.login.errLink",
+  servicio: "auth.login.errService",
 };
 
 export const Route = createFileRoute("/ingresar")({
   validateSearch: (search: Record<string, unknown>): { estado?: Status } => ({
-    estado: search.estado === "enviado" || (typeof search.estado === "string" && Object.hasOwn(errors, search.estado))
+    estado: search.estado === "enviado" || (typeof search.estado === "string" && Object.hasOwn(errorKeys, search.estado))
       ? (search.estado as Status)
       : undefined,
   }),
@@ -31,37 +32,36 @@ export const Route = createFileRoute("/ingresar")({
 function Login() {
   const { estado } = Route.useSearch();
   const [sending, setSending] = useState(false);
+  const { t } = useI18n();
 
   if (estado === "enviado") {
     return (
       <AuthLayout>
         <MailIcon />
-        <AuthEyebrow>Enlace enviado</AuthEyebrow>
-        <AuthTitle>Revisá tu correo</AuthTitle>
-        <AuthLede role="status">
-          Si tu correo está habilitado, te llegó un enlace para entrar. Revisá también la carpeta de spam.
-        </AuthLede>
-        <AuthNote>El enlace vence en 15 minutos y sirve una sola vez.</AuthNote>
-        <Link to="/ingresar" className={authGhostButton}>Usar otro correo</Link>
+        <AuthEyebrow>{t("auth.login.sentEyebrow")}</AuthEyebrow>
+        <AuthTitle>{t("auth.login.sentTitle")}</AuthTitle>
+        <AuthLede role="status">{t("auth.login.sentLede")}</AuthLede>
+        <AuthNote>{t("auth.login.sentNote")}</AuthNote>
+        <Link to="/ingresar" className={authGhostButton}>{t("auth.login.otherEmail")}</Link>
       </AuthLayout>
     );
   }
 
   return (
     <AuthLayout>
-      <AuthEyebrow>Acceso para vendedores</AuthEyebrow>
-      <AuthTitle>Entrá a tu vitrina</AuthTitle>
-      <AuthLede>Te enviamos un enlace a tu correo para entrar. Sin contraseñas.</AuthLede>
-      {estado && <AuthAlert>{errors[estado]}</AuthAlert>}
+      <AuthEyebrow>{t("auth.login.eyebrow")}</AuthEyebrow>
+      <AuthTitle>{t("auth.login.title")}</AuthTitle>
+      <AuthLede>{t("auth.login.lede")}</AuthLede>
+      {estado && <AuthAlert>{t(errorKeys[estado])}</AuthAlert>}
       <form action="/auth" method="post" className="mt-2 grid gap-4" onSubmit={() => setSending(true)}>
         <input type="hidden" name="action" value="link" />
-        <EmailField label="Correo electrónico" autoFocus />
+        <EmailField label={t("auth.login.emailLabel")} autoFocus />
         <button type="submit" className={authButton} disabled={sending}>
           {sending && <Loader2 className="size-4 animate-spin" />}
-          {sending ? "Enviando…" : "Enviarme un enlace"}
+          {sending ? t("auth.login.sending") : t("auth.login.submit")}
         </button>
       </form>
-      <AuthSwitch>¿Todavía no tenés tienda? <Link to="/registrarse">Abrí tu vitrina</Link></AuthSwitch>
+      <AuthSwitch>{t("auth.login.switch")} <Link to="/registrarse">{t("auth.login.switchLink")}</Link></AuthSwitch>
     </AuthLayout>
   );
 }

@@ -7,7 +7,8 @@ import {
 } from "@tanstack/react-router";
 import type { QueryClient } from "@tanstack/react-query";
 import css from "../style.css?url";
-import { noIndex, siteLanguage, siteName } from "../seo";
+import { getInitialLocale, LocaleProvider, useI18n } from "../i18n";
+import { htmlLang, noIndex, siteName } from "../seo";
 
 /** Inter (text), Bricolage Grotesque (Vitrina), Fraunces (serif store themes), Geist Mono. */
 const fonts = [
@@ -35,6 +36,7 @@ const buttonClass = "inline-flex h-11 items-center rounded-full bg-primary px-6 
 
 export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
   {
+    beforeLoad: async () => ({ locale: await getInitialLocale() }),
     head: () => ({
       meta: [
         { charSet: "utf-8" },
@@ -49,28 +51,45 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
         { rel: "stylesheet", href: css },
       ],
     }),
-    component: () => (
-      <html lang={siteLanguage}>
-        <head>
-          <HeadContent />
-        </head>
-        <body>
-          <Outlet />
-          <Scripts />
-        </body>
-      </html>
-    ),
-    notFoundComponent: () => (
-      <Message title="Página no encontrada">
-        <p className="text-muted-foreground">El enlace no existe o la ficha ya no está publicada.</p>
-        <Link to="/" className={buttonClass}>Volver al inicio</Link>
-      </Message>
-    ),
-    errorComponent: ({ reset }) => (
-      <Message title="Algo salió mal">
-        <p className="text-muted-foreground">No pudimos cargar esta página. Probá de nuevo en un momento.</p>
-        <button onClick={reset} className={buttonClass}>Reintentar</button>
-      </Message>
-    ),
+    component: RootDocument,
+    notFoundComponent: NotFound,
+    errorComponent: ErrorView,
   },
 );
+
+function RootDocument() {
+  const { locale } = Route.useRouteContext();
+  return (
+    <html lang={htmlLang(locale)}>
+      <head>
+        <HeadContent />
+      </head>
+      <body>
+        <LocaleProvider initialLocale={locale}>
+          <Outlet />
+        </LocaleProvider>
+        <Scripts />
+      </body>
+    </html>
+  );
+}
+
+function NotFound() {
+  const { t } = useI18n();
+  return (
+    <Message title={t("common.notFoundTitle")}>
+      <p className="text-muted-foreground">{t("common.notFoundDesc")}</p>
+      <Link to="/" className={buttonClass}>{t("common.backHome")}</Link>
+    </Message>
+  );
+}
+
+function ErrorView({ reset }: { reset: () => void }) {
+  const { t } = useI18n();
+  return (
+    <Message title={t("common.errorTitle")}>
+      <p className="text-muted-foreground">{t("common.errorDesc")}</p>
+      <button onClick={reset} className={buttonClass}>{t("common.retry")}</button>
+    </Message>
+  );
+}

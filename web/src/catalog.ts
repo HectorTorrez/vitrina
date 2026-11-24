@@ -26,6 +26,7 @@ export interface Shop {
   description: string;
   theme: string;
   accentColor?: string;
+  locale?: "" | "es" | "en";
   logoUrl?: string;
   backgroundUrl?: string;
   instagram: string;
@@ -71,11 +72,15 @@ export function acceptsBookings(shop: Pick<Shop, "hours">) {
   return shop.hours.some((day) => day.open);
 }
 
-const usd = new Intl.NumberFormat("es-SV", {
+const usdEs = new Intl.NumberFormat("es-SV", {
   style: "currency",
   currency: "USD",
 });
-export const price = (cents: number) => usd.format(cents / 100);
+const usdEn = new Intl.NumberFormat("en-US", {
+  style: "currency",
+  currency: "USD",
+});
+export const price = (cents: number, locale: "es" | "en" = "es") => (locale === "en" ? usdEn : usdEs).format(cents / 100);
 
 export function totalPrice(product: Product, choices: Record<string, string> = {}) {
   return product.options.reduce((total, option) => {

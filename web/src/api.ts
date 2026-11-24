@@ -8,7 +8,11 @@ export function apiURL(path: string) {
 /** Calls the API; with `request`, on behalf of its visitor by forwarding their session cookie. */
 export function apiFetch(path: string, { request, timeout = 5000, ...init }: RequestInit & { request?: Request; timeout?: number } = {}) {
   const headers = new Headers(init.headers);
-  if (request) headers.set("Cookie", request.headers.get("Cookie") || "");
+  if (request) {
+    headers.set("Cookie", request.headers.get("Cookie") || "");
+    const lang = request.headers.get("Accept-Language");
+    if (lang) headers.set("Accept-Language", lang);
+  }
   return fetch(apiURL(path), { ...init, headers, signal: AbortSignal.timeout(timeout), redirect: "error" });
 }
 

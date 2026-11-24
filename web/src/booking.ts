@@ -47,6 +47,24 @@ const zone = "America/El_Salvador";
 export const weekdayShort = ["dom", "lun", "mar", "mié", "jue", "vie", "sáb"];
 export const monthShort = ["ene", "feb", "mar", "abr", "may", "jun", "jul", "ago", "sep", "oct", "nov", "dic"];
 
+const weekdayShortByLocale = {
+  es: weekdayShort,
+  en: ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"],
+} as const;
+
+const monthShortByLocale = {
+  es: monthShort,
+  en: ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"],
+} as const;
+
+export function getWeekdayShort(locale: "es" | "en" = "es") {
+  return weekdayShortByLocale[locale];
+}
+
+export function getMonthShort(locale: "es" | "en" = "es") {
+  return monthShortByLocale[locale];
+}
+
 /** Today (plus `offsetDays`) in the shop's time zone as YYYY-MM-DD. */
 export function shopToday(offsetDays = 0) {
   const now = new Date(Date.now() + offsetDays * 86400000);
@@ -54,10 +72,10 @@ export function shopToday(offsetDays = 0) {
 }
 
 /** Formats a shop-local "YYYY-MM-DDTHH:MM" for people, e.g. "martes 18 de febrero, 10:00". */
-export function formatLocal(value: string, withTime = true) {
+export function formatLocal(value: string, withTime = true, locale: "es" | "en" = "es") {
   const [date, time] = value.split("T");
   const [y, m, d] = date.split("-").map(Number);
-  const label = new Intl.DateTimeFormat("es-SV", { weekday: "long", day: "numeric", month: "long", timeZone: "UTC" })
+  const label = new Intl.DateTimeFormat(locale === "en" ? "en-US" : "es-SV", { weekday: "long", day: "numeric", month: "long", timeZone: "UTC" })
     .format(new Date(Date.UTC(y, m - 1, d)));
   return withTime && time ? label + ", " + time : label;
 }

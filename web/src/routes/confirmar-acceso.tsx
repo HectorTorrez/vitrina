@@ -2,6 +2,7 @@ import { useState, type SubmitEvent } from "react";
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { Loader2 } from "lucide-react";
 import { AuthEyebrow, AuthLayout, AuthLede, AuthNote, AuthTitle, authButton } from "../AuthLayout";
+import { useI18n } from "../i18n";
 
 export const Route = createFileRoute("/confirmar-acceso")({
   headers: () => ({
@@ -15,6 +16,7 @@ export const Route = createFileRoute("/confirmar-acceso")({
 
 function ConfirmAccess() {
   const [sending, setSending] = useState(false);
+  const { t } = useI18n();
 
   function submitAccess(event: SubmitEvent<HTMLFormElement>) {
     // The fragment stays out of HTTP requests until the user confirms.
@@ -25,18 +27,18 @@ function ConfirmAccess() {
 
   return (
     <AuthLayout>
-      <AuthEyebrow>Último paso</AuthEyebrow>
-      <AuthTitle>Ya casi estás adentro</AuthTitle>
-      <AuthLede>Confirmá para entrar al panel de tu tienda desde este dispositivo.</AuthLede>
+      <AuthEyebrow>{t("auth.confirm.eyebrow")}</AuthEyebrow>
+      <AuthTitle>{t("auth.confirm.title")}</AuthTitle>
+      <AuthLede>{t("auth.confirm.lede")}</AuthLede>
       <form action="/auth" method="post" className="mt-2 grid gap-4" onSubmit={submitAccess}>
         <input type="hidden" name="action" value="verify" />
         <input type="hidden" name="token" />
         <button type="submit" className={authButton} disabled={sending}>
           {sending && <Loader2 className="size-4 animate-spin" />}
-          {sending ? "Entrando…" : "Entrar al panel"}
+          {sending ? t("auth.confirm.entering") : t("auth.confirm.submit")}
         </button>
       </form>
-      <AuthNote>¿El enlace no funciona? <Link to="/ingresar">Pedí otro</Link>.</AuthNote>
+      <AuthNote>{t("auth.confirm.note")} <Link to="/ingresar">{t("auth.confirm.requestNew")}</Link>.</AuthNote>
     </AuthLayout>
   );
 }
