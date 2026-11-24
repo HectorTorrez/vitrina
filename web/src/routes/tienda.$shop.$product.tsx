@@ -114,7 +114,16 @@ function Details() {
           <ProductGallery key={p.slug} product={p} />
         </div>
         <Order key={p.slug} shopSlug={params.shop} product={p} phone={data.whatsapp} currency={data.currency}
-          booking={bookable ? <PublicBooking shop={params.shop} shopName={data.name} timeZone={data.timezone} service={p} /> : null} />
+          booking={bookable ? (
+            <PublicBooking
+              shop={params.shop}
+              shopName={data.name}
+              timeZone={data.timezone}
+              horizonDays={data.bookingConfig?.horizonDays}
+              staff={data.staff}
+              service={p}
+            />
+          ) : null} />
       </div>
 
       {others.length > 0 && (

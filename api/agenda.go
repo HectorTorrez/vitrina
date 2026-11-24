@@ -65,9 +65,19 @@ func activeBooking(db *gorm.DB, slug string, id uint, booking *reservation) erro
 }
 
 // saveBooking creates a booking (id 0) or moves an active future one, rejecting overlaps.
-func saveBooking(db *gorm.DB, slug, service string, start time.Time, customer, phone string, id uint) (reservation, error) {
+func saveBooking(db *gorm.DB, slug, service string, start time.Time, customer, phone, staffID string, id uint) (reservation, error) {
 	var r reservation
 	err := withShopAgenda(db, slug, func(tx *gorm.DB) error {
+		var s shop
+		if err := tx.Take(&s, "slug = ?", slug).Error; err != nil {
+			return err
+		}
+		staffID = strings.TrimSpace(staffID)
+		if staffID != "" {
+			if _, ok := s.findStaff(staffID); !ok {
+				return validationError("Elegí un especialista válido")
+			}
+		}
 		if id != 0 {
 			if err := activeBooking(tx, slug, id, &r); err != nil {
 				return err
@@ -88,17 +98,35 @@ func saveBooking(db *gorm.DB, slug, service string, start time.Time, customer, p
 		var count int64
 		overlaps := tx.Model(&reservation{}).Where("shop_slug = ? AND cancelled_at IS NULL AND id <> ?", slug, id).
 			Where(clause.Lt{Column: "starts_at", Value: end}, clause.Gt{Column: "ends_at", Value: start})
+		if staffID != "" {
+			overlaps = overlaps.Where("staff_id = ?", staffID)
+		} else if len(s.Staff) > 0 {
+			overlaps = overlaps.Where("staff_id = ''")
+		}
 		if err := overlaps.Count(&count).Error; err != nil {
 			return err
 		}
 		if count > 0 {
 			return errOccupied
 		}
-		r = reservation{ID: id, ShopSlug: slug, ServiceSlug: service, Customer: customer, Phone: phone, Source: "panel", StartsAt: start, EndsAt: end}
 		if id == 0 {
+			token := newManageToken()
+			r = reservation{
+				ShopSlug: slug, ServiceSlug: service, StaffID: staffID,
+				Customer: customer, Phone: phone, Source: "panel",
+				ManageToken: &token, StartsAt: start, EndsAt: end,
+			}
 			return tx.Create(&r).Error
 		}
-		return tx.Model(&r).Select("service_slug", "customer", "phone", "starts_at", "ends_at").Updates(&r).Error
+		r.ServiceSlug = service
+		r.StaffID = staffID
+		r.Customer = customer
+		r.Phone = phone
+		r.StartsAt = start
+		r.EndsAt = end
+		r.Reminder1SentAt = nil
+		r.Reminder2SentAt = nil
+		return tx.Model(&r).Select("service_slug", "staff_id", "customer", "phone", "starts_at", "ends_at", "reminder1_sent_at", "reminder2_sent_at").Updates(&r).Error
 	})
 	return r, err
 }

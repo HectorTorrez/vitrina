@@ -58,10 +58,59 @@ func (p *product) AfterFind(*gorm.DB) error {
 	return nil
 }
 
-// dayHours is the opening window for one weekday in the shop's time zone. Empty Open means closed.
-type dayHours struct {
+// timeBlock is a single open–close interval within a day ("HH:MM").
+type timeBlock struct {
 	Open  string `json:"open"`
 	Close string `json:"close"`
+}
+
+// dayHours is the opening window(s) for one weekday in the shop's time zone. Empty Open and Blocks means closed.
+type dayHours struct {
+	Open   string      `json:"open"`
+	Close  string      `json:"close"`
+	Blocks []timeBlock `json:"blocks,omitempty"`
+}
+
+func (d dayHours) intervals() []timeBlock {
+	if len(d.Blocks) > 0 {
+		return d.Blocks
+	}
+	if d.Open != "" && d.Close != "" {
+		return []timeBlock{{Open: d.Open, Close: d.Close}}
+	}
+	return nil
+}
+
+// bookingConfig holds per-shop agenda rules and reminder settings.
+type bookingConfig struct {
+	BufferMinutes        int `json:"bufferMinutes,omitempty"`
+	LeadTimeMinutes      int `json:"leadTimeMinutes,omitempty"`
+	HorizonDays          int `json:"horizonDays,omitempty"`
+	CancelNoticeHours    int `json:"cancelNoticeHours,omitempty"`
+	ReminderHoursBefore  int `json:"reminderHoursBefore,omitempty"`
+	Reminder2HoursBefore int `json:"reminder2HoursBefore,omitempty"`
+}
+
+// staffMember represents a specialist, stylist, or station with an independent agenda.
+type staffMember struct {
+	ID           string     `json:"id"`
+	Name         string     `json:"name"`
+	Role         string     `json:"role,omitempty"`
+	Active       bool       `json:"active"`
+	ServiceSlugs []string   `json:"serviceSlugs,omitempty"`
+	Hours        []dayHours `json:"hours,omitempty"`
+}
+
+func (m staffMember) offersService(serviceSlug string) bool {
+	if len(m.ServiceSlugs) == 0 {
+		return true
+	}
+	for _, slug := range m.ServiceSlugs {
+		if slug == serviceSlug {
+			return true
+		}
+	}
+	return false
 }
 
 // shopStyle holds optional visual overrides applied on top of the selected theme.
@@ -111,9 +160,11 @@ type shop struct {
 	MapURL         string         `json:"mapUrl" gorm:"not null;default:''"`
 	Whatsapp       string         `json:"whatsapp"`
 	// Hours holds seven entries indexed by time.Weekday (Sunday first). Empty disables online booking.
-	Hours        []dayHours `json:"hours" gorm:"serializer:json;type:jsonb;not null;default:'[]'"`
-	BlockedDates []string   `json:"blockedDates" gorm:"serializer:json;type:jsonb;not null;default:'[]'"`
-	Products     []product  `json:"products" gorm:"foreignKey:ShopSlug;references:Slug"`
+	Hours         []dayHours    `json:"hours" gorm:"serializer:json;type:jsonb;not null;default:'[]'"`
+	BlockedDates  []string      `json:"blockedDates" gorm:"serializer:json;type:jsonb;not null;default:'[]'"`
+	BookingConfig bookingConfig `json:"bookingConfig" gorm:"serializer:json;type:jsonb;not null;default:'{}'"`
+	Staff         []staffMember `json:"staff" gorm:"serializer:json;type:jsonb;not null;default:'[]'"`
+	Products      []product     `json:"products" gorm:"foreignKey:ShopSlug;references:Slug"`
 }
 
 func (s shop) location() *time.Location {
@@ -125,12 +176,72 @@ func (s shop) location() *time.Location {
 	return shopZone
 }
 
+func (s shop) bookingBuffer() time.Duration {
+	if s.BookingConfig.BufferMinutes > 0 {
+		return time.Duration(s.BookingConfig.BufferMinutes) * time.Minute
+	}
+	return 0
+}
+
+func (s shop) bookingLeadTime() time.Duration {
+	if s.BookingConfig.LeadTimeMinutes > 0 {
+		return time.Duration(s.BookingConfig.LeadTimeMinutes) * time.Minute
+	}
+	return bookingLeadTime
+}
+
+func (s shop) bookingHorizonDays() int {
+	if s.BookingConfig.HorizonDays > 0 {
+		return s.BookingConfig.HorizonDays
+	}
+	return bookingHorizonDays
+}
+
+func (s shop) cancelNotice() time.Duration {
+	if s.BookingConfig.CancelNoticeHours > 0 {
+		return time.Duration(s.BookingConfig.CancelNoticeHours) * time.Hour
+	}
+	return 0
+}
+
+func (s shop) activeStaffForService(serviceSlug string) []staffMember {
+	var out []staffMember
+	for _, m := range s.Staff {
+		if m.Active && m.offersService(serviceSlug) {
+			out = append(out, m)
+		}
+	}
+	return out
+}
+
+func (s shop) findStaff(id string) (staffMember, bool) {
+	for _, m := range s.Staff {
+		if m.ID == id {
+			return m, true
+		}
+	}
+	return staffMember{}, false
+}
+
+func (s shop) staffName(id string) string {
+	if id == "" {
+		return ""
+	}
+	if m, ok := s.findStaff(id); ok {
+		return m.Name
+	}
+	return ""
+}
+
 func (s *shop) AfterFind(*gorm.DB) error {
 	if s.Hours == nil {
 		s.Hours = []dayHours{}
 	}
 	if s.BlockedDates == nil {
 		s.BlockedDates = []string{}
+	}
+	if s.Staff == nil {
+		s.Staff = []staffMember{}
 	}
 	if s.PaymentMethods == nil {
 		s.PaymentMethods = []string{}
@@ -148,25 +259,30 @@ func (s *shop) AfterFind(*gorm.DB) error {
 }
 
 type reservation struct {
-	ID          uint    `gorm:"primaryKey"`
-	ShopSlug    string  `gorm:"index:agenda,priority:1;not null"`
-	ServiceSlug string  `gorm:"not null"`
-	Service     product `gorm:"foreignKey:ShopSlug,ServiceSlug;references:ShopSlug,Slug"`
-	Customer    string  `gorm:"not null"`
-	Phone       string  `gorm:"not null;default:''"`
-	Notes       string  `gorm:"not null;default:''"`
-	Source      string  `gorm:"not null;default:'panel'"`
-	CreatedAt   time.Time
-	StartsAt    time.Time `gorm:"index:agenda,priority:2;not null"`
-	CancelledAt *time.Time
-	EndsAt      time.Time `gorm:"not null;check:ends_at > starts_at"`
+	ID              uint    `gorm:"primaryKey"`
+	ShopSlug        string  `gorm:"index:agenda,priority:1;not null"`
+	ServiceSlug     string  `gorm:"not null"`
+	Service         product `gorm:"foreignKey:ShopSlug,ServiceSlug;references:ShopSlug,Slug"`
+	StaffID         string  `gorm:"index:agenda_staff,priority:2;not null;default:''"`
+	Customer        string  `gorm:"not null"`
+	Phone           string  `gorm:"not null;default:''"`
+	Email           string  `gorm:"not null;default:''"`
+	Notes           string  `gorm:"not null;default:''"`
+	Source          string  `gorm:"not null;default:'panel'"`
+	ManageToken     *string `gorm:"uniqueIndex"`
+	Reminder1SentAt *time.Time
+	Reminder2SentAt *time.Time
+	CreatedAt       time.Time
+	StartsAt        time.Time `gorm:"index:agenda,priority:2;not null"`
+	CancelledAt     *time.Time
+	EndsAt          time.Time `gorm:"not null;check:ends_at > starts_at"`
 }
 
 func seed(db *gorm.DB) error {
 	sizes := option{Name: "Tamaño", Values: []string{"A4", "A3"}}
 	shops := []shop{
 		{Slug: "marea-estudio", Name: "Marea Estudio", Description: "Láminas de autor impresas en San Salvador.", Theme: "costa", Instagram: "marea.estudio", TikTok: "marea.prints"},
-		{Slug: "luna-unas", Name: "Luna Uñas", Description: "Manicura y cuidado de uñas con cita previa.", Theme: "arena", Hours: []dayHours{{}, {}, {"09:00", "18:00"}, {"09:00", "18:00"}, {"09:00", "18:00"}, {"09:00", "18:00"}, {"09:00", "14:00"}}},
+		{Slug: "luna-unas", Name: "Luna Uñas", Description: "Manicura y cuidado de uñas con cita previa.", Theme: "arena", Hours: []dayHours{{}, {}, {Open: "09:00", Close: "18:00"}, {Open: "09:00", Close: "18:00"}, {Open: "09:00", Close: "18:00"}, {Open: "09:00", Close: "18:00"}, {Open: "09:00", Close: "14:00"}}},
 	}
 	items := []product{
 		{ShopSlug: "marea-estudio", Slug: "sol-de-tarde", Name: "Sol de tarde", Kind: "product", PriceCents: 1800, Available: true, Artwork: "sol-de-tarde", Options: []option{sizes, {Name: "Tipo de papel", Values: []string{"Mate", "Satinado"}}}, Position: 1},
