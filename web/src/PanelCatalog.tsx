@@ -172,6 +172,20 @@ export function PanelCatalog({ shop }: { shop: PanelShop }) {
                       )}
                       {item.hidden && <Badge variant="secondary" className="gap-1"><EyeOff /> Oculta</Badge>}
                       {!item.available && <Badge variant="outline" className="border-amber-300 bg-amber-50 text-amber-800">No disponible</Badge>}
+                      {item.stock != null && (
+                        <Badge
+                          variant="outline"
+                          className={cn(
+                            item.stock === 0
+                              ? "border-destructive/40 bg-destructive/10 text-destructive"
+                              : item.stock <= 5
+                                ? "border-amber-300 bg-amber-50 text-amber-800"
+                                : "border-border bg-muted/50 text-muted-foreground",
+                          )}
+                        >
+                          {item.stock === 0 ? (locale === "en" ? "Sold out" : "Agotado") : `Stock: ${item.stock}`}
+                        </Badge>
+                      )}
                     </span>
                   </span>
                   <span className="hidden text-right font-mono text-sm sm:block">

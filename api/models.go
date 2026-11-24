@@ -35,8 +35,9 @@ type product struct {
 	Badge       string   `json:"badge" gorm:"not null;default:''"`
 	PriceCents  int      `json:"priceCents" gorm:"check:price_cents >= 0"`
 	CompareAtCents int   `json:"compareAtCents" gorm:"not null;default:0;check:compare_at_cents >= 0"`
-	Available   bool     `json:"available"`
-	Artwork     string   `json:"artwork"`
+	Available       bool     `json:"available"`
+	Stock           *int     `json:"stock"`
+	Artwork         string   `json:"artwork"`
 	Options     []option `json:"options" gorm:"serializer:json;type:jsonb"`
 	Position    int      `json:"position"`
 	Hidden      bool     `json:"hidden" gorm:"not null;default:false"`
@@ -78,25 +79,37 @@ type shopStyle struct {
 	Announcement  string `json:"announcement,omitempty"`
 }
 
+// deliveryConfig describes pickup and delivery options offered by a shop.
+type deliveryConfig struct {
+	PickupEnabled    bool   `json:"pickupEnabled"`
+	PickupNote       string `json:"pickupNote,omitempty"`
+	DeliveryEnabled  bool   `json:"deliveryEnabled"`
+	DeliveryFeeMode  string `json:"deliveryFeeMode,omitempty"` // "" | "free" | "fixed" | "coordinate"
+	DeliveryFeeCents int    `json:"deliveryFeeCents,omitempty"`
+	DeliveryNote     string `json:"deliveryNote,omitempty"`
+}
+
 type shop struct {
-	Slug          string    `json:"slug" gorm:"primaryKey"`
-	Name          string    `json:"name"`
-	Description   string    `json:"description"`
-	Theme         string    `json:"theme"`
-	AccentColor   string    `json:"accentColor"`
-	Locale        string    `json:"locale" gorm:"not null;default:''"`
-	Timezone      string    `json:"timezone" gorm:"not null;default:'America/El_Salvador'"`
-	Currency      string    `json:"currency" gorm:"not null;default:'USD'"`
-	Style         shopStyle `json:"style" gorm:"serializer:json;type:jsonb;not null;default:'{}'"`
-	LogoURL       string    `json:"logoUrl"`
-	BackgroundURL string `json:"backgroundUrl"`
-	Instagram     string `json:"instagram"`
-	TikTok        string `json:"tiktok" gorm:"column:tiktok"`
-	Facebook      string `json:"facebook" gorm:"not null;default:''"`
-	Website       string `json:"website" gorm:"not null;default:''"`
-	Address       string `json:"address" gorm:"not null;default:''"`
-	MapURL        string `json:"mapUrl" gorm:"not null;default:''"`
-	Whatsapp      string `json:"whatsapp"`
+	Slug           string         `json:"slug" gorm:"primaryKey"`
+	Name           string         `json:"name"`
+	Description    string         `json:"description"`
+	Theme          string         `json:"theme"`
+	AccentColor    string         `json:"accentColor"`
+	Locale         string         `json:"locale" gorm:"not null;default:''"`
+	Timezone       string         `json:"timezone" gorm:"not null;default:'America/El_Salvador'"`
+	Currency       string         `json:"currency" gorm:"not null;default:'USD'"`
+	Style          shopStyle      `json:"style" gorm:"serializer:json;type:jsonb;not null;default:'{}'"`
+	Delivery       deliveryConfig `json:"delivery" gorm:"serializer:json;type:jsonb;not null;default:'{}'"`
+	PaymentMethods []string       `json:"paymentMethods" gorm:"serializer:json;type:jsonb;not null;default:'[]'"`
+	LogoURL        string         `json:"logoUrl"`
+	BackgroundURL  string         `json:"backgroundUrl"`
+	Instagram      string         `json:"instagram"`
+	TikTok         string         `json:"tiktok" gorm:"column:tiktok"`
+	Facebook       string         `json:"facebook" gorm:"not null;default:''"`
+	Website        string         `json:"website" gorm:"not null;default:''"`
+	Address        string         `json:"address" gorm:"not null;default:''"`
+	MapURL         string         `json:"mapUrl" gorm:"not null;default:''"`
+	Whatsapp       string         `json:"whatsapp"`
 	// Hours holds seven entries indexed by time.Weekday (Sunday first). Empty disables online booking.
 	Hours        []dayHours `json:"hours" gorm:"serializer:json;type:jsonb;not null;default:'[]'"`
 	BlockedDates []string   `json:"blockedDates" gorm:"serializer:json;type:jsonb;not null;default:'[]'"`
@@ -118,6 +131,9 @@ func (s *shop) AfterFind(*gorm.DB) error {
 	}
 	if s.BlockedDates == nil {
 		s.BlockedDates = []string{}
+	}
+	if s.PaymentMethods == nil {
+		s.PaymentMethods = []string{}
 	}
 	if s.Products == nil {
 		s.Products = []product{}

@@ -3,13 +3,13 @@ import { createFileRoute, Link, notFound } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
 import { ArrowLeft, Check, ChevronLeft, ChevronRight, Clock, Share2, ShoppingBag } from "lucide-react";
 import { trackEvent } from "../analytics";
-import { acceptsBookings, shopQuery, price, productImage, productImages, totalPrice, type Product } from "../catalog";
+import { acceptsBookings, isProductAvailable, shopQuery, price, productImage, productImages, totalPrice, type Product } from "../catalog";
 import { useI18n } from "../i18n";
 import { htmlLang, pageHead, resolveShopLocale, shopLocalBusinessSchema } from "../seo";
 import { PublicBooking } from "../PublicBooking";
 import { useCart } from "../store/CartContext";
 import { StoreLayout } from "../store/StoreLayout";
-import { badgeLabel, ProductCard, ProductImage, WhatsAppIcon } from "../store/StoreParts";
+import { badgeLabel, lowStockLabel, ProductCard, ProductImage, WhatsAppIcon } from "../store/StoreParts";
 import { cn } from "@/lib/utils";
 import { useCopied } from "@/lib/useCopied";
 
@@ -43,7 +43,8 @@ export const Route = createFileRoute("/tienda/$shop/$product")({
     ].join(" · ");
     const description = p.description ? summary + ". " + p.description : summary;
     const shopDesc = loaderData.description.trim() || description;
-    const offer = p.available ? {
+    const avail = isProductAvailable(p);
+    const offer = avail ? {
       "@type": "Offer", url, price: (displayedPrice / 100).toFixed(2), priceCurrency: currency,
       seller: { "@id": shopUrl + "#negocio" },
       ...(!service ? { availability: "https://schema.org/InStock" } : {}),
@@ -112,7 +113,7 @@ function Details() {
         <div className="@3xl:sticky @3xl:top-24 @3xl:self-start">
           <ProductGallery key={p.slug} product={p} />
         </div>
-        <Order key={p.slug} shopSlug={params.shop} product={p} phone={data.whatsapp}
+        <Order key={p.slug} shopSlug={params.shop} product={p} phone={data.whatsapp} currency={data.currency}
           booking={bookable ? <PublicBooking shop={params.shop} shopName={data.name} timeZone={data.timezone} service={p} /> : null} />
       </div>
 
@@ -122,7 +123,7 @@ function Details() {
           <div className="grid grid-cols-2 gap-x-4 gap-y-8 @3xl:grid-cols-4 @3xl:gap-x-6">
             {others.map((item) => (
               <Link key={item.slug} to="/tienda/$shop/$product" params={{ shop: params.shop, product: item.slug }}>
-                <ProductCard product={item} />
+                <ProductCard product={item} currency={data.currency} />
               </Link>
             ))}
           </div>
@@ -187,18 +188,21 @@ function ShareButton({ url, title }: { url: string; title: string }) {
   );
 }
 
-function Order({ shopSlug, product, phone, booking }: { shopSlug: string; product: Product; phone: string; booking: ReactNode }) {
+function Order({ shopSlug, product, phone, currency, booking }: { shopSlug: string; product: Product; phone: string; currency?: string; booking: ReactNode }) {
   const { locale, t } = useI18n();
   const cart = useCart();
   const [choices, setChoices] = useState<Record<string, string>>({});
   const [showMessage, setShowMessage] = useState(false);
   const service = product.kind === "service";
+  const avail = isProductAvailable(product);
+  const soldOut = product.available && product.stock != null && product.stock <= 0;
+  const lowStock = lowStockLabel(product, locale);
   const total = totalPrice(product, choices);
   const options = product.options;
   const message = [
     (service ? t("store.waHelloService") : t("store.waHelloProduct")) + product.name,
     ...options.map((o) => o.name + " · " + (choices[o.name] ?? o.values[0])),
-    "Total · " + price(total, locale),
+    "Total · " + price(total, locale, currency),
   ].join("\n");
 
   return (
@@ -214,12 +218,19 @@ function Order({ shopSlug, product, phone, booking }: { shopSlug: string; produc
               {badgeLabel(product.badge, locale)}
             </span>
           )}
+          {lowStock && (
+            <span className="rounded-full bg-amber-500/15 px-2.5 py-0.5 text-xs font-semibold text-amber-700 dark:text-amber-300">
+              {lowStock}
+            </span>
+          )}
         </div>
         <h1 className="font-store text-[clamp(2.2rem,6cqw,3.75rem)] leading-[1.05] font-medium tracking-[-0.03em]">{product.name}</h1>
         <div className="flex flex-wrap items-center gap-3">
-          <p className="font-mono text-2xl font-medium" aria-live="polite">{product.available ? price(total, locale) : t("store.unavailable")}</p>
-          {product.available && product.compareAtCents && product.compareAtCents > product.priceCents && (
-            <span className="font-mono text-base text-store-muted line-through">{price(product.compareAtCents, locale)}</span>
+          <p className="font-mono text-2xl font-medium" aria-live="polite">
+            {avail ? price(total, locale, currency) : soldOut ? (locale === "en" ? "Sold out" : "Agotado") : t("store.unavailable")}
+          </p>
+          {avail && product.compareAtCents && product.compareAtCents > product.priceCents && (
+            <span className="font-mono text-base text-store-muted line-through">{price(product.compareAtCents, locale, currency)}</span>
           )}
           {service && (
             <span className="inline-flex items-center gap-1.5 rounded-full bg-store-soft px-3 py-1 text-sm font-medium">
@@ -227,7 +238,7 @@ function Order({ shopSlug, product, phone, booking }: { shopSlug: string; produc
             </span>
           )}
         </div>
-        {service && !booking && product.available && <p className="text-store-muted">{t("store.confirmByWa")}</p>}
+        {service && !booking && avail && <p className="text-store-muted">{t("store.confirmByWa")}</p>}
       </div>
 
       {product.description && (
@@ -262,7 +273,7 @@ function Order({ shopSlug, product, phone, booking }: { shopSlug: string; produc
 
       {booking}
 
-      {product.available ? (
+      {avail ? (
         <div className="grid gap-2.5">
           {!service && cart && (
             <button
@@ -271,7 +282,7 @@ function Order({ shopSlug, product, phone, booking }: { shopSlug: string; produc
               className="flex h-13 items-center justify-center gap-2 rounded-full bg-store-accent px-6 font-semibold text-store-accent-ink transition hover:opacity-90"
             >
               <ShoppingBag className="size-5" />
-              {locale === "en" ? "Add to bag" : "Agregar al pedido"} · {price(total, locale)}
+              {locale === "en" ? "Add to bag" : "Agregar al pedido"} · {price(total, locale, currency)}
             </button>
           )}
           {phone ? (
@@ -286,7 +297,7 @@ function Order({ shopSlug, product, phone, booking }: { shopSlug: string; produc
               <WhatsAppIcon className="size-5" />
               {service
                 ? (booking ? t("store.askWaBooking") : t("store.askWaHours"))
-                : t("store.orderWa") + " · " + price(total, locale)}
+                : t("store.orderWa") + " · " + price(total, locale, currency)}
             </a>
           ) : booking ? null : (
             <div className="grid gap-3">
@@ -304,7 +315,9 @@ function Order({ shopSlug, product, phone, booking }: { shopSlug: string; produc
         </div>
       ) : (
         <p className="rounded-2xl border border-store-rule bg-store-surface p-4 text-store-muted">
-          {t("store.optionUnavailable")}
+          {soldOut
+            ? (locale === "en" ? "This item is currently sold out." : "Este producto está agotado por el momento.")
+            : t("store.optionUnavailable")}
         </p>
       )}
     </section>

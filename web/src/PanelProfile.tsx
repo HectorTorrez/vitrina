@@ -5,7 +5,7 @@ import { PhoneCountrySelect } from "./PhoneCountrySelect";
 import phoneLabelsEs from "react-phone-number-input/locale/es";
 import phoneLabelsEn from "react-phone-number-input/locale/en";
 import "react-phone-number-input/style.css";
-import { acceptsBookings, type Product, type ShopStyle } from "./catalog";
+import { acceptsBookings, PAYMENT_METHOD_PRESETS, type DeliveryConfig, type Product, type ShopStyle } from "./catalog";
 import { useI18n } from "./i18n";
 import type { PanelShop, Profile } from "./panel";
 import { AffixInput, Field, FormSection, FormSelect, SaveBar, Stepper, usePanelAction } from "./PanelForm";
@@ -66,6 +66,15 @@ interface ProfileDraft {
   timezone: string;
   currency: string;
   style: ShopStyle;
+  delivery: {
+    pickupEnabled: boolean;
+    pickupNote: string;
+    deliveryEnabled: boolean;
+    deliveryFeeMode: "free" | "fixed" | "coordinate";
+    deliveryFee: string;
+    deliveryNote: string;
+  };
+  paymentMethods: string[];
   logoUrl: string;
   backgroundUrl: string;
   instagram: string;
@@ -105,6 +114,15 @@ function toDraft(profile?: Profile): ProfileDraft {
       veilOpacity: profile?.style?.veilOpacity ?? 0,
       announcement: profile?.style?.announcement ?? "",
     },
+    delivery: {
+      pickupEnabled: Boolean(profile?.delivery?.pickupEnabled),
+      pickupNote: profile?.delivery?.pickupNote ?? "",
+      deliveryEnabled: Boolean(profile?.delivery?.deliveryEnabled),
+      deliveryFeeMode: (profile?.delivery?.deliveryFeeMode || "coordinate") as "free" | "fixed" | "coordinate",
+      deliveryFee: profile?.delivery?.deliveryFeeCents ? (profile.delivery.deliveryFeeCents / 100).toFixed(2) : "",
+      deliveryNote: profile?.delivery?.deliveryNote ?? "",
+    },
+    paymentMethods: profile?.paymentMethods ?? [],
     theme: profile?.theme || "costa",
     instagram: profile?.instagram ?? "",
     tiktok: profile?.tiktok ?? "",
@@ -134,6 +152,17 @@ function cleanHandle(value: string) {
 }
 
 function fromDraft(draft: ProfileDraft): Profile {
+  const deliveryFeeCents = draft.delivery.deliveryFeeMode === "fixed"
+    ? Math.max(0, Math.round(Number(draft.delivery.deliveryFee.replace(",", ".") || 0) * 100))
+    : 0;
+  const delivery: DeliveryConfig = {
+    pickupEnabled: draft.delivery.pickupEnabled,
+    pickupNote: draft.delivery.pickupNote.trim(),
+    deliveryEnabled: draft.delivery.deliveryEnabled,
+    deliveryFeeMode: draft.delivery.deliveryEnabled ? draft.delivery.deliveryFeeMode : "",
+    deliveryFeeCents,
+    deliveryNote: draft.delivery.deliveryNote.trim(),
+  };
   return {
     name: draft.name.trim(),
     description: draft.description.trim(),
@@ -146,6 +175,8 @@ function fromDraft(draft: ProfileDraft): Profile {
       ...draft.style,
       announcement: (draft.style.announcement ?? "").trim(),
     },
+    delivery,
+    paymentMethods: draft.paymentMethods,
     logoUrl: draft.logoUrl,
     backgroundUrl: draft.backgroundUrl,
     instagram: cleanHandle(draft.instagram),
@@ -614,6 +645,187 @@ function ContactFields({ draft, set, errors }: { draft: ProfileDraft; set: SetDr
   );
 }
 
+function CommerceFields({ draft, set }: { draft: ProfileDraft; set: SetDraft }) {
+  const { locale } = useI18n();
+  const en = locale === "en";
+  const [customMethod, setCustomMethod] = useState("");
+  const setDelivery = (patch: Partial<ProfileDraft["delivery"]>) => set({ delivery: { ...draft.delivery, ...patch } });
+  const presetKeys = new Set<string>(PAYMENT_METHOD_PRESETS.map((p) => p.key));
+  const customMethods = draft.paymentMethods.filter((m) => !presetKeys.has(m));
+
+  const toggleMethod = (key: string) => {
+    const exists = draft.paymentMethods.includes(key);
+    if (exists) {
+      set({ paymentMethods: draft.paymentMethods.filter((m) => m !== key) });
+    } else if (draft.paymentMethods.length < 12) {
+      set({ paymentMethods: [...draft.paymentMethods, key] });
+    }
+  };
+
+  const addCustom = () => {
+    const trimmed = customMethod.trim();
+    if (!trimmed || trimmed.length > 40 || draft.paymentMethods.length >= 12) return;
+    if (draft.paymentMethods.some((m) => m.toLowerCase() === trimmed.toLowerCase())) {
+      setCustomMethod("");
+      return;
+    }
+    set({ paymentMethods: [...draft.paymentMethods, trimmed] });
+    setCustomMethod("");
+  };
+
+  return (
+    <div className="grid gap-6">
+      <div className="grid gap-3">
+        <div className="grid gap-0.5">
+          <h4 className="text-sm font-semibold">{en ? "Delivery & pickup options" : "Opciones de entrega"}</h4>
+          <p className="text-xs text-muted-foreground">
+            {en ? "Shown on your storefront and selectable in the cart." : "Se muestran en tu tienda y el cliente puede elegirlas en el carrito."}
+          </p>
+        </div>
+
+        <div className="grid gap-3 rounded-xl border bg-muted/30 p-4">
+          <label className="flex cursor-pointer items-center justify-between gap-4">
+            <span className="grid gap-0.5">
+              <span className="text-sm font-medium">{en ? "Store pickup" : "Retiro en local"}</span>
+              <span className="text-xs text-muted-foreground">{en ? "Customers pick up their order at your address." : "El cliente pasa a recoger su pedido."}</span>
+            </span>
+            <Switch checked={draft.delivery.pickupEnabled} onCheckedChange={(pickupEnabled) => setDelivery({ pickupEnabled })} />
+          </label>
+          {draft.delivery.pickupEnabled && (
+            <Input
+              value={draft.delivery.pickupNote}
+              maxLength={160}
+              className="h-9 bg-card"
+              placeholder={en ? "Optional note (e.g. Mon–Sat 9am–5pm, Suite 4)" : "Nota opcional (ej. Lun–Sáb 9am–5pm, Col. Escalón)"}
+              onChange={(e) => setDelivery({ pickupNote: e.target.value })}
+            />
+          )}
+        </div>
+
+        <div className="grid gap-3 rounded-xl border bg-muted/30 p-4">
+          <label className="flex cursor-pointer items-center justify-between gap-4">
+            <span className="grid gap-0.5">
+              <span className="text-sm font-medium">{en ? "Home delivery" : "Envío a domicilio"}</span>
+              <span className="text-xs text-muted-foreground">{en ? "Deliver orders to the customer's address." : "Enviás pedidos a la dirección del cliente."}</span>
+            </span>
+            <Switch checked={draft.delivery.deliveryEnabled} onCheckedChange={(deliveryEnabled) => setDelivery({ deliveryEnabled })} />
+          </label>
+          {draft.delivery.deliveryEnabled && (
+            <div className="grid gap-3 pt-1">
+              <div className="grid gap-1.5">
+                <span className="text-xs font-medium text-muted-foreground">{en ? "Delivery cost" : "Costo de envío"}</span>
+                <PillGroup
+                  label={en ? "Delivery cost" : "Costo de envío"}
+                  value={draft.delivery.deliveryFeeMode}
+                  onChange={(deliveryFeeMode) => setDelivery({ deliveryFeeMode })}
+                  options={[
+                    { value: "coordinate", label: en ? "To be arranged" : "A coordinar" },
+                    { value: "fixed", label: en ? "Fixed fee" : "Tarifa fija" },
+                    { value: "free", label: en ? "Free" : "Gratis" },
+                  ]}
+                />
+              </div>
+              {draft.delivery.deliveryFeeMode === "fixed" && (
+                <Field label={en ? "Fixed delivery fee" : "Tarifa fija de envío"}>
+                  <AffixInput
+                    prefix="$"
+                    suffix={draft.currency || "USD"}
+                    value={draft.delivery.deliveryFee}
+                    inputMode="decimal"
+                    placeholder="3.50"
+                    className="bg-card"
+                    inputClassName="font-mono"
+                    onChange={(e) => setDelivery({ deliveryFee: e.target.value.replace(/[^\d.,]/g, "") })}
+                  />
+                </Field>
+              )}
+              <Input
+                value={draft.delivery.deliveryNote}
+                maxLength={160}
+                className="h-9 bg-card"
+                placeholder={en ? "Optional coverage note (e.g. Same-day in metro area)" : "Nota opcional (ej. Envíos el mismo día en San Salvador)"}
+                onChange={(e) => setDelivery({ deliveryNote: e.target.value })}
+              />
+            </div>
+          )}
+        </div>
+      </div>
+
+      <div className="grid gap-3 border-t pt-5">
+        <div className="grid gap-0.5">
+          <h4 className="text-sm font-semibold">{en ? "Accepted payment methods" : "Métodos de pago aceptados"}</h4>
+          <p className="text-xs text-muted-foreground">
+            {en
+              ? "Choose which payment methods you accept. Customers can pick one when sending their order."
+              : "Elegí qué métodos de pago aceptás. Tus clientes podrán elegir uno al enviar su pedido."}
+          </p>
+        </div>
+        <div className="flex flex-wrap gap-2">
+          {PAYMENT_METHOD_PRESETS.map((preset) => {
+            const active = draft.paymentMethods.includes(preset.key);
+            return (
+              <button
+                key={preset.key}
+                type="button"
+                aria-pressed={active}
+                onClick={() => toggleMethod(preset.key)}
+                className={cn(
+                  "inline-flex h-9 items-center gap-1.5 rounded-full border px-3.5 text-xs font-medium transition",
+                  active ? "border-primary bg-primary text-primary-foreground" : "border-border bg-card hover:border-foreground/40",
+                )}
+              >
+                {active && <Check className="size-3.5" strokeWidth={3} />}
+                {en ? preset.en : preset.es}
+              </button>
+            );
+          })}
+        </div>
+
+        <div className="grid gap-2 pt-1">
+          <span className="text-xs font-medium text-muted-foreground">
+            {en ? "Add another payment method (optional)" : "Agregar otro método personalizado (opcional)"}
+          </span>
+          <div className="flex flex-wrap items-center gap-2">
+            <Input
+              value={customMethod}
+              maxLength={40}
+              className="h-9 max-w-xs"
+              placeholder={en ? "e.g. Zelle, Apple Pay, Wompi" : "Ej. Chivo Wallet, Wompi, SINPE, Zelle"}
+              onChange={(e) => setCustomMethod(e.target.value)}
+              onKeyDown={(e) => {
+                if (e.key === "Enter") {
+                  e.preventDefault();
+                  addCustom();
+                }
+              }}
+            />
+            <Button type="button" variant="outline" size="sm" className="rounded-full" disabled={!customMethod.trim() || draft.paymentMethods.length >= 12} onClick={addCustom}>
+              <Plus className="size-3.5" /> {en ? "Add" : "Agregar"}
+            </Button>
+          </div>
+          {customMethods.length > 0 && (
+            <div className="flex flex-wrap gap-1.5 pt-1">
+              {customMethods.map((method) => (
+                <span key={method} className="inline-flex items-center gap-1.5 rounded-full border bg-card px-3 py-1 text-xs font-medium">
+                  {method}
+                  <button
+                    type="button"
+                    onClick={() => toggleMethod(method)}
+                    aria-label={method}
+                    className="rounded-full p-0.5 text-muted-foreground hover:text-destructive"
+                  >
+                    <X className="size-3" />
+                  </button>
+                </span>
+              ))}
+            </div>
+          )}
+        </div>
+      </div>
+    </div>
+  );
+}
+
 function HoursEditor({ draft, set, errors }: { draft: ProfileDraft; set: SetDraft; errors: ProfileErrors }) {
   const { locale, t } = useI18n();
   const weekdays = weekdaysByLocale[locale];
@@ -745,6 +957,9 @@ export function ProfileEditor({ shop }: { shop: PanelShop }) {
         </FormSection>
         <FormSection title="Contacto y redes" text="Aparecen como botones en tu tienda.">
           <ContactFields draft={draft} set={set} errors={visibleErrors} />
+        </FormSection>
+        <FormSection title="Entregas y métodos de pago" text="Definí cómo entregás tus pedidos y qué formas de pago aceptás.">
+          <CommerceFields draft={draft} set={set} />
         </FormSection>
         <FormSection title="Reservas en línea">
           <HoursEditor draft={draft} set={set} errors={visibleErrors} />

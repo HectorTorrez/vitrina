@@ -23,7 +23,7 @@ func savePanelItem(db *gorm.DB, shopSlug string, item product, create bool) erro
 		return result.Error
 	}
 	result := db.Model(&product{}).Where("shop_slug = ? AND slug = ? AND kind = ?", shopSlug, item.Slug, item.Kind).
-		Select("name", "description", "category", "badge", "price_cents", "compare_at_cents", "available", "image_url", "gallery", "options", "position", "hidden", "duration_minutes").Updates(&item)
+		Select("name", "description", "category", "badge", "price_cents", "compare_at_cents", "available", "stock", "image_url", "gallery", "options", "position", "hidden", "duration_minutes").Updates(&item)
 	if result.Error == nil && result.RowsAffected == 0 {
 		return gorm.ErrRecordNotFound
 	}
@@ -65,7 +65,11 @@ func validatePanelItem(item *product) error {
 	switch item.Kind {
 	case "product":
 		item.DurationMinutes = 0
+		if item.Stock != nil && (*item.Stock < 0 || *item.Stock > 999999) {
+			return validationError("El stock debe ser entre 0 y 999999 unidades")
+		}
 	case "service":
+		item.Stock = nil
 		if item.DurationMinutes < 1 || item.DurationMinutes > 1440 {
 			return validationError("La duración del servicio debe estar entre 1 y 1440 minutos")
 		}
